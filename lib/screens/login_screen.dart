@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,6 +17,13 @@ class _LoginPageState extends State<LoginPage> {
   bool loading = false;
   String? erro;
   bool mostrarSenha = false;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    senhaController.dispose();
+    super.dispose();
+  }
 
   Future<void> login() async {
     setState(() {
@@ -35,205 +41,194 @@ class _LoginPageState extends State<LoginPage> {
         }),
       );
 
-      print("STATUS: ${response.statusCode}");
-      print("BODY: ${response.body}");
-
       if (response.body.isEmpty) {
-        setState(() {
-          erro = "Servidor não respondeu";
-        });
+        if (mounted) setState(() => erro = "Servidor não respondeu");
         return;
       }
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data["token"] != null) {
-        final token = data["token"];
-
-        print("TOKEN: $token");
-
-        // 💾 Salvando token no SharedPreferences
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("token", token);
+        await prefs.setString("token", data["token"]);
 
-        if (!context.mounted) return;
-
+        if (!mounted) return;
         Navigator.pushReplacementNamed(context, "/home");
-      } else {
-        setState(() {
-          erro = data["message"] ?? "Erro no login";
-        });
+      } else if (mounted) {
+        setState(() => erro = data["message"] ?? "Erro no login");
       }
-    } catch (e) {
-      print("ERRO: $e");
-
-      setState(() {
-        erro = "Erro de conexão";
-      });
+    } catch (_) {
+      if (mounted) setState(() => erro = "Erro de conexão");
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
-
-    setState(() {
-      loading = false;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? colors.secondary : Colors.lightBlue;
+    final fieldFill = isDark ? colors.surface : Colors.grey.shade100;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                "assets/images/logo.png",
-                width: 1000,
-
-                errorBuilder: (context, error, stackTrace) {
-                  return const Text("❌ IMAGEM NÃO CARREGOU");
-                },
-              ),
-
-              const SizedBox(height: 40),
-
-              TextField(
-                controller: emailController,
-                style: const TextStyle(color: Colors.black, fontSize: 22),
-
-                decoration: InputDecoration(
-                  labelText: "Email",
-
-                  labelStyle: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 20,
-                  ),
-
-                  prefixIcon: const Icon(
-                    Icons.email_rounded,
-                    color: Colors.lightBlue,
-                  ),
-
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide.none,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(
-                      color: Colors.lightBlue,
-                      width: 2,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 650),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(0, 24 * (1 - value)),
+                  child: child,
+                ),
+              );
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  "assets/images/logo.png",
+                  width: 320,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.directions_run_rounded,
+                      size: 92,
+                      color: accent,
+                    );
+                  },
+                ),
+                const SizedBox(height: 40),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  style: TextStyle(color: colors.onSurface, fontSize: 22),
+                  decoration: InputDecoration(
+                    labelText: "Email",
+                    labelStyle: TextStyle(
+                      color: colors.onSurface,
+                      fontSize: 20,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    prefixIcon: Icon(Icons.email_rounded, color: accent),
+                    filled: true,
+                    fillColor: fieldFill,
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: accent, width: 2),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 16),
-
-              TextField(
-                controller: senhaController,
-
-                obscureText: !mostrarSenha,
-
-                style: const TextStyle(color: Colors.black, fontSize: 22),
-
-                decoration: InputDecoration(
-                  labelText: "Senha",
-
-                  labelStyle: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 20,
-                  ),
-
-                  prefixIcon: const Icon(
-                    Icons.lock_rounded,
-                    color: Colors.lightBlue,
-                  ),
-
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      setState(() {
-                        mostrarSenha = !mostrarSenha;
-                      });
-                    },
-
-                    icon: Icon(
-                      mostrarSenha
-                          ? Icons.visibility_off_rounded
-                          : Icons.visibility_rounded,
-
-                      color: Colors.grey,
+                const SizedBox(height: 16),
+                TextField(
+                  controller: senhaController,
+                  obscureText: !mostrarSenha,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => loading ? null : login(),
+                  style: TextStyle(color: colors.onSurface, fontSize: 22),
+                  decoration: InputDecoration(
+                    labelText: "Senha",
+                    labelStyle: TextStyle(
+                      color: colors.onSurface,
+                      fontSize: 20,
                     ),
-                  ),
-
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide.none,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(
-                      color: Colors.lightBlue,
-                      width: 2,
+                    prefixIcon: Icon(Icons.lock_rounded, color: accent),
+                    suffixIcon: IconButton(
+                      tooltip: mostrarSenha ? "Ocultar senha" : "Mostrar senha",
+                      onPressed: () =>
+                          setState(() => mostrarSenha = !mostrarSenha),
+                      icon: Icon(
+                        mostrarSenha
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
+                        color: isDark ? colors.onSurfaceVariant : Colors.grey,
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    filled: true,
+                    fillColor: fieldFill,
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: accent, width: 2),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-
-              if (erro != null)
-                Text(erro!, style: const TextStyle(color: Colors.red)),
-
-              const SizedBox(height: 16),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: loading ? null : login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightBlueAccent,
-                    foregroundColor: Colors.white,
-                    textStyle: const TextStyle(fontSize: 18),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: loading
-                      ? const CircularProgressIndicator(color: Colors.blue)
-                      : const Text(
-                          "Entrar",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
+                const SizedBox(height: 24),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: erro == null
+                      ? const SizedBox(height: 20)
+                      : Text(
+                          erro!,
+                          key: ValueKey(erro),
+                          style: TextStyle(color: colors.error),
                         ),
                 ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, "/cadastro");
-                },
-                child: const Text(
-                  "Criar conta",
-                  style: TextStyle(
-                    fontSize: 16,
-                    letterSpacing: 1,
-                    color: Colors.lightBlue,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: loading ? null : login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark
+                          ? colors.primary
+                          : Colors.lightBlueAccent,
+                      foregroundColor: Colors.white,
+                      textStyle: const TextStyle(fontSize: 18),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: loading
+                          ? const SizedBox(
+                              key: ValueKey('loading'),
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.blue,
+                              ),
+                            )
+                          : const Text(
+                              "Entrar",
+                              key: ValueKey('enter'),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                    ),
                   ),
                 ),
-              ),
-            ],
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, "/cadastro"),
+                  child: Text(
+                    "Criar conta",
+                    style: TextStyle(
+                      fontSize: 16,
+                      letterSpacing: 1,
+                      color: accent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

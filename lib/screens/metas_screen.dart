@@ -11,6 +11,7 @@ class MetasPage extends StatefulWidget {
 class _MetasPageState extends State<MetasPage> {
   List metas = [];
   bool loading = true;
+  String? erroCarregamento;
 
   @override
   void initState() {
@@ -21,14 +22,18 @@ class _MetasPageState extends State<MetasPage> {
   Future<void> carregarMetas() async {
     try {
       final data = await Api.listarMetas();
+      if (!mounted) return;
 
       setState(() {
         metas = data;
         loading = false;
+        erroCarregamento = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         loading = false;
+        erroCarregamento = "Não foi possível carregar suas metas.";
       });
     }
   }
@@ -46,6 +51,8 @@ class _MetasPageState extends State<MetasPage> {
       builder: (_) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final colors = Theme.of(context).colorScheme;
+
             return Container(
               padding: EdgeInsets.only(
                 left: 24,
@@ -53,8 +60,8 @@ class _MetasPageState extends State<MetasPage> {
                 top: 20,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 24,
               ),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF8FAFD),
+              decoration: BoxDecoration(
+                color: colors.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
               ),
 
@@ -77,7 +84,7 @@ class _MetasPageState extends State<MetasPage> {
 
                     const SizedBox(height: 26),
 
-                    const Row(
+                    Row(
                       children: [
                         Icon(
                           Icons.flag_rounded,
@@ -92,7 +99,7 @@ class _MetasPageState extends State<MetasPage> {
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: colors.onSurface,
                           ),
                         ),
                       ],
@@ -100,9 +107,12 @@ class _MetasPageState extends State<MetasPage> {
 
                     const SizedBox(height: 8),
 
-                    const Text(
+                    Text(
                       "Defina um novo objetivo e acompanhe sua evolução.",
-                      style: TextStyle(color: Colors.black54, fontSize: 15),
+                      style: TextStyle(
+                        color: colors.onSurfaceVariant,
+                        fontSize: 15,
+                      ),
                     ),
 
                     const SizedBox(height: 28),
@@ -120,7 +130,7 @@ class _MetasPageState extends State<MetasPage> {
                         ),
 
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: colors.surface,
 
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
@@ -145,7 +155,7 @@ class _MetasPageState extends State<MetasPage> {
                         ),
 
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: colors.surface,
 
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
@@ -169,7 +179,7 @@ class _MetasPageState extends State<MetasPage> {
                         ),
 
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: colors.surface,
 
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
@@ -206,9 +216,23 @@ class _MetasPageState extends State<MetasPage> {
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           try {
+                            final objetivo = double.tryParse(
+                              objetivoController.text.replaceAll(',', '.'),
+                            );
+                            if (objetivo == null || objetivo <= 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Informe um objetivo numérico maior que zero.",
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
                             await Api.criarMeta(
                               titulo: tituloController.text,
-                              objetivo: double.parse(objetivoController.text),
+                              objetivo: objetivo,
                               tipo: tipoSelecionado,
                             );
 
@@ -268,31 +292,27 @@ class _MetasPageState extends State<MetasPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
+    final colors = Theme.of(context).colorScheme;
 
+    return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFFF5F7FB),
         surfaceTintColor: Colors.transparent,
 
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.black,
-          ),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
 
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               "Metas",
               style: TextStyle(
-                color: Colors.black,
+                color: colors.onSurface,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -300,7 +320,7 @@ class _MetasPageState extends State<MetasPage> {
 
             Text(
               "Acompanhe seus objetivos",
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
             ),
           ],
         ),
@@ -313,7 +333,9 @@ class _MetasPageState extends State<MetasPage> {
       ),
 
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
+          : erroCarregamento != null
+          ? _estadoErro(carregarMetas)
           : metas.isEmpty
           ? const Center(child: Text("Nenhuma meta criada"))
           : RefreshIndicator(
@@ -335,7 +357,7 @@ class _MetasPageState extends State<MetasPage> {
                     padding: const EdgeInsets.all(18),
 
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colors.surface,
 
                       borderRadius: BorderRadius.circular(24),
 
@@ -360,10 +382,10 @@ class _MetasPageState extends State<MetasPage> {
                               child: Text(
                                 meta["titulo"],
 
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  color: colors.onSurface,
                                 ),
                               ),
                             ),
@@ -417,6 +439,34 @@ class _MetasPageState extends State<MetasPage> {
                 },
               ),
             ),
+    );
+  }
+
+  Widget _estadoErro(Future<void> Function() tentarNovamente) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 52),
+            const SizedBox(height: 12),
+            Text(erroCarregamento!, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () {
+                setState(() {
+                  loading = true;
+                  erroCarregamento = null;
+                });
+                tentarNovamente();
+              },
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text("Tentar novamente"),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

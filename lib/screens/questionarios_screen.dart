@@ -89,14 +89,17 @@ class _QuestionariosPageState extends State<QuestionariosPage>
   }
 
   Future<void> _carregarHistorico() async {
+    if (!mounted) return;
     setState(() => carregando = true);
     try {
       final list = await Api.listarQuestionarios();
+      if (!mounted) return;
       setState(() {
         historicoQuestionarios = list;
         carregando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => carregando = false);
     }
   }
@@ -106,33 +109,40 @@ class _QuestionariosPageState extends State<QuestionariosPage>
       await Api.salvarQuestionario(tipo: 'acq5', respostas: respostasACQ5);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Questionário ACQ-5 enviado com sucesso!")),
+          const SnackBar(
+            content: Text("Questionário ACQ-5 enviado com sucesso!"),
+          ),
         );
       }
-      _carregarHistorico();
+      await _carregarHistorico();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao enviar: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erro ao enviar: $e")));
       }
     }
   }
 
   Future<void> _salvarMiniAQLQ() async {
     try {
-      await Api.salvarQuestionario(tipo: 'miniaqlq', respostas: respostasMiniAQLQ);
+      await Api.salvarQuestionario(
+        tipo: 'miniaqlq',
+        respostas: respostasMiniAQLQ,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Questionário MiniAQLQ enviado com sucesso!")),
+          const SnackBar(
+            content: Text("Questionário MiniAQLQ enviado com sucesso!"),
+          ),
         );
       }
-      _carregarHistorico();
+      await _carregarHistorico();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao enviar: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erro ao enviar: $e")));
       }
     }
   }
@@ -140,7 +150,7 @@ class _QuestionariosPageState extends State<QuestionariosPage>
   Future<void> _deletarQuestionario(String id) async {
     try {
       await Api.deletarQuestionario(id);
-      _carregarHistorico();
+      await _carregarHistorico();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -177,7 +187,10 @@ class _QuestionariosPageState extends State<QuestionariosPage>
           indicatorColor: primaryColor,
           tabs: const [
             Tab(icon: Icon(Icons.health_and_safety), text: "Controle (ACQ-5)"),
-            Tab(icon: Icon(Icons.favorite), text: "Qualidade de Vida (MiniAQLQ)"),
+            Tab(
+              icon: Icon(Icons.favorite),
+              text: "Qualidade de Vida (MiniAQLQ)",
+            ),
           ],
         ),
       ),
@@ -235,10 +248,20 @@ class _QuestionariosPageState extends State<QuestionariosPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Pontuação Média: ${media.toStringAsFixed(2)}",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: txtColor)),
-                      Text("Classificação: $status",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: statusColor)),
+                      Text(
+                        "Pontuação Média: ${media.toStringAsFixed(2)}",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: txtColor,
+                        ),
+                      ),
+                      Text(
+                        "Classificação: $status",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -253,13 +276,30 @@ class _QuestionariosPageState extends State<QuestionariosPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(perguntasACQ5[index], style: TextStyle(fontWeight: FontWeight.bold, color: txtColor)),
+                  Text(
+                    perguntasACQ5[index],
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: txtColor,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
                     initialValue: respostasACQ5[key],
-                    decoration: InputDecoration(contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                    ),
                     items: List.generate(opcoesACQ5.length, (i) {
-                      return DropdownMenuItem(value: i, child: Text(opcoesACQ5[i], style: const TextStyle(fontSize: 13)));
+                      return DropdownMenuItem(
+                        value: i,
+                        child: Text(
+                          opcoesACQ5[i],
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      );
                     }),
                     onChanged: (val) {
                       if (val != null) {
@@ -279,11 +319,16 @@ class _QuestionariosPageState extends State<QuestionariosPage>
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0066FF),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               onPressed: _salvarACQ5,
               icon: const Icon(Icons.send),
-              label: const Text("Enviar ACQ-5", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              label: const Text(
+                "Enviar ACQ-5",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -318,16 +363,30 @@ class _QuestionariosPageState extends State<QuestionariosPage>
             ),
             child: Row(
               children: [
-                Icon(Icons.sentiment_satisfied_alt, color: statusColor, size: 28),
+                Icon(
+                  Icons.sentiment_satisfied_alt,
+                  color: statusColor,
+                  size: 28,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Pontuação Média: ${media.toStringAsFixed(2)} / 7.0",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: txtColor)),
-                      Text("Classificação: $status",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: statusColor)),
+                      Text(
+                        "Pontuação Média: ${media.toStringAsFixed(2)} / 7.0",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: txtColor,
+                        ),
+                      ),
+                      Text(
+                        "Classificação: $status",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -342,14 +401,30 @@ class _QuestionariosPageState extends State<QuestionariosPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("${index + 1}. ${perguntasMiniAQLQ[index]}",
-                      style: TextStyle(fontWeight: FontWeight.bold, color: txtColor)),
+                  Text(
+                    "${index + 1}. ${perguntasMiniAQLQ[index]}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: txtColor,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
                     initialValue: respostasMiniAQLQ[key],
-                    decoration: InputDecoration(contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                    ),
                     items: List.generate(opcoesMiniAQLQ.length, (i) {
-                      return DropdownMenuItem(value: i + 1, child: Text(opcoesMiniAQLQ[i], style: const TextStyle(fontSize: 13)));
+                      return DropdownMenuItem(
+                        value: i + 1,
+                        child: Text(
+                          opcoesMiniAQLQ[i],
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      );
                     }),
                     onChanged: (val) {
                       if (val != null) {
@@ -369,11 +444,16 @@ class _QuestionariosPageState extends State<QuestionariosPage>
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0066FF),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               onPressed: _salvarMiniAQLQ,
               icon: const Icon(Icons.send),
-              label: const Text("Enviar MiniAQLQ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              label: const Text(
+                "Enviar MiniAQLQ",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -389,7 +469,11 @@ class _QuestionariosPageState extends State<QuestionariosPage>
         children: [
           Text(
             "Histórico de Questionários",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: txtColor),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: txtColor,
+            ),
           ),
           const SizedBox(height: 12),
           if (carregando)
@@ -398,7 +482,10 @@ class _QuestionariosPageState extends State<QuestionariosPage>
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
-                child: Text("Nenhum questionário de asma registrado.", style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  "Nenhum questionário de asma registrado.",
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             )
           else
@@ -409,7 +496,9 @@ class _QuestionariosPageState extends State<QuestionariosPage>
               itemBuilder: (context, index) {
                 final item = historicoQuestionarios[index];
                 final isACQ5 = item['tipo'] == 'acq5';
-                final dataStr = item['criado_em'] != null ? item['criado_em'].toString().split('T')[0] : "";
+                final dataStr = item['criado_em'] != null
+                    ? item['criado_em'].toString().split('T')[0]
+                    : "";
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
@@ -417,12 +506,17 @@ class _QuestionariosPageState extends State<QuestionariosPage>
                     color: cardBg,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                      ),
                     ],
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: isACQ5 ? Colors.teal.withValues(alpha: 0.15) : Colors.purple.withValues(alpha: 0.15),
+                      backgroundColor: isACQ5
+                          ? Colors.teal.withValues(alpha: 0.15)
+                          : Colors.purple.withValues(alpha: 0.15),
                       child: Icon(
                         isACQ5 ? Icons.health_and_safety : Icons.favorite,
                         color: isACQ5 ? Colors.teal : Colors.purple,
@@ -430,7 +524,10 @@ class _QuestionariosPageState extends State<QuestionariosPage>
                     ),
                     title: Text(
                       isACQ5 ? "Questionário ACQ-5" : "Questionário MiniAQLQ",
-                      style: TextStyle(fontWeight: FontWeight.bold, color: txtColor),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: txtColor,
+                      ),
                     ),
                     subtitle: Text(
                       "Média: ${item['pontuacao_media']} • ${item['classificacao'] ?? ''}\nData: $dataStr",
@@ -438,7 +535,8 @@ class _QuestionariosPageState extends State<QuestionariosPage>
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () => _deletarQuestionario(item['id_questionario']),
+                      onPressed: () =>
+                          _deletarQuestionario(item['id_questionario']),
                     ),
                   ),
                 );

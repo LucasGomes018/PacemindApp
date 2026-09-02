@@ -10,6 +10,17 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Precisamos acessar suas fotos</string>
 
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Usamos sua localização para registrar o percurso da corrida.</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Usamos sua localização em segundo plano para continuar registrando a corrida quando o app estiver minimizado.</string>
+
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

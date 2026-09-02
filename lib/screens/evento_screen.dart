@@ -11,6 +11,7 @@ class EventosPage extends StatefulWidget {
 class _EventosPageState extends State<EventosPage> {
   List eventos = [];
   bool loading = true;
+  String? erroCarregamento;
 
   bool isAdmin = false;
 
@@ -101,6 +102,7 @@ class _EventosPageState extends State<EventosPage> {
   Future<void> carregarPerfil() async {
     try {
       final usuario = await Api.me();
+      if (!mounted) return;
 
       setState(() {
         isAdmin = usuario["tipo_usuario"] == "admin";
@@ -115,6 +117,7 @@ class _EventosPageState extends State<EventosPage> {
   Future<void> carregarMinhasInscricoes() async {
     try {
       final response = await Api.minhasInscricoes();
+      if (!mounted) return;
 
       print("RESPOSTA API:");
       print(response);
@@ -133,6 +136,7 @@ class _EventosPageState extends State<EventosPage> {
       print("MAPA FINAL:");
       print(inscricoesUsuario);
     } catch (e) {
+      if (!mounted) return;
       print("ERRO INSCRIÇÕES:");
       print(e);
     }
@@ -141,14 +145,18 @@ class _EventosPageState extends State<EventosPage> {
   Future<void> carregarEventos() async {
     try {
       final data = await Api.listarEventos();
+      if (!mounted) return;
 
       setState(() {
         eventos = data;
         loading = false;
+        erroCarregamento = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         loading = false;
+        erroCarregamento = "Não foi possível carregar os eventos.";
       });
     }
   }
@@ -156,7 +164,8 @@ class _EventosPageState extends State<EventosPage> {
   String formatarData(String? data) {
     if (data == null) return "-";
 
-    final d = DateTime.parse(data).toLocal();
+    final d = DateTime.tryParse(data)?.toLocal();
+    if (d == null) return "Data inválida";
 
     return "${d.day.toString().padLeft(2, '0')}/"
         "${d.month.toString().padLeft(2, '0')}/"
@@ -427,7 +436,9 @@ class _EventosPageState extends State<EventosPage> {
                                     ),
 
                                     decoration: BoxDecoration(
-                                      color: Colors.green.withValues(alpha: 0.1),
+                                      color: Colors.green.withValues(
+                                        alpha: 0.1,
+                                      ),
 
                                       borderRadius: BorderRadius.circular(30),
                                     ),
@@ -733,7 +744,6 @@ class _EventosPageState extends State<EventosPage> {
     final descricaoController = TextEditingController();
 
     DateTime? dataSelecionada;
-    TimeOfDay? horaSelecionada;
 
     final pageContext = context;
 
@@ -922,7 +932,6 @@ class _EventosPageState extends State<EventosPage> {
 
                             setModalState(() {
                               dataSelecionada = dataCompleta;
-                              horaSelecionada = hora;
                             });
                           }
                         }
@@ -1136,8 +1145,6 @@ class _EventosPageState extends State<EventosPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FB),
-
       floatingActionButton: isAdmin
           ? FloatingActionButton(
               backgroundColor: const Color(0xFF0066FF),
@@ -1150,26 +1157,32 @@ class _EventosPageState extends State<EventosPage> {
 
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           "Eventos",
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        foregroundColor: Colors.black87,
       ),
 
       body: RefreshIndicator(
         onRefresh: carregarEventos,
-        child: eventos.isEmpty
+        child: erroCarregamento != null
+            ? _estadoErro()
+            : eventos.isEmpty
             ? ListView(
-                children: const [
+                children: [
                   SizedBox(height: 250),
 
                   Center(
                     child: Text(
                       "Nenhum evento encontrado",
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ],
@@ -1356,8 +1369,9 @@ class _EventosPageState extends State<EventosPage> {
                                     },
 
                                     style: IconButton.styleFrom(
-                                      backgroundColor: Colors.orange
-                                          .withValues(alpha: 0.12),
+                                      backgroundColor: Colors.orange.withValues(
+                                        alpha: 0.12,
+                                      ),
                                       padding: const EdgeInsets.all(14),
                                     ),
 
@@ -1398,7 +1412,9 @@ class _EventosPageState extends State<EventosPage> {
 
                                                     decoration: BoxDecoration(
                                                       color: Colors.red
-                                                          .withValues(alpha: 0.1),
+                                                          .withValues(
+                                                            alpha: 0.1,
+                                                          ),
                                                       shape: BoxShape.circle,
                                                     ),
 
@@ -1595,6 +1611,35 @@ class _EventosPageState extends State<EventosPage> {
                 },
               ),
       ),
+    );
+  }
+
+  Widget _estadoErro() {
+    return ListView(
+      children: [
+        const SizedBox(height: 220),
+        Center(
+          child: Column(
+            children: [
+              const Icon(Icons.cloud_off_rounded, size: 52),
+              const SizedBox(height: 12),
+              Text(erroCarregamento!),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () {
+                  setState(() {
+                    loading = true;
+                    erroCarregamento = null;
+                  });
+                  carregarEventos();
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text("Tentar novamente"),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

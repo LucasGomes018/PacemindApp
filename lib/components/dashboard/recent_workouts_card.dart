@@ -3,50 +3,51 @@ import 'package:flutter/material.dart';
 class RecentWorkoutsCard extends StatelessWidget {
   final List treinos;
 
-  const RecentWorkoutsCard({
-    super.key,
-    required this.treinos,
-  });
+  const RecentWorkoutsCard({super.key, required this.treinos});
 
   IconData _icon(String tipo) {
-    tipo = tipo.toLowerCase();
-
-    if (tipo.contains("corrida")) return Icons.directions_run;
-    if (tipo.contains("bike")) return Icons.directions_bike;
-    if (tipo.contains("caminhada")) return Icons.directions_walk;
-    if (tipo.contains("muscul")) return Icons.fitness_center;
-
+    final normalized = tipo.toLowerCase();
+    if (normalized.contains("corrida")) return Icons.directions_run;
+    if (normalized.contains("bike")) return Icons.directions_bike;
+    if (normalized.contains("caminhada")) return Icons.directions_walk;
+    if (normalized.contains("muscul")) return Icons.fitness_center;
     return Icons.sports;
   }
 
   Color _color(String tipo) {
-    tipo = tipo.toLowerCase();
-
-    if (tipo.contains("corrida")) return Colors.blue;
-    if (tipo.contains("bike")) return Colors.green;
-    if (tipo.contains("muscul")) return Colors.orange;
-    if (tipo.contains("caminhada")) return Colors.teal;
-
+    final normalized = tipo.toLowerCase();
+    if (normalized.contains("corrida")) return Colors.blue;
+    if (normalized.contains("bike")) return Colors.green;
+    if (normalized.contains("muscul")) return Colors.orange;
+    if (normalized.contains("caminhada")) return Colors.teal;
     return Colors.grey;
+  }
+
+  String _tempo(dynamic segundos) {
+    final total = int.tryParse(segundos?.toString() ?? "") ?? 0;
+    if (total <= 0) return "Tempo não informado";
+    return "${total ~/ 60}min ${(total % 60).toString().padLeft(2, '0')}s";
+  }
+
+  String _pace(dynamic segundos) {
+    final total = double.tryParse(segundos?.toString() ?? "")?.round() ?? 0;
+    if (total <= 0) return "Pace não informado";
+    return "Pace ${total ~/ 60}:${(total % 60).toString().padLeft(2, '0')} /km";
   }
 
   @override
   Widget build(BuildContext context) {
-    final concluidos = treinos
-        .where((treino) => (treino["status"] ?? "")
-            .toString()
-            .toLowerCase() ==
-        "concluido")
-        .toList();
+    final colors = Theme.of(context).colorScheme;
+    final recentes = treinos.take(5).toList();
 
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: .05),
+            color: colors.shadow.withValues(alpha: .06),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -55,45 +56,42 @@ class RecentWorkoutsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
-                Icons.history,
-                color: Color(0xFF0066FF),
-              ),
-              SizedBox(width: 8),
+              Icon(Icons.history, color: colors.primary),
+              const SizedBox(width: 8),
               Text(
-                "Últimos Treinos",
+                "Últimos treinos concluídos",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 19,
-                  color: Color(0xFF0066FF),
+                  color: colors.primary,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          if (concluidos.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 30),
-              child: Text(
-                "Nenhum treino concluído encontrado.",
-                style: TextStyle(color: Colors.grey),
+          if (recentes.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 30),
+              child: Center(
+                child: Text(
+                  "Nenhum treino concluído encontrado.",
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
               ),
             ),
-          ...concluidos.take(5).map((treino) {
-            final tipo = (treino["tipo"] ?? "").toString();
+          ...recentes.map((treino) {
+            final tipo = (treino["tipo"] ?? "Treino").toString();
+            final cor = _color(tipo);
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: _color(tipo).withValues(alpha: .12),
-                    child: Icon(
-                      _icon(tipo),
-                      color: _color(tipo),
-                    ),
+                    backgroundColor: cor.withValues(alpha: .12),
+                    child: Icon(_icon(tipo), color: cor),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -102,25 +100,50 @@ class RecentWorkoutsCard extends StatelessWidget {
                       children: [
                         Text(
                           tipo,
-                          style: const TextStyle(
+                          style: TextStyle(
+                            color: colors.onSurface,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        const SizedBox(height: 3),
                         Text(
-                          (treino["data"] ?? "").toString(),
-                          style: const TextStyle(
-                            color: Colors.grey,
+                          (treino["data"] ?? "Data não informada").toString(),
+                          style: TextStyle(
+                            color: colors.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          "${_tempo(treino["tempo_segundos"])}  •  ${_pace(treino["ritmo_medio_segundos"])}",
+                          style: TextStyle(
+                            color: colors.onSurfaceVariant,
+                            fontSize: 12,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Text(
-                    "${treino["distancia_km"] ?? 0} km",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0066FF),
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        "${treino["distancia_km"] ?? 0} km",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: colors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        "Concluído",
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

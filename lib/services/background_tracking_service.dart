@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
@@ -25,9 +26,8 @@ class BackgroundTrackingService {
   static Future<void> start(int idCorrida) async {
     final service = FlutterBackgroundService();
 
+    await service.startService();
     service.invoke("startRun", {"idCorrida": idCorrida});
-
-    service.startService();
   }
 
   static Future<void> stop() async {
@@ -39,6 +39,8 @@ class BackgroundTrackingService {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) {
+  DartPluginRegistrant.ensureInitialized();
+
   StreamSubscription<Position>? positionStream;
 
   int? idCorrida;

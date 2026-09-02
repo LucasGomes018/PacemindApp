@@ -46,14 +46,17 @@ class _TestesPageState extends State<TestesPage>
   }
 
   Future<void> _carregarHistorico() async {
+    if (!mounted) return;
     setState(() => carregando = true);
     try {
       final testes = await Api.listarTestes();
+      if (!mounted) return;
       setState(() {
         historicoTestes = testes;
         carregando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => carregando = false);
     }
   }
@@ -73,10 +76,12 @@ class _TestesPageState extends State<TestesPage>
   }
 
   void _calcularSprint() {
-    final sec = double.tryParse(_tempoSprintController.text.replaceAll(',', '.')) ?? 0.0;
+    final sec =
+        double.tryParse(_tempoSprintController.text.replaceAll(',', '.')) ??
+        0.0;
     if (sec > 0) {
       final vmax = 0.020 / (sec / 3600.0); // 20m em km/h
-      
+
       // Buscar último 3km para ASR
       double? ultimoVVO2;
       for (var t in historicoTestes) {
@@ -132,18 +137,20 @@ class _TestesPageState extends State<TestesPage>
         );
       }
 
-      _carregarHistorico();
+      await _carregarHistorico();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao salvar teste: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erro ao salvar teste: $e")));
       }
     }
   }
 
   Future<void> _salvarSprint() async {
-    final sec = double.tryParse(_tempoSprintController.text.replaceAll(',', '.')) ?? 0.0;
+    final sec =
+        double.tryParse(_tempoSprintController.text.replaceAll(',', '.')) ??
+        0.0;
 
     if (sec <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -168,16 +175,18 @@ class _TestesPageState extends State<TestesPage>
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Teste de Sprint 20m salvo com sucesso!")),
+          const SnackBar(
+            content: Text("Teste de Sprint 20m salvo com sucesso!"),
+          ),
         );
       }
 
-      _carregarHistorico();
+      await _carregarHistorico();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao salvar teste: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erro ao salvar teste: $e")));
       }
     }
   }
@@ -188,9 +197,9 @@ class _TestesPageState extends State<TestesPage>
       _carregarHistorico();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Erro ao deletar teste.")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Erro ao deletar teste.")));
       }
     }
   }
@@ -249,7 +258,9 @@ class _TestesPageState extends State<TestesPage>
               color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFBFDBFE),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFBFDBFE),
               ),
             ),
             child: const Row(
@@ -319,7 +330,10 @@ class _TestesPageState extends State<TestesPage>
                 children: [
                   Text(
                     "vVO2max Estimada",
-                    style: TextStyle(fontSize: 14, color: isDark ? Colors.grey : Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey : Colors.grey.shade600,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -342,11 +356,16 @@ class _TestesPageState extends State<TestesPage>
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0066FF),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               onPressed: _salvar3km,
               icon: const Icon(Icons.save),
-              label: const Text("Salvar Teste de 3km", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              label: const Text(
+                "Salvar Teste de 3km",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -366,7 +385,9 @@ class _TestesPageState extends State<TestesPage>
               color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFEF3C7),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFFDE68A),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFFDE68A),
               ),
             ),
             child: const Row(
@@ -408,7 +429,10 @@ class _TestesPageState extends State<TestesPage>
                 color: cardBg,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                  ),
                 ],
               ),
               child: Row(
@@ -416,22 +440,42 @@ class _TestesPageState extends State<TestesPage>
                 children: [
                   Column(
                     children: [
-                      Text("Vmax (20m)", style: TextStyle(fontSize: 13, color: isDark ? Colors.grey : Colors.grey.shade600)),
+                      Text(
+                        "Vmax (20m)",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.grey : Colors.grey.shade600,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         "${vmaxCalculada!.toStringAsFixed(1)} km/h",
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.amber),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber,
+                        ),
                       ),
                     ],
                   ),
                   if (asrCalculada != null)
                     Column(
                       children: [
-                        Text("ASR (Reserva Anaeróbica)", style: TextStyle(fontSize: 13, color: isDark ? Colors.grey : Colors.grey.shade600)),
+                        Text(
+                          "ASR (Reserva Anaeróbica)",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.grey : Colors.grey.shade600,
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           "+${asrCalculada!.toStringAsFixed(1)} km/h",
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
                         ),
                       ],
                     ),
@@ -447,11 +491,16 @@ class _TestesPageState extends State<TestesPage>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber.shade800,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               onPressed: _salvarSprint,
               icon: const Icon(Icons.bolt),
-              label: const Text("Salvar Sprint 20m", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              label: const Text(
+                "Salvar Sprint 20m",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -480,7 +529,10 @@ class _TestesPageState extends State<TestesPage>
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
-                child: Text("Nenhum teste físico registrado ainda.", style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  "Nenhum teste físico registrado ainda.",
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             )
           else
@@ -501,20 +553,30 @@ class _TestesPageState extends State<TestesPage>
                     color: cardBg,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                      ),
                     ],
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: is3km ? const Color(0xFF0066FF).withValues(alpha: 0.15) : Colors.amber.withValues(alpha: 0.15),
+                      backgroundColor: is3km
+                          ? const Color(0xFF0066FF).withValues(alpha: 0.15)
+                          : Colors.amber.withValues(alpha: 0.15),
                       child: Icon(
                         is3km ? Icons.directions_run : Icons.bolt,
-                        color: is3km ? const Color(0xFF0066FF) : Colors.amber.shade800,
+                        color: is3km
+                            ? const Color(0xFF0066FF)
+                            : Colors.amber.shade800,
                       ),
                     ),
                     title: Text(
                       is3km ? "Teste de 3km" : "Sprint 20m Speed Max",
-                      style: TextStyle(fontWeight: FontWeight.bold, color: txtColor),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: txtColor,
+                      ),
                     ),
                     subtitle: Text(
                       is3km

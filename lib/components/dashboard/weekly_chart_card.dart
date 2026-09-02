@@ -4,24 +4,21 @@ import '../../components/charts/km_chart.dart';
 class WeeklyChartCard extends StatelessWidget {
   final List<Map<String, dynamic>> dados;
 
-  const WeeklyChartCard({
-    super.key,
-    required this.dados,
-  });
+  const WeeklyChartCard({super.key, required this.dados});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: .05),
             blurRadius: 12,
             offset: const Offset(0, 5),
-          )
+          ),
         ],
       ),
 
@@ -30,10 +27,7 @@ class WeeklyChartCard extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(
-                Icons.show_chart,
-                color: Color(0xFF0066FF),
-              ),
+              Icon(Icons.show_chart, color: Color(0xFF0066FF)),
 
               SizedBox(width: 8),
 
@@ -50,12 +44,7 @@ class WeeklyChartCard extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          SizedBox(
-            height: 220,
-            child: KmChart(
-              dados: dados,
-            ),
-          ),
+          SizedBox(height: 220, child: KmChart(dados: dados)),
         ],
       ),
     );

@@ -15,21 +15,46 @@ import 'services/background_tracking_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme_provider.dart';
 import 'core/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await NotificacaoService.inicializar();
-  await BackgroundTrackingService.initialize();
-  await initializeDateFormatting('pt_BR', null);
+  try {
+    await NotificacaoService.inicializar();
+  } catch (_) {}
 
-  runApp(const MyApp());
+  try {
+    await BackgroundTrackingService.initialize();
+  } catch (_) {}
+
+  try {
+    await initializeDateFormatting('pt_BR', null);
+  } catch (_) {}
+
+  String? token;
+  var corridaAtiva = false;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    token = prefs.getString('token');
+    corridaAtiva = prefs.getBool('corrida_ativa') ?? false;
+  } catch (_) {}
+
+  runApp(
+    MyApp(
+      isAuthenticated: token != null && token.isNotEmpty,
+      initialPage: corridaAtiva ? 1 : 0,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isAuthenticated;
+  final int initialPage;
+
+  const MyApp({super.key, this.isAuthenticated = false, this.initialPage = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -45,12 +70,12 @@ class MyApp extends StatelessWidget {
             darkTheme: AppTheme.dark,
             themeMode: theme.currentTheme,
 
-            initialRoute: "/",
+            initialRoute: isAuthenticated ? "/home" : "/",
 
             routes: {
               "/": (context) => const LoginPage(),
               "/cadastro": (context) => const CadastroPage(),
-              "/home": (context) => const DashboardPage(),
+              "/home": (context) => DashboardPage(initialPage: initialPage),
               "/notificacoes": (context) => const NotificationsPage(),
               "/eventos": (context) => const EventosPage(),
               "/treinos": (context) => const TreinosPage(),

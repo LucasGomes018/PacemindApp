@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api.dart';
 
 class TreinosPage extends StatefulWidget {
-  const TreinosPage({super.key});
+  final VoidCallback? onBack;
+
+  const TreinosPage({super.key, this.onBack});
 
   @override
   State<TreinosPage> createState() => _TreinosPageState();
@@ -14,6 +16,7 @@ class TreinosPage extends StatefulWidget {
 class _TreinosPageState extends State<TreinosPage> {
   List treinos = [];
   bool loading = true;
+  String? erroCarregamento;
 
   String filtroSelecionado = "Todos";
 
@@ -41,15 +44,24 @@ class _TreinosPageState extends State<TreinosPage> {
         headers: {"Authorization": "Bearer $token"},
       );
 
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception("Falha ao carregar treinos");
+      }
+
       final data = jsonDecode(response.body);
+      if (data is! List) throw Exception("Formato inválido");
+      if (!mounted) return;
 
       setState(() {
         treinos = data;
         loading = false;
+        erroCarregamento = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         loading = false;
+        erroCarregamento = "Não foi possível carregar seus treinos.";
       });
     }
   }
@@ -155,6 +167,8 @@ class _TreinosPageState extends State<TreinosPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     if (loading) {
       return const Scaffold(
         body: Center(
@@ -164,30 +178,28 @@ class _TreinosPageState extends State<TreinosPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
-
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFFF5F7FB),
         surfaceTintColor: Colors.transparent,
 
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.black,
-          ),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
           onPressed: () {
-            Navigator.pop(context);
+            if (widget.onBack != null) {
+              widget.onBack!();
+            } else {
+              Navigator.pop(context);
+            }
           },
         ),
 
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               "Treinos",
               style: TextStyle(
-                color: Colors.black,
+                color: colors.onSurface,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -195,7 +207,7 @@ class _TreinosPageState extends State<TreinosPage> {
 
             Text(
               "Gerencie seus treinos",
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
             ),
           ],
         ),
@@ -251,7 +263,7 @@ class _TreinosPageState extends State<TreinosPage> {
                       decoration: BoxDecoration(
                         color: selecionado
                             ? const Color(0xFF0066FF)
-                            : Colors.white,
+                            : colors.surface,
 
                         borderRadius: BorderRadius.circular(18),
 
@@ -267,7 +279,9 @@ class _TreinosPageState extends State<TreinosPage> {
                         child: Text(
                           filtro,
                           style: TextStyle(
-                            color: selecionado ? Colors.white : Colors.black87,
+                            color: selecionado
+                                ? Colors.white
+                                : colors.onSurface,
 
                             fontWeight: FontWeight.w600,
                           ),
@@ -280,10 +294,12 @@ class _TreinosPageState extends State<TreinosPage> {
             ),
 
             Expanded(
-              child: treinosFiltrados.isEmpty
+              child: erroCarregamento != null
+                  ? _estadoErro()
+                  : treinosFiltrados.isEmpty
                   ? const Center(child: Text("Nenhum treino encontrado"))
                   : ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                       itemCount: treinosFiltrados.length,
 
                       itemBuilder: (context, index) {
@@ -295,7 +311,7 @@ class _TreinosPageState extends State<TreinosPage> {
                           padding: const EdgeInsets.all(18),
 
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: colors.surface,
 
                             borderRadius: BorderRadius.circular(24),
 
@@ -342,10 +358,10 @@ class _TreinosPageState extends State<TreinosPage> {
                                         Text(
                                           treino["tipo"] ?? "Treino",
 
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 19,
-                                            color: Colors.black87,
+                                            color: colors.onSurface,
                                           ),
                                         ),
 
@@ -354,8 +370,8 @@ class _TreinosPageState extends State<TreinosPage> {
                                         Text(
                                           treino["data"] ?? "",
 
-                                          style: const TextStyle(
-                                            color: Colors.grey,
+                                          style: TextStyle(
+                                            color: colors.onSurfaceVariant,
                                           ),
                                         ),
                                       ],
@@ -394,16 +410,19 @@ class _TreinosPageState extends State<TreinosPage> {
 
                                 children: [
                                   _info(
+                                    context,
                                     "Distância",
                                     "${treino["distancia_km"] ?? 0} km",
                                   ),
 
                                   _info(
+                                    context,
                                     "Tempo",
                                     formatarTempo(treino["tempo_segundos"]),
                                   ),
 
                                   _info(
+                                    context,
                                     "Pace",
                                     formatarPace(
                                       treino["ritmo_medio_segundos"],
@@ -419,9 +438,7 @@ class _TreinosPageState extends State<TreinosPage> {
                                   child: Text(
                                     treino["observacoes"],
 
-                                    style: const TextStyle(
-                                      color: Colors.black87,
-                                    ),
+                                    style: TextStyle(color: colors.onSurface),
                                   ),
                                 ),
                             ],
@@ -436,14 +453,42 @@ class _TreinosPageState extends State<TreinosPage> {
     );
   }
 
-  Widget _info(String titulo, String valor) {
+  Widget _estadoErro() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 52),
+            const SizedBox(height: 12),
+            Text(erroCarregamento!, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () {
+                setState(() {
+                  loading = true;
+                  erroCarregamento = null;
+                });
+                carregarTreinos();
+              },
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text("Tentar novamente"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _info(BuildContext context, String titulo, String valor) {
     return Column(
       children: [
         Text(
           valor,
 
-          style: const TextStyle(
-            color: Colors.black,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
             fontSize: 17,
           ),
@@ -451,7 +496,12 @@ class _TreinosPageState extends State<TreinosPage> {
 
         const SizedBox(height: 4),
 
-        Text(titulo, style: const TextStyle(color: Colors.grey)),
+        Text(
+          titulo,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
@@ -466,6 +516,8 @@ class _TreinosPageState extends State<TreinosPage> {
       backgroundColor: Colors.transparent,
 
       builder: (context) {
+        final colors = Theme.of(context).colorScheme;
+
         return AnimatedPadding(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
@@ -474,8 +526,8 @@ class _TreinosPageState extends State<TreinosPage> {
           ),
           child: Container(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFD),
+            decoration: BoxDecoration(
+              color: colors.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
             ),
             child: SingleChildScrollView(
@@ -497,7 +549,7 @@ class _TreinosPageState extends State<TreinosPage> {
 
                   const SizedBox(height: 26),
 
-                  const Row(
+                  Row(
                     children: [
                       Icon(
                         Icons.fitness_center_rounded,
@@ -513,7 +565,7 @@ class _TreinosPageState extends State<TreinosPage> {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: colors.onSurface,
                         ),
                       ),
                     ],
@@ -521,9 +573,12 @@ class _TreinosPageState extends State<TreinosPage> {
 
                   const SizedBox(height: 8),
 
-                  const Text(
+                  Text(
                     "Cadastre um novo treino na sua rotina.",
-                    style: TextStyle(color: Colors.black54, fontSize: 15),
+                    style: TextStyle(
+                      color: colors.onSurfaceVariant,
+                      fontSize: 15,
+                    ),
                   ),
 
                   const SizedBox(height: 28),
@@ -541,7 +596,7 @@ class _TreinosPageState extends State<TreinosPage> {
                       ),
 
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: colors.surface,
 
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(18),
@@ -566,7 +621,7 @@ class _TreinosPageState extends State<TreinosPage> {
                       ),
 
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: colors.surface,
 
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(18),

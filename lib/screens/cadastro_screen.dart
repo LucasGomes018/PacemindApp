@@ -30,23 +30,36 @@ class _CadastroPageState extends State<CadastroPage> {
   String? erro;
   bool mostrarSenha = false;
 
+  @override
+  void dispose() {
+    timer?.cancel();
+    nomeController.dispose();
+    emailController.dispose();
+    senhaController.dispose();
+    codigoController.dispose();
+    super.dispose();
+  }
+
   Future<void> cadastrar() async {
     // 🛑 VALIDAÇÃO ANTES DE TUDO
     if (nomeController.text.isEmpty ||
         emailController.text.isEmpty ||
         senhaController.text.isEmpty) {
+      if (!mounted) return;
       setState(() {
         erro = "Preencha todos os campos";
       });
       return;
     }
     if (!emailValidado) {
+      if (!mounted) return;
       setState(() {
         erro = "Valide seu email antes de continuar";
       });
       return;
     }
 
+    if (!mounted) return;
     setState(() {
       loading = true;
       erro = null;
@@ -107,6 +120,7 @@ class _CadastroPageState extends State<CadastroPage> {
       });
     }
 
+    if (!mounted) return;
     setState(() {
       loading = false;
     });
@@ -114,6 +128,7 @@ class _CadastroPageState extends State<CadastroPage> {
 
   Future<void> enviarCodigo() async {
     try {
+      if (!mounted) return;
       setState(() {
         enviandoCodigo = true;
       });
@@ -147,6 +162,7 @@ class _CadastroPageState extends State<CadastroPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         enviandoCodigo = false;
         erro = "Erro ao enviar código";
@@ -172,6 +188,7 @@ class _CadastroPageState extends State<CadastroPage> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        if (!mounted) return;
         setState(() {
           emailValidado = true;
           mostrarMensagemSucesso = true;
@@ -196,6 +213,7 @@ class _CadastroPageState extends State<CadastroPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         erro = "Erro ao validar código";
         validandoCodigo = false;
@@ -212,6 +230,7 @@ class _CadastroPageState extends State<CadastroPage> {
       if (segundosRestantes <= 0) {
         timer.cancel();
 
+        if (!mounted) return;
         setState(() {
           codigoEnviado = false;
           codigoController.clear();
@@ -228,8 +247,12 @@ class _CadastroPageState extends State<CadastroPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final fieldFill = Theme.of(context).brightness == Brightness.dark
+        ? colors.surface
+        : Colors.grey.shade100;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -253,9 +276,9 @@ class _CadastroPageState extends State<CadastroPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
 
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: Colors.black87,
+                        color: colors.onSurface,
                       ),
                     ),
                   ),
@@ -283,13 +306,13 @@ class _CadastroPageState extends State<CadastroPage> {
                 TextField(
                   controller: nomeController,
 
-                  style: const TextStyle(color: Colors.black, fontSize: 20),
+                  style: TextStyle(color: colors.onSurface, fontSize: 20),
 
                   decoration: InputDecoration(
                     labelText: "Nome",
 
-                    labelStyle: const TextStyle(
-                      color: Colors.black,
+                    labelStyle: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 18,
                     ),
 
@@ -299,7 +322,7 @@ class _CadastroPageState extends State<CadastroPage> {
                     ),
 
                     filled: true,
-                    fillColor: Colors.grey.shade100,
+                    fillColor: fieldFill,
 
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide.none,
@@ -322,13 +345,13 @@ class _CadastroPageState extends State<CadastroPage> {
                 TextField(
                   controller: emailController,
 
-                  style: const TextStyle(color: Colors.black, fontSize: 20),
+                  style: TextStyle(color: colors.onSurface, fontSize: 20),
 
                   decoration: InputDecoration(
                     labelText: "Email",
 
-                    labelStyle: const TextStyle(
-                      color: Colors.black,
+                    labelStyle: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 18,
                     ),
 
@@ -338,7 +361,7 @@ class _CadastroPageState extends State<CadastroPage> {
                     ),
 
                     filled: true,
-                    fillColor: Colors.grey.shade100,
+                    fillColor: fieldFill,
 
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide.none,
@@ -405,16 +428,16 @@ class _CadastroPageState extends State<CadastroPage> {
                           controller: codigoController,
                           keyboardType: TextInputType.number,
 
-                          style: const TextStyle(
-                            color: Colors.black,
+                          style: TextStyle(
+                            color: colors.onSurface,
                             fontSize: 20,
                           ),
 
                           decoration: InputDecoration(
                             labelText: "Código recebido",
 
-                            labelStyle: const TextStyle(
-                              color: Colors.black,
+                            labelStyle: TextStyle(
+                              color: colors.onSurface,
                               fontSize: 18,
                             ),
                             prefixIcon: const Icon(
@@ -520,13 +543,13 @@ class _CadastroPageState extends State<CadastroPage> {
 
                   obscureText: !mostrarSenha,
 
-                  style: const TextStyle(color: Colors.black, fontSize: 20),
+                  style: TextStyle(color: colors.onSurface, fontSize: 20),
 
                   decoration: InputDecoration(
                     labelText: "Senha",
 
-                    labelStyle: const TextStyle(
-                      color: Colors.black,
+                    labelStyle: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 18,
                     ),
 
@@ -552,7 +575,7 @@ class _CadastroPageState extends State<CadastroPage> {
                     ),
 
                     filled: true,
-                    fillColor: Colors.grey.shade100,
+                    fillColor: fieldFill,
 
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide.none,
@@ -591,7 +614,9 @@ class _CadastroPageState extends State<CadastroPage> {
                       ),
                     ),
                     child: loading
-                        ? const CircularProgressIndicator(color: Colors.lightBlueAccent)
+                        ? const CircularProgressIndicator(
+                            color: Colors.lightBlueAccent,
+                          )
                         : Text(
                             emailValidado
                                 ? "Cadastrar"

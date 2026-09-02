@@ -21,7 +21,7 @@ class WeeklyGoalCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -36,10 +36,7 @@ class WeeklyGoalCard extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(
-                Icons.flag_rounded,
-                color: Color(0xFF0066FF),
-              ),
+              Icon(Icons.flag_rounded, color: Color(0xFF0066FF)),
               SizedBox(width: 8),
               Text(
                 "Meta da Semana",
@@ -56,10 +53,10 @@ class WeeklyGoalCard extends StatelessWidget {
             children: [
               Text(
                 "${kmAtual.toStringAsFixed(1)} km",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const Spacer(),
@@ -74,20 +71,29 @@ class WeeklyGoalCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: LinearProgressIndicator(
-              value: progresso,
-              minHeight: 12,
-              backgroundColor: Colors.grey.shade200,
-              color: const Color(0xFF0066FF),
-            ),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: progresso),
+            duration: const Duration(milliseconds: 900),
+            curve: Curves.easeOutCubic,
+            builder: (context, animatedProgress, child) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: LinearProgressIndicator(
+                  value: animatedProgress,
+                  minHeight: 12,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: .10),
+                  color: const Color(0xFF0066FF),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 14),
           Text(
             "Meta: ${metaSegura.toStringAsFixed(1)} km",
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 6),
@@ -95,9 +101,9 @@ class WeeklyGoalCard extends StatelessWidget {
             faltam <= 0
                 ? "Meta atingida"
                 : "Faltam ${faltam.toStringAsFixed(1)} km",
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],

@@ -28,10 +28,6 @@ class _ProfilePageState extends State<ProfilePage> {
   void abrirEditarPerfil() {
     final nomeController = TextEditingController(text: user!["nome_usuario"]);
 
-    final paceController = TextEditingController(
-      text: user!["pace_referencia_segundos"]?.toString(),
-    );
-
     final objetivoController = TextEditingController(
       text: user!["objetivo_semanal_km"]?.toString(),
     );
@@ -45,11 +41,15 @@ class _ProfilePageState extends State<ProfilePage> {
     showDialog(
       context: context,
       barrierColor: Colors.black54,
-      builder: (_) {
+      builder: (dialogContext) {
         return Dialog(
           backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           child: Container(
-            padding: const EdgeInsets.all(22),
+            padding: const EdgeInsets.fromLTRB(22, 18, 22, 22),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
               gradient: const LinearGradient(
@@ -70,27 +70,56 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 🔥 HEADER
                   Row(
-                    children: const [
-                      Icon(
-                        Icons.edit_rounded,
-                        color: Colors.lightBlueAccent,
-                        size: 28,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.lightBlueAccent.withValues(alpha: .14),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.lightBlueAccent,
+                          size: 24,
+                        ),
                       ),
-                      SizedBox(width: 10),
-                      Text(
-                        "Editar Perfil",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Editar perfil",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 21,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 3),
+                            Text(
+                              "Mantenha seus dados atualizados",
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: "Fechar",
+                        onPressed: () => Navigator.pop(dialogContext),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white70,
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 22),
 
                   // 👤 NOME
                   _customField(
@@ -126,56 +155,85 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       StatefulBuilder(
                         builder: (context, setModalState) {
+                          const selectBackground = Color(0xFF1E293B);
+                          const selectText = Colors.white;
+                          const selectIcon = Colors.cyanAccent;
+
                           return Row(
                             children: [
                               // ⏱️ MINUTOS
                               Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.05),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.08),
-                                    ),
-                                  ),
-                                  child: DropdownButtonFormField<int>(
-                                    initialValue: minutosSelecionados,
-
-                                    dropdownColor: const Color(0xFF1E293B),
-
-                                    menuMaxHeight: 250,
-
-                                    decoration: const InputDecoration(
-                                      border: InputBorder.none,
-                                    ),
-
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
-
-                                    icon: const Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                      color: Colors.cyanAccent,
-                                    ),
-
-                                    items: List.generate(
-                                      13,
-                                      (index) => DropdownMenuItem(
-                                        value: index + 3,
-                                        child: Text("${index + 3} min"),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "Minutos",
+                                      style: TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 12,
                                       ),
                                     ),
+                                    const SizedBox(height: 7),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.08,
+                                          ),
+                                        ),
+                                      ),
+                                      child: DropdownButtonFormField<int>(
+                                        initialValue: minutosSelecionados,
 
-                                    onChanged: (value) {
-                                      setModalState(() {
-                                        minutosSelecionados = value!;
-                                      });
-                                    },
-                                  ),
+                                        dropdownColor: selectBackground,
+
+                                        menuMaxHeight: 250,
+
+                                        decoration: const InputDecoration(
+                                          border: InputBorder.none,
+                                        ),
+
+                                        style: const TextStyle(
+                                          color: selectText,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+
+                                        icon: const Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: selectIcon,
+                                        ),
+
+                                        items: List.generate(
+                                          13,
+                                          (index) => DropdownMenuItem(
+                                            value: index + 3,
+                                            child: Text(
+                                              "${index + 3} min",
+                                              style: const TextStyle(
+                                                color: selectText,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        onChanged: (value) {
+                                          setModalState(() {
+                                            minutosSelecionados = value!;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
 
@@ -183,56 +241,78 @@ class _ProfilePageState extends State<ProfilePage> {
 
                               // ⏱️ SEGUNDOS
                               Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.05),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.08),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "Segundos",
+                                      style: TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 12,
+                                      ),
                                     ),
-                                  ),
-                                  child: DropdownButtonFormField<int>(
-                                    initialValue: segundosSelecionados,
-
-                                    menuMaxHeight: 250,
-
-                                    dropdownColor: const Color(0xFF1E293B),
-
-                                    decoration: const InputDecoration(
-                                      border: InputBorder.none,
-                                    ),
-
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-
-                                    icon: const Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                      color: Colors.cyanAccent,
-                                    ),
-
-                                    items: List.generate(60, (index) {
-                                      final valor = index;
-
-                                      return DropdownMenuItem(
-                                        value: valor,
-                                        child: Text(
-                                          valor.toString().padLeft(2, '0'),
+                                    const SizedBox(height: 7),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.05,
                                         ),
-                                      );
-                                    }),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.08,
+                                          ),
+                                        ),
+                                      ),
+                                      child: DropdownButtonFormField<int>(
+                                        initialValue: segundosSelecionados,
 
-                                    onChanged: (value) {
-                                      setModalState(() {
-                                        segundosSelecionados = value!;
-                                      });
-                                    },
-                                  ),
+                                        menuMaxHeight: 250,
+
+                                        dropdownColor: selectBackground,
+
+                                        decoration: const InputDecoration(
+                                          border: InputBorder.none,
+                                        ),
+
+                                        style: const TextStyle(
+                                          color: selectText,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+
+                                        icon: const Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: selectIcon,
+                                        ),
+
+                                        items: List.generate(60, (index) {
+                                          final valor = index;
+
+                                          return DropdownMenuItem(
+                                            value: valor,
+                                            child: Text(
+                                              valor.toString().padLeft(2, '0'),
+                                              style: const TextStyle(
+                                                color: selectText,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          );
+                                        }),
+
+                                        onChanged: (value) {
+                                          setModalState(() {
+                                            segundosSelecionados = value!;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -522,12 +602,14 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> carregarPerfil() async {
     try {
       final data = await Api.getProfile();
+      if (!mounted) return;
 
       setState(() {
         user = data;
         loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         loading = false;
       });
@@ -545,11 +627,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     if (loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(color: Colors.lightBlueAccent),
-        ),
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: colors.primary)),
       );
     }
 
@@ -560,7 +642,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       body: Stack(
         children: [
@@ -600,7 +682,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   // 🔥 HEADER
                   Container(
-                    height: 340,
+                    height: 318,
                     width: double.infinity,
 
                     decoration: const BoxDecoration(
@@ -635,7 +717,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     padding: const EdgeInsets.all(12),
 
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.18),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.18,
+                                      ),
                                       borderRadius: BorderRadius.circular(18),
                                     ),
 
@@ -646,17 +730,24 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ),
                                 ),
 
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.18),
-                                    borderRadius: BorderRadius.circular(18),
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(18),
+                                  onTap: () => Navigator.pushNamed(
+                                    context,
+                                    "/configuracoes",
                                   ),
-
-                                  child: const Icon(
-                                    Icons.settings_rounded,
-                                    color: Colors.white,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.18,
+                                      ),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: const Icon(
+                                      Icons.settings_rounded,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -748,8 +839,27 @@ class _ProfilePageState extends State<ProfilePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
 
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(
+                          "Resumo do perfil",
+                          style: TextStyle(
+                            color: colors.onSurface,
+                            fontSize: 21,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Seus parâmetros atuais de treinamento",
+                          style: TextStyle(
+                            color: colors.onSurfaceVariant,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
                         _modernTile(
+                          context,
                           Icons.speed_rounded,
                           "Pace de referência",
                           formatarPace(user!["pace_referencia_segundos"]),
@@ -758,6 +868,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 14),
 
                         _modernTile(
+                          context,
                           Icons.flag_rounded,
                           "Meta semanal",
                           user!["objetivo_semanal_km"] != null
@@ -768,10 +879,32 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 14),
 
                         _modernTile(
+                          context,
                           Icons.calendar_month_rounded,
                           "Conta criada",
                           user!["criado_em"] ?? "-",
                         ),
+
+                        // const SizedBox(height: 20),
+
+                        // SizedBox(
+                        //   width: double.infinity,
+                        //   child: OutlinedButton.icon(
+                        //     onPressed: abrirEditarPerfil,
+                        //     icon: const Icon(Icons.edit_rounded),
+                        //     label: const Text("Editar informações"),
+                        //     style: OutlinedButton.styleFrom(
+                        //       foregroundColor: colors.primary,
+                        //       side: BorderSide(
+                        //         color: colors.primary.withValues(alpha: .35),
+                        //       ),
+                        //       padding: const EdgeInsets.symmetric(vertical: 15),
+                        //       shape: RoundedRectangleBorder(
+                        //         borderRadius: BorderRadius.circular(16),
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
 
                         // const SizedBox(height: 28),
 
@@ -827,7 +960,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         //     ),
                         //   ),
                         // ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 120),
                       ],
                     ),
                   ),
@@ -988,68 +1121,90 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _modernTile(IconData icon, String title, String value) {
-    return Container(
-      padding: const EdgeInsets.all(22),
+  Widget _modernTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String value,
+  ) {
+    final colors = Theme.of(context).colorScheme;
 
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.75),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.96, end: 1),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutCubic,
+      builder: (context, scale, child) {
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
 
-        borderRadius: BorderRadius.circular(30),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.92),
 
-        border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(30),
 
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+          border: Border.all(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.08),
           ),
-        ],
-      ),
 
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
+          boxShadow: [
+            BoxShadow(
+              color: colors.shadow.withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 7),
+            ),
+          ],
+        ),
 
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0066FF), Color(0xFF00C6FF)],
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0066FF), Color(0xFF00C6FF)],
+                ),
+
+                borderRadius: BorderRadius.circular(20),
               ),
 
-              borderRadius: BorderRadius.circular(20),
+              child: Icon(icon, color: Colors.white, size: 26),
             ),
 
-            child: Icon(icon, color: Colors.white, size: 26),
-          ),
+            const SizedBox(width: 18),
 
-          const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-
-                const SizedBox(height: 6),
-
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 6),
+
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

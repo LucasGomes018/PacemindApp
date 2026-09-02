@@ -123,7 +123,6 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
     });
   }
 
-
   Future<void> _salvarGPS(bool valor) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool("gpsSegundoPlano", valor);
@@ -164,7 +163,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
         return StatefulBuilder(
           builder: (context, setState) {
             return Dialog(
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
@@ -192,12 +191,12 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
 
                         const SizedBox(height: 18),
 
-                        const Text(
+                        Text(
                           "Alterar senha",
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
 
@@ -656,7 +655,9 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 0,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -675,7 +676,11 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                 CircleAvatar(
                   backgroundColor: isDark ? const Color(0xFF1E3A8A) : lightBlue,
                   radius: 22,
-                  child: Icon(icon, color: isDark ? Colors.lightBlueAccent : primaryBlue, size: 24),
+                  child: Icon(
+                    icon,
+                    color: isDark ? Colors.lightBlueAccent : primaryBlue,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -695,20 +700,13 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                           padding: const EdgeInsets.only(top: 2.0),
                           child: Text(
                             subtitle,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: subColor,
-                            ),
+                            style: TextStyle(fontSize: 13, color: subColor),
                           ),
                         ),
                     ],
                   ),
                 ),
-                trailing ??
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: subColor,
-                    ),
+                trailing ?? Icon(Icons.chevron_right_rounded, color: subColor),
               ],
             ),
           ),
@@ -736,7 +734,9 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 0,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -745,8 +745,12 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
       ),
       child: SwitchListTile(
         activeThumbColor: primaryBlue,
-        inactiveThumbColor: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
-        inactiveTrackColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+        inactiveThumbColor: isDark
+            ? Colors.grey.shade600
+            : Colors.grey.shade300,
+        inactiveTrackColor: isDark
+            ? Colors.grey.shade800
+            : Colors.grey.shade200,
         title: Text(
           title,
           style: TextStyle(
@@ -757,14 +761,15 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
         ),
         subtitle: subtitle == null
             ? null
-            : Text(
-                subtitle,
-                style: TextStyle(fontSize: 13, color: subColor),
-              ),
+            : Text(subtitle, style: TextStyle(fontSize: 13, color: subColor)),
         secondary: CircleAvatar(
           backgroundColor: isDark ? const Color(0xFF1E3A8A) : lightBlue,
           radius: 22,
-          child: Icon(icon, color: isDark ? Colors.lightBlueAccent : primaryBlue, size: 24),
+          child: Icon(
+            icon,
+            color: isDark ? Colors.lightBlueAccent : primaryBlue,
+            size: 24,
+          ),
         ),
         value: value,
         onChanged: onChanged,

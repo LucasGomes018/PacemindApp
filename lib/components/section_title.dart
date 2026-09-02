@@ -11,7 +11,11 @@ class SectionTitle extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Text(
         text,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
       ),
     );
   }

@@ -31,7 +31,33 @@ class Api {
       headers: {"Authorization": "Bearer $token"},
     );
 
-    return jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao carregar dashboard");
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>) {
+      throw Exception("Formato inválido do dashboard");
+    }
+
+    return data;
+  }
+
+  static Future<List<dynamic>> listarTreinosConcluidos() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/treinos?status=concluido"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao buscar treinos concluídos");
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! List) throw Exception("Formato inválido de treinos");
+
+    return data;
   }
 
   static Future<Map<String, dynamic>> me() async {
@@ -163,6 +189,46 @@ class Api {
 
       body: jsonEncode({"titulo": titulo, "mensagem": mensagem, "tipo": tipo}),
     );
+  }
+
+  static Future<List<dynamic>> listarMensagensChat() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/recomendacoes"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao carregar histórico do chat");
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! List) throw Exception("Formato inválido do histórico");
+
+    return data;
+  }
+
+  static Future<void> salvarMensagemChat({
+    required String mensagem,
+    required bool enviadaPeloUsuario,
+  }) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse("$baseUrl/recomendacoes"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "titulo": enviadaPeloUsuario ? "Pergunta" : "PaceMind IA",
+        "mensagem": mensagem,
+        "tipo": enviadaPeloUsuario ? "chat_usuario" : "chat_ia",
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception("Erro ao salvar mensagem do chat");
+    }
   }
 
   // ===============================
@@ -676,10 +742,7 @@ class Api {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
       },
-      body: jsonEncode({
-        "tipo": tipo,
-        "respostas": respostas,
-      }),
+      body: jsonEncode({"tipo": tipo, "respostas": respostas}),
     );
 
     if (response.statusCode != 201) {

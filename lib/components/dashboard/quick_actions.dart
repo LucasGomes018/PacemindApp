@@ -31,19 +31,12 @@ class QuickActions extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: cor,
-                size: 34,
-              ),
+              Icon(icon, color: cor, size: 34),
               const SizedBox(height: 12),
               Text(
                 titulo,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: cor,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: cor, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -57,12 +50,12 @@ class QuickActions extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Ações rápidas",
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
 

@@ -5,7 +5,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/notificacao_service.dart';
+import '../services/background_tracking_service.dart';
 import '../core/api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -32,6 +34,7 @@ class _MapPageState extends State<MapPage> {
   Timer? timer;
 
   int? idCorrida;
+  String? erroLocalizacao;
 
   int paceMedioSegundos = 0;
 
@@ -43,24 +46,74 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     pegarLocalizacaoInicial();
+    restaurarCorridaAtiva();
+  }
+
+  Future<void> restaurarCorridaAtiva() async {
+    final prefs = await SharedPreferences.getInstance();
+    final corridaAtiva = prefs.getBool("corrida_ativa") ?? false;
+    final inicio = DateTime.tryParse(
+      prefs.getString("corrida_iniciada_em") ?? "",
+    );
+    final idSalvo = prefs.getInt("id_corrida_ativa");
+
+    if (!corridaAtiva || inicio == null || idSalvo == null || !mounted) return;
+
+    setState(() {
+      corridaIniciada = true;
+      idCorrida = idSalvo;
+      idTreinoVinculado = prefs.getString("id_treino_ativo");
+      tempoSegundos = DateTime.now().difference(inicio).inSeconds;
+    });
+
+    timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => tempoSegundos++);
+    });
   }
 
   Future<void> pegarLocalizacaoInicial() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(
+            () => erroLocalizacao = "Ative a localização para usar o mapa.",
+          );
+        }
+        return;
+      }
 
-    if (!serviceEnabled) return;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
 
-    LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(
+            () => erroLocalizacao =
+                "Permita o acesso à localização para exibir o mapa.",
+          );
+        }
+        return;
+      }
 
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      final pos = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
+
+      setState(() {
+        posicaoAtual = LatLng(pos.latitude, pos.longitude);
+        erroLocalizacao = null;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => erroLocalizacao = "Não foi possível obter sua localização.",
+        );
+      }
     }
-
-    Position pos = await Geolocator.getCurrentPosition();
-
-    setState(() {
-      posicaoAtual = LatLng(pos.latitude, pos.longitude);
-    });
   }
 
   Future<void> escolherTreino() async {
@@ -76,8 +129,8 @@ class _MapPageState extends State<MapPage> {
         return Container(
           height: MediaQuery.of(context).size.height * .72,
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-          decoration: const BoxDecoration(
-            color: Color(0xFFF8FAFD),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: Column(
@@ -109,27 +162,38 @@ class _MapPageState extends State<MapPage> {
 
               const SizedBox(height: 18),
 
-              const Text(
+              Text(
                 "Escolha um treino",
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
 
               const SizedBox(height: 8),
 
-              const Text(
+              Text(
                 "Selecione um treino planejado para vincular à corrida.",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54, height: 1.5),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
               ),
 
               const SizedBox(height: 24),
 
               Expanded(
                 child: treinos.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           "Nenhum treino planejado encontrado.",
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       )
                     : ListView.separated(
@@ -243,7 +307,79 @@ class _MapPageState extends State<MapPage> {
     idTreinoVinculado = resultado;
   }
 
+  Future<bool> garantirLocalizacaoSegundoPlano() async {
+    final servicoAtivo = await Geolocator.isLocationServiceEnabled();
+    if (!servicoAtivo) {
+      if (!mounted) return false;
+      await _pedirAcesso(
+        titulo: "Ative a localização",
+        mensagem:
+            "A localização do aparelho está desligada. Ative-a para iniciar e continuar o rastreamento da corrida.",
+        abrirConfiguracoes: Geolocator.openLocationSettings,
+      );
+      final servicoReativado = await Geolocator.isLocationServiceEnabled();
+      final permissaoAtualizada = await Geolocator.checkPermission();
+      return servicoReativado &&
+          permissaoAtualizada == LocationPermission.always;
+    }
+
+    var permissao = await Geolocator.checkPermission();
+    if (permissao == LocationPermission.denied) {
+      permissao = await Geolocator.requestPermission();
+    }
+
+    if (permissao == LocationPermission.always) return true;
+
+    if (!mounted) return false;
+    await _pedirAcesso(
+      titulo: "Permita a localização em segundo plano",
+      mensagem:
+          "Para continuar registrando sua corrida quando o aplicativo estiver fechado ou em segundo plano, escolha a opção \"Sempre\" nas permissões de localização.",
+      abrirConfiguracoes: Geolocator.openAppSettings,
+    );
+
+    final permissaoAtualizada = await Geolocator.checkPermission();
+    return permissaoAtualizada == LocationPermission.always;
+  }
+
+  Future<bool> _pedirAcesso({
+    required String titulo,
+    required String mensagem,
+    required Future<bool> Function() abrirConfiguracoes,
+  }) async {
+    final abrir = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(titulo),
+          content: Text(mensagem),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text("Agora não"),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                await abrirConfiguracoes();
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext, true);
+                }
+              },
+              icon: const Icon(Icons.settings_rounded),
+              label: const Text("Abrir configurações"),
+            ),
+          ],
+        );
+      },
+    );
+
+    return abrir ?? false;
+  }
+
   void iniciarCorrida() async {
+    if (!await garantirLocalizacaoSegundoPlano()) return;
+    if (!mounted) return;
+
     percurso.clear();
     distanciaTotal = 0;
     tempoSegundos = 0;
@@ -258,7 +394,7 @@ class _MapPageState extends State<MapPage> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFD),
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(28),
             ),
             child: Column(
@@ -280,21 +416,24 @@ class _MapPageState extends State<MapPage> {
 
                 const SizedBox(height: 20),
 
-                const Text(
+                Text(
                   "Vincular treino",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
 
                 const SizedBox(height: 10),
 
-                const Text(
+                Text(
                   "Deseja associar esta corrida a um treino planejado?\n\nAssim o PaceMind atualizará automaticamente o progresso do treino.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.black54, height: 1.5),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
                 ),
 
                 const SizedBox(height: 30),
@@ -349,16 +488,70 @@ class _MapPageState extends State<MapPage> {
     }
 
     if (idTreinoVinculado != null) {
-      await Api.iniciarTreino(idTreinoVinculado!);
+      try {
+        await Api.iniciarTreino(idTreinoVinculado!);
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Não foi possível iniciar o treino.")),
+        );
+        return;
+      }
     }
 
+    late final Map<String, dynamic> corrida;
+    try {
+      corrida = await Api.iniciarCorrida();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Não foi possível iniciar a corrida.")),
+      );
+      return;
+    }
+
+    idCorrida = corrida["id"];
+    if (idCorrida == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("A corrida não recebeu um identificador."),
+          ),
+        );
+      }
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool("corrida_ativa", true);
+    await prefs.setInt("id_corrida_ativa", idCorrida!);
+    await prefs.setString(
+      "corrida_iniciada_em",
+      DateTime.now().toIso8601String(),
+    );
+    if (idTreinoVinculado != null) {
+      await prefs.setString("id_treino_ativo", idTreinoVinculado!);
+    } else {
+      await prefs.remove("id_treino_ativo");
+    }
+    try {
+      await BackgroundTrackingService.start(idCorrida!);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "O rastreamento em segundo plano não foi ativado. A corrida continuará nesta tela.",
+            ),
+          ),
+        );
+      }
+    }
+
+    if (!mounted) return;
     setState(() {
       corridaIniciada = true;
     });
-
-    final corrida = await Api.iniciarCorrida();
-
-    idCorrida = corrida["id"];
 
     Api.criarNotificacao(
       titulo: "Corrida iniciada",
@@ -372,6 +565,7 @@ class _MapPageState extends State<MapPage> {
     );
 
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
       setState(() {
         tempoSegundos++;
       });
@@ -386,6 +580,7 @@ class _MapPageState extends State<MapPage> {
         ).listen((Position pos) async {
           final novaPosicao = LatLng(pos.latitude, pos.longitude);
 
+          if (!mounted) return;
           setState(() {
             posicaoAtual = novaPosicao;
             percurso.add(novaPosicao);
@@ -447,6 +642,13 @@ class _MapPageState extends State<MapPage> {
       }
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("corrida_ativa");
+    await prefs.remove("id_corrida_ativa");
+    await prefs.remove("corrida_iniciada_em");
+    await prefs.remove("id_treino_ativo");
+    await BackgroundTrackingService.stop();
+
     setState(() {
       corridaIniciada = false;
     });
@@ -471,6 +673,15 @@ class _MapPageState extends State<MapPage> {
         "${segundos.toString().padLeft(2, '0')}";
   }
 
+  Widget _camadaMapa() {
+    final tiles = TileLayer(
+      urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      userAgentPackageName: "com.pacemind.app",
+    );
+
+    return tiles;
+  }
+
   @override
   void dispose() {
     timer?.cancel();
@@ -481,7 +692,33 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     if (posicaoAtual == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.location_off_rounded, size: 52),
+                const SizedBox(height: 12),
+                Text(
+                  erroLocalizacao ?? "Obtendo sua localização...",
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                if (erroLocalizacao != null)
+                  FilledButton.icon(
+                    onPressed: pegarLocalizacaoInicial,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text("Tentar novamente"),
+                  )
+                else
+                  const CircularProgressIndicator(),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     return Scaffold(
@@ -493,10 +730,7 @@ class _MapPageState extends State<MapPage> {
             options: MapOptions(initialCenter: posicaoAtual!, initialZoom: 17),
 
             children: [
-              TileLayer(
-                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-                userAgentPackageName: "com.pacemind.app",
-              ),
+              _camadaMapa(),
 
               PolylineLayer(
                 polylines: [
@@ -571,7 +805,7 @@ class _MapPageState extends State<MapPage> {
 
           // BOTÃO
           Positioned(
-            bottom: 40,
+            bottom: 130,
             left: 20,
             right: 20,
             child: SizedBox(

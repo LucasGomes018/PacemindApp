@@ -41,6 +41,11 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:foregroundServiceType="location"
+            android:exported="true" />
+
         <activity
     android:name="com.yalantis.ucrop.UCropActivity"
     android:screenOrientation="portrait"

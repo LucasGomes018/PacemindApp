@@ -18,7 +18,9 @@ import '/components/drawer_menu.dart';
 DateTime? semanaSelecionada;
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  final int initialPage;
+
+  const DashboardPage({super.key, this.initialPage = 0});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -27,12 +29,14 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? data;
   bool loading = true;
+  String? erroCarregamento;
 
-  int selectedIndex = 0; // 🔥 agora fica aqui dentro
+  late int selectedIndex;
 
   @override
   void initState() {
     super.initState();
+    selectedIndex = widget.initialPage.clamp(0, 3);
     carregarDados();
     pedirPermissaoNotificacao();
   }
@@ -46,16 +50,30 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> carregarDados() async {
-    final resultado = await Api.getDashboard(semana: semanaSelecionada);
+    try {
+      final dashboard = await Api.getDashboard(semana: semanaSelecionada);
+      List<dynamic> treinosConcluidos = [];
 
-    print(resultado);
+      try {
+        treinosConcluidos = await Api.listarTreinosConcluidos();
+      } catch (_) {}
 
-    print("DADOS: $resultado");
+      if (!mounted) return;
 
-    setState(() {
-      data = resultado;
-      loading = false;
-    });
+      final resultado = {...dashboard, "treinos": treinosConcluidos};
+
+      setState(() {
+        data = resultado;
+        loading = false;
+        erroCarregamento = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        erroCarregamento = "Não foi possível carregar seus dados.";
+      });
+    }
   }
 
   Future<void> logout() async {
@@ -75,7 +93,34 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     if (data == null) {
-      return const Center(child: Text("Erro ao carregar dados"));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off_rounded, size: 52),
+              const SizedBox(height: 12),
+              Text(
+                erroCarregamento ?? "Erro ao carregar dados",
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () {
+                  setState(() {
+                    loading = true;
+                    erroCarregamento = null;
+                  });
+                  carregarDados();
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text("Tentar novamente"),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     final d = data!;
@@ -100,22 +145,9 @@ class _DashboardPageState extends State<DashboardPage> {
       return value.toString();
     }
 
-    String formatarTempo(int totalSegundos) {
-      final h = totalSegundos ~/ 3600;
-      final m = (totalSegundos % 3600) ~/ 60;
-      final s = totalSegundos % 60;
-
-      if (h > 0) {
-        return "${h}h ${m}m";
-      }
-
-      return "${m}m ${s}s";
-    }
-
     final nomeUsuario = asString(d["nome"], "Usuário");
     final kmSemana = asDouble(resumo["total_km"]);
     final tempoTotalSegundos = asInt(resumo["total_tempo"]);
-    final tempoFormatado = formatarTempo(tempoTotalSegundos);
     final treinos = asInt(resumo["total_treinos"]);
     final carga = (d["carga"] is List && d["carga"].isNotEmpty)
         ? asInt(d["carga"][0]["carga"])
@@ -142,7 +174,7 @@ class _DashboardPageState extends State<DashboardPage> {
       onRefresh: carregarDados,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -249,11 +281,18 @@ class _DashboardPageState extends State<DashboardPage> {
     final pages = [
       _buildDashboard(),
       const MapPage(),
-      const TreinosPage(),
+      TreinosPage(
+        onBack: () {
+          setState(() {
+            selectedIndex = 0;
+          });
+        },
+      ),
       const ProfilePage(),
     ];
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: const AppDrawer(),
       appBar: AppBar(

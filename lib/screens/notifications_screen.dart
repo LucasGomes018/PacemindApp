@@ -15,6 +15,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List notificacoes = [];
 
   bool loading = true;
+  String? erroCarregamento;
 
   @override
   void initState() {
@@ -37,15 +38,24 @@ class _NotificationsPageState extends State<NotificationsPage> {
         headers: {"Authorization": "Bearer $token"},
       );
 
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception("Falha ao carregar notificações");
+      }
+
       final data = jsonDecode(response.body);
+      if (data is! List) throw Exception("Formato inválido");
+      if (!mounted) return;
 
       setState(() {
         notificacoes = data;
         loading = false;
+        erroCarregamento = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         loading = false;
+        erroCarregamento = "Não foi possível carregar as notificações.";
       });
     }
   }
@@ -107,27 +117,35 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
-
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-
-        title: const Text(
+        title: Text(
           "Notificações",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
 
       body: loading
-          ? const Center(child: CircularProgressIndicator( color: Colors.lightBlueAccent ))
+          ? Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            )
+          : erroCarregamento != null
+          ? _estadoErro()
           : notificacoes.isEmpty
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_off, size: 70, color: Colors.grey),
+                  Icon(
+                    Icons.notifications_off,
+                    size: 70,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
 
                   SizedBox(height: 16),
 
@@ -135,7 +153,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     "Nenhuma notificação",
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.grey,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -167,7 +185,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       padding: const EdgeInsets.all(16),
 
                       decoration: BoxDecoration(
-                        color: lida ? Colors.white : const Color(0xFFEAF4FF),
+                        color: lida
+                            ? Theme.of(context).colorScheme.surface
+                            : Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: .10),
 
                         borderRadius: BorderRadius.circular(22),
 
@@ -188,7 +210,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             padding: const EdgeInsets.all(12),
 
                             decoration: BoxDecoration(
-                              color: pegarCor(n["tipo"]).withValues(alpha: 0.12),
+                              color: pegarCor(
+                                n["tipo"],
+                              ).withValues(alpha: 0.12),
 
                               shape: BoxShape.circle,
                             ),
@@ -215,7 +239,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                         ? FontWeight.w500
                                         : FontWeight.bold,
 
-                                    color: Colors.black87,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                   ),
                                 ),
 
@@ -224,8 +250,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 Text(
                                   n["mensagem"] ?? "",
 
-                                  style: const TextStyle(
-                                    color: Colors.black54,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                     height: 1.4,
                                   ),
                                 ),
@@ -235,9 +263,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 Text(
                                   n["criado_em"] ?? "",
 
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ],
@@ -245,7 +275,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           ),
 
                           PopupMenuButton(
-                            icon: const Icon(Icons.more_vert, color: Colors.black),
+                            icon: Icon(
+                              Icons.more_vert,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
 
                             itemBuilder: (context) => [
                               const PopupMenuItem(
@@ -267,6 +300,34 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 },
               ),
             ),
+    );
+  }
+
+  Widget _estadoErro() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 52),
+            const SizedBox(height: 12),
+            Text(erroCarregamento!, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () {
+                setState(() {
+                  loading = true;
+                  erroCarregamento = null;
+                });
+                carregarNotificacoes();
+              },
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text("Tentar novamente"),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

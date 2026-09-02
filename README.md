@@ -113,3 +113,31 @@ Acompanhe a frequência dos treinos e os períodos de descanso.
 ## 🔄 Comparação de desempenho
 
 Uma das propostas do PaceMind é permitir que o corredor compare diferentes períodos de treinamento.
+
+---
+
+## ⚙️ Funcionalidades Principais
+
+- [x] Registro e sincronização de treinos de corrida
+- [x] Gráficos de evolução de pace, volume e frequência cardíaca
+- [x] Cálculo e distribuição automática em zonas de intensidade (Z1 a Z5)
+- [x] Histórico e comparação de desempenho entre diferentes períodos
+- [x] Análise de carga acumulada e dias de descanso/consistência
+
+---
+
+## 💻 Tecnologias Utilizadas
+
+- **Mobile:** Flutter / Dart
+- **Backend:** Node.js / JavaScript
+- **Banco de Dados & Autenticação:** PostgreSQL / Supabase
+
+---
+
+## ✉️ Contato & Desenvolvedores
+
+**Projeto desenvolvico por Lucas dos Santos Gomes**
+
+- **E-mail:** [lucasg16809@gmail.com](mailto:lucasg16809@gmail.com)
+- **Linkedin:** 
+- **Repositório:** https://github.com/LucasGomes018/PacemindApp
