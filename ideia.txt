@@ -1,0 +1,197 @@
+Preciso desenvolver um app de treino de corrida com foco em análise de dados.
+
+O app deve permitir registrar e comparar dados de treino, principalmente:
+
+Volume:
+quilometragem por treino, por semana e por mês;
+tempo total treinado;
+quantidade de treinos;
+longão da semana;
+evolução do volume ao longo do tempo.
+
+Intensidade:
+ritmo médio;
+ritmo por trecho;
+frequência cardíaca média e máxima;
+zonas de intensidade;
+tempo em cada zona;
+percentual do treino em cada zona.
+
+Zonas de treino:
+Zona 1: muito leve;
+Zona 2: leve/aeróbico;
+Zona 3: moderado;
+Zona 4: forte;
+Zona 5: máximo/alta intensidade.
+
+O app precisa salvar esses dados para comparação futura, mostrando evolução semanal e mensal.
+
+Comparações importantes:
+volume desta semana vs semana anterior;
+volume deste mês vs mês anterior;
+tempo em cada zona;
+ritmo médio ao longo do tempo;
+carga de treino;
+dias de descanso;
+consistência dos treinos.
+
+Também quero gráficos simples para visualizar:
+quilometragem semanal;
+tempo total treinado;
+distribuição por zonas;
+evolução do ritmo;
+evolução da frequência cardíaca;
+carga de treino.
+
+Cada treino salvo deve ter:
+data;
+tipo de treino;
+distância;
+tempo;
+ritmo médio;
+frequência cardíaca média;
+frequência cardíaca máxima;
+tempo em cada zona;
+sensação do treino;
+observações;
+status: concluído, parcial ou não feito.
+
+A ideia é que o app ajude o usuário a entender se está treinando demais, treinando pouco ou evoluindo bem.
+
+Também quero que esses dados fiquem salvos em banco de dados para gerar histórico, relatórios e comparações depois.
+
+No futuro, seria interessante integrar com GPS, relógio esportivo, Strava, Garmin ou Apple Watch.
+
+Boa tarde Lukinha, futuramente dá pra introduzir teste para corrida, exemplo e esse dos 3km
+Teste de Corrida de 3 km
+
+O teste de 3 km consiste em percorrer uma distância de 3.000 metros no menor tempo possível. O objetivo é avaliar o condicionamento físico, a resistência cardiorrespiratória e o desempenho na corrida.
+
+📋 ORIENTAÇÕES PARA OS TESTES
+Olá! Vamos realizar dois testes que serão utilizados para avaliar sua capacidade física e personalizar seus treinos.
+🏃‍♂️ 1️⃣ Teste de 3 km
+Faça um bom aquecimento antes de iniciar. 
+O objetivo é correr 3.000 metros no menor tempo possível. 
+Mantenha um ritmo forte e constante até o final. 
+Ao terminar, me envie o tempo total (minutos e segundos). 
+⚡ 2️⃣ Teste Sprint Speed Max (Velocidade Máxima)
+Este teste avalia sua velocidade máxima em um percurso de 20 metros.
+✅ Como fazer:
+1.Meça e marque exatamente 20 metros (linha de início e linha de chegada). 
+2.Marque também um ponto 5 metros antes da linha inicial. Esses 5 metros serão utilizados apenas para ganhar velocidade. 
+3.Comece a correr a partir da marca dos 5 metros, acelerando progressivamente. 
+4.Quando cruzar a linha de início dos 20 metros, inicie o cronômetro. 
+5.Corra na sua velocidade máxima durante todo o percurso. 
+6.Quando cruzar a linha final dos 20 metros, pare o cronômetro imediatamente. 
+7.Me envie o tempo registrado. 
+⚠️ Importante:
+Os 20 metros devem estar corretamente medidos para que o resultado seja confiável. 
+Não diminua a velocidade antes da linha final. Continue correndo alguns metros após terminar o percurso. 
+Faça um bom aquecimento antes de realizar o teste. 
+📊 Com os resultados do teste de 3 km e do Sprint Speed Max, vou calcular sua capacidade aeróbica, sua velocidade máxima e sua Reserva Anaeróbica (ASR). Esses dados serão utilizados para montar um treinamento totalmente personalizado, de acordo com a sua capacidade fisiológica.
+💪 Dê o seu máximo nos dois testes. Quanto mais precisos forem os resultados, mais eficiente será a prescrição do seu treinamento.
+
+QUESTIONÁRIO 1 – CONTROLE DA ASMA (ACQ-5)
+Por favor, responda às perguntas abaixo considerando a última semana.
+Q1. Em média, durante a última semana, com que frequência você acordou durante a noite por causa da sua asma?
+0 = Nunca
+1 = Quase nunca
+2 = Algumas vezes
+3 = Várias vezes
+4 = Muitas vezes
+5 = Muitíssimas vezes
+6 = Não consegui dormir por causa da asma
+Resposta: _____
+Q2. Em média, durante a última semana, como estavam os sintomas da sua asma ao acordar pela manhã?
+0 = Nenhum sintoma
+1 = Sintomas muito leves
+2 = Sintomas leves
+3 = Sintomas moderados
+4 = Sintomas bastante graves
+5 = Sintomas graves
+6 = Sintomas muito graves
+Resposta: _____
+Q3. Em geral, durante a última semana, o quanto sua asma limitou suas atividades?
+0 = Não limitou em nada
+1 = Limitou muito pouco
+2 = Limitou um pouco
+3 = Limitou moderadamente
+4 = Limitou bastante
+5 = Limitou extremamente
+6 = Limitou totalmente
+Resposta: _____
+Q4. Em geral, durante a última semana, quanta falta de ar você sentiu por causa da sua asma?
+0 = Nenhuma
+1 = Muito pouca
+2 = Pouca
+3 = Moderada
+4 = Bastante
+5 = Muita
+6 = Muitíssima
+Resposta: _____
+Q5. Em geral, durante a última semana, quanto tempo você apresentou chiado no peito?
+0 = Em nenhum momento
+1 = Quase nunca
+2 = Em uma pequena parte do tempo
+3 = Em uma quantidade moderada do tempo
+4 = Em grande parte do tempo
+5 = Na maior parte do tempo
+6 = Durante todo o tempo
+Resposta: _____
+
+
+QUESTIONÁRIO 2 – QUALIDADE DE VIDA NA ASMA – (MiniAQLQ)
+Por favor, responda considerando as últimas 2 semanas.
+
+PARTE 1 – EM GERAL, QUANTO TEMPO, DURANTE AS 2 ÚLTIMAS SEMANAS:
+Use a escala abaixo para responder às questões de 1 a 11:
+1 = Sempre
+2 = Quase sempre
+3 = Bastante tempo
+4 = Algum tempo
+5 = Pouco tempo
+6 = Quase nunca
+7 = Nunca
+1.Sentiu falta de ar por causa da asma? _____
+2.Sentiu-se incomodado(a) por, ou teve de evitar, um ambiente com pó? _____
+3.Teve um sentimento de frustração, tristeza ou revolta por causa da asma? _____
+4.Sentiu-se incomodado(a) por ter tosse? _____
+5.Teve medo ou receio de não ter à mão a medicação para a asma? _____
+6.Teve uma sensação de aperto no peito ou peso no peito? _____
+7.Sentiu-se incomodado(a) por, ou teve de evitar, um ambiente com fumo de tabaco? _____
+8.Teve dificuldade em dormir bem de noite por ter asma? _____
+9.Sentiu-se preocupado(a) por ter asma? _____
+10.Sentiu pieira/chiado no peito? _____
+11.Sentiu-se incomodado(a) por, ou teve de evitar sair por causa do tempo, clima ou poluição do ar? _____
+
+PARTE 2 – ATÉ QUE PONTO SE SENTIU LIMITADO(A) DURANTE AS 2 ÚLTIMAS SEMANAS AO DESEMPENHAR ESTAS ATIVIDADES, POR TER ASMA?
+Use a escala abaixo para responder às questões de 12 a 15:
+1 = Completamente limitado(a)
+2 = Extremamente limitado(a)
+3 = Muito limitado(a)
+4 = Moderadamente limitado(a)
+5 = Pouco limitado(a)
+6 = Muito pouco limitado(a)
+7 = Nada limitado(a)
+12.Atividades extenuantes, como ter de se apressar, fazer ginástica, correr pela escada acima ou praticar desporto. _____
+13.Atividades moderadas, como andar a pé, fazer o trabalho doméstico, tratar do jardim/quintal, ir às compras ou subir escadas. _____
+14.Atividades sociais, como falar, brincar com crianças ou pegá-las ao colo, visitar amigos ou família. _____
+15.Atividades relacionadas com a sua profissão ou tarefas que desempenha na maior parte dos dias. _____
+
+Por favor, envie suas respostas assim:
+MiniAQLQ:
+1=__
+2=__
+3=__
+4=__
+5=__
+6=__
+7=__
+8=__
+9=__
+10=__
+11=__
+12=__
+13=__
+14=__
+15=__

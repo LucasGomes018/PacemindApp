@@ -779,4 +779,278 @@ class Api {
       throw Exception("Erro ao deletar questionário");
     }
   }
+
+  // ===============================
+  // ⚡ ZONAS DE TREINO & ANÁLISE
+  // ===============================
+
+  static Future<Map<String, dynamic>> getZonasPace() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/zonas/pace"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return {};
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> getZonasDistribuicao() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/zonas/distribuicao"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return {};
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> getZonasAnalise() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/zonas/analise"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return {};
+    return jsonDecode(response.body);
+  }
+
+  static Future<List<dynamic>> getZonasPorSemana() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/zonas/semana"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return [];
+    return jsonDecode(response.body);
+  }
+
+  // ===============================
+  // 🔥 OVERTRAINING & CARGA ACWR
+  // ===============================
+
+  static Future<Map<String, dynamic>> getOvertraining() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/analise/overtraining"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return {};
+    return jsonDecode(response.body);
+  }
+
+  // ===============================
+  // 📈 COMPARAÇÕES & HISTÓRICO SEMANAL
+  // ===============================
+
+  static Future<Map<String, dynamic>> getComparacaoSemanal() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/resumo/semana/comparacao"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return {};
+    return jsonDecode(response.body);
+  }
+
+  static Future<List<dynamic>> getHistoricoSemanal() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/resumo/semana/historico"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return [];
+    return jsonDecode(response.body);
+  }
+
+  // ===============================
+  // 📋 FICHA DO ALUNO
+  // ===============================
+
+  static Future<Map<String, dynamic>> getFichaAluno() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/ficha"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return {};
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> salvarFichaAluno(Map<String, dynamic> dados) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse("$baseUrl/ficha"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dados),
+    );
+
+    if (response.statusCode == 400) {
+      // Se já existe, tenta atualizar
+      final putResp = await http.put(
+        Uri.parse("$baseUrl/ficha"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(dados),
+      );
+      if (putResp.statusCode == 200) return jsonDecode(putResp.body);
+    }
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception("Erro ao salvar ficha do aluno");
+    }
+
+    return jsonDecode(response.body);
+  }
+
+  // ===============================
+  // 🔬 EXAMES
+  // ===============================
+
+  static Future<List<dynamic>> listarExames() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/exames"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return [];
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> salvarExame(Map<String, dynamic> dados) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse("$baseUrl/exames"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dados),
+    );
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception("Erro ao salvar exame");
+    }
+
+    return jsonDecode(response.body);
+  }
+
+  static Future<void> deletarExame(String id) async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/exames/$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao deletar exame");
+    }
+  }
+
+  // ===============================
+  // 📑 RELATÓRIOS
+  // ===============================
+
+  static Future<List<dynamic>> listarRelatorios() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/relatorios"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) return [];
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> salvarRelatorio(Map<String, dynamic> dados) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse("$baseUrl/relatorios"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dados),
+    );
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception("Erro ao salvar relatório");
+    }
+
+    return jsonDecode(response.body);
+  }
+
+  static Future<void> deletarRelatorio(String id) async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/relatorios/$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao deletar relatório");
+    }
+  }
+
+  // ===============================
+  // 🏃 CRIAR TREINO COMPLETO
+  // ===============================
+
+  static Future<Map<String, dynamic>> criarTreinoCompleto({
+    required String tipo,
+    required double distanciaKm,
+    required int tempoSegundos,
+    required String data,
+    int? fcMedia,
+    int? fcMax,
+    int? sensacao,
+    String? observacoes,
+    String status = "concluido",
+    Map<String, int>? tempoZonas,
+  }) async {
+    final token = await _getToken();
+    final ritmoMedio = distanciaKm > 0 ? (tempoSegundos / distanciaKm).round() : 0;
+
+    final body = {
+      "tipo": tipo,
+      "distancia_km": distanciaKm,
+      "tempo_segundos": tempoSegundos,
+      "data": data,
+      "ritmo_medio_segundos": ritmoMedio,
+      "fc_media": fcMedia,
+      "fc_max": fcMax,
+      "sensacao": sensacao ?? 5,
+      "observacoes": observacoes,
+      "status": status,
+      ...?tempoZonas == null ? null : {"zonas": tempoZonas},
+    };
+
+    final response = await http.post(
+      Uri.parse("$baseUrl/treinos"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception("Erro ao criar treino: ${response.body}");
+    }
+
+    return jsonDecode(response.body);
+  }
 }

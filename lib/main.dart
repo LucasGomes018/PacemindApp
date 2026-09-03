@@ -11,6 +11,13 @@ import 'screens/configuracoes_screen.dart';
 import 'screens/recomendacoes_screen.dart';
 import 'screens/testes_screen.dart';
 import 'screens/questionarios_screen.dart';
+import 'screens/zonas_screen.dart';
+import 'screens/evolucao_screen.dart';
+import 'screens/overtraining_screen.dart';
+import 'screens/execucoes_screen.dart';
+import 'screens/ficha_screen.dart';
+import 'screens/exames_screen.dart';
+import 'screens/relatorios_screen.dart';
 import 'services/background_tracking_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -69,6 +76,8 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: theme.currentTheme,
+            themeAnimationDuration: const Duration(milliseconds: 500),
+            themeAnimationCurve: Curves.easeInOut,
 
             initialRoute: isAuthenticated ? "/home" : "/",
 
@@ -84,6 +93,13 @@ class MyApp extends StatelessWidget {
               "/configuracoes": (context) => const ConfiguracoesPage(),
               "/testes": (context) => const TestesPage(),
               "/questionarios": (context) => const QuestionariosPage(),
+              "/zonas": (context) => const ZonasPage(),
+              "/evolucao": (context) => const EvolucaoPage(),
+              "/overtraining": (context) => const OvertrainingPage(),
+              "/execucoes": (context) => const ExecucoesPage(),
+              "/ficha": (context) => const FichaPage(),
+              "/exames": (context) => const ExamesPage(),
+              "/relatorios": (context) => const RelatoriosPage(),
             },
           );
         },

@@ -42,14 +42,27 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       barrierColor: Colors.black54,
       builder: (dialogContext) {
+        final screenWidth = MediaQuery.of(dialogContext).size.width;
+        final screenHeight = MediaQuery.of(dialogContext).size.height;
+        final isSmallScreen = screenWidth < 360;
+
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 24,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 12 : 16,
+            vertical: 20,
           ),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(22, 18, 22, 22),
+            constraints: BoxConstraints(
+              maxHeight: screenHeight * 0.88,
+              maxWidth: 460,
+            ),
+            padding: EdgeInsets.fromLTRB(
+              isSmallScreen ? 16 : 22,
+              18,
+              isSmallScreen ? 16 : 22,
+              22,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
               gradient: const LinearGradient(
@@ -67,6 +80,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -190,6 +204,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         ),
                                       ),
                                       child: DropdownButtonFormField<int>(
+                                        isExpanded: true,
                                         initialValue: minutosSelecionados,
 
                                         dropdownColor: selectBackground,
@@ -268,6 +283,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         ),
                                       ),
                                       child: DropdownButtonFormField<int>(
+                                        isExpanded: true,
                                         initialValue: segundosSelecionados,
 
                                         menuMaxHeight: 250,
@@ -362,7 +378,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => Navigator.pop(dialogContext),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white70,
                             side: BorderSide(
@@ -393,18 +409,22 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               );
 
+                              if (!mounted) return;
                               setState(() {
                                 user = atualizado;
                               });
 
-                              Navigator.pop(context);
+                              if (!dialogContext.mounted) return;
+                              Navigator.pop(dialogContext);
 
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text("Perfil atualizado!"),
                                 ),
                               );
                             } catch (e) {
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text("Erro ao atualizar"),
@@ -504,12 +524,16 @@ class _ProfilePageState extends State<ProfilePage> {
   void abrirOpcoesFoto() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
-      builder: (_) {
+      builder: (bottomSheetContext) {
+        final screenWidth = MediaQuery.of(bottomSheetContext).size.width;
+        final isSmall = screenWidth < 360;
+
         return Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(20),
+          margin: EdgeInsets.all(isSmall ? 8 : 12),
+          padding: EdgeInsets.all(isSmall ? 16 : 20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(28),
             gradient: const LinearGradient(
@@ -528,70 +552,72 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
 
           child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 🔥 BARRINHA
-                Container(
-                  width: 45,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 🔥 BARRINHA
+                  Container(
+                    width: 45,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.photo_camera,
-                      color: Colors.lightBlueAccent,
-                      size: 26,
-                    ),
-
-                    SizedBox(width: 10),
-
-                    Text(
-                      "Alterar foto",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.photo_camera,
+                        color: Colors.lightBlueAccent,
+                        size: 26,
                       ),
-                    ),
-                  ],
-                ),
 
-                const SizedBox(height: 24),
+                      SizedBox(width: 10),
 
-                // 📷 CAMERA
-                _fotoOption(
-                  icon: Icons.camera_alt_rounded,
-                  title: "Tirar foto",
-                  subtitle: "Usar a câmera do dispositivo",
-                  onTap: () {
-                    Navigator.pop(context);
-                    escolherImagem(ImageSource.camera);
-                  },
-                ),
+                      Text(
+                        "Alterar foto",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 24),
 
-                // 🖼️ GALERIA
-                _fotoOption(
-                  icon: Icons.photo_library_rounded,
-                  title: "Escolher da galeria",
-                  subtitle: "Selecionar imagem salva",
-                  onTap: () {
-                    Navigator.pop(context);
-                    escolherImagem(ImageSource.gallery);
-                  },
-                ),
+                  // 📷 CAMERA
+                  _fotoOption(
+                    icon: Icons.camera_alt_rounded,
+                    title: "Tirar foto",
+                    subtitle: "Usar a câmera do dispositivo",
+                    onTap: () {
+                      Navigator.pop(bottomSheetContext);
+                      escolherImagem(ImageSource.camera);
+                    },
+                  ),
 
-                const SizedBox(height: 10),
-              ],
+                  const SizedBox(height: 14),
+
+                  // 🖼️ GALERIA
+                  _fotoOption(
+                    icon: Icons.photo_library_rounded,
+                    title: "Escolher da galeria",
+                    subtitle: "Selecionar imagem salva",
+                    onTap: () {
+                      Navigator.pop(bottomSheetContext);
+                      escolherImagem(ImageSource.gallery);
+                    },
+                  ),
+
+                  const SizedBox(height: 10),
+                ],
+              ),
             ),
           ),
         );
@@ -682,47 +708,42 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   // 🔥 HEADER
                   Container(
-                    height: 318,
                     width: double.infinity,
-
+                    constraints: const BoxConstraints(minHeight: 318),
+                    padding: const EdgeInsets.only(bottom: 24),
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [Color(0xFF0057FF), Color(0xFF00C6FF)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(50),
                         bottomRight: Radius.circular(50),
                       ),
                     ),
-
                     child: SafeArea(
+                      bottom: false,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(height: 25),
+                          const SizedBox(height: 20),
 
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 22),
-
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                               children: [
                                 GestureDetector(
                                   onTap: abrirEditarPerfil,
-
                                   child: Container(
                                     padding: const EdgeInsets.all(12),
-
                                     decoration: BoxDecoration(
                                       color: Colors.white.withValues(
                                         alpha: 0.18,
                                       ),
                                       borderRadius: BorderRadius.circular(18),
                                     ),
-
                                     child: const Icon(
                                       Icons.edit_rounded,
                                       color: Colors.white,
@@ -754,7 +775,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
 
-                          const SizedBox(height: 25),
+                          const SizedBox(height: 18),
 
                           // 👤 FOTO
                           GestureDetector(
@@ -763,7 +784,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               clipBehavior: Clip.none,
                               children: [
                                 CircleAvatar(
-                                  radius: 62,
+                                  radius: MediaQuery.of(context).size.width < 360 ? 54 : 62,
                                   backgroundColor: Colors.white,
                                   backgroundImage:
                                       user!["foto_url"] != null &&
@@ -775,9 +796,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                   child:
                                       user!["foto_url"] == null ||
                                           user!["foto_url"].toString().isEmpty
-                                      ? const Icon(
+                                      ? Icon(
                                           Icons.person,
-                                          size: 70,
+                                          size: MediaQuery.of(context).size.width < 360 ? 58 : 70,
                                           color: Colors.grey,
                                         )
                                       : null,
@@ -807,24 +828,36 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
 
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 16),
 
-                          Text(
-                            user!["nome_usuario"] ?? "",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              user!["nome_usuario"] ?? "",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
 
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
 
-                          Text(
-                            user!["email"] ?? "",
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 15,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              user!["email"] ?? "",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                         ],
@@ -836,8 +869,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // 📦 CARDS
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-
+                    padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width < 360 ? 14 : 20,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -973,45 +1007,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _infoTile(String title, dynamic value) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(
-          218,
-          203,
-          240,
-          255,
-        ), // 👈 fundo mais visível
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.black87,
-              fontWeight: FontWeight.w500,
-              fontSize: 16,
-            ),
-          ),
-          Text(
-            value?.toString() ?? "-",
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w500,
-              fontSize: 16,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _customField({
     required TextEditingController controller,
     required String label,
@@ -1128,6 +1123,7 @@ class _ProfilePageState extends State<ProfilePage> {
     String value,
   ) {
     final colors = Theme.of(context).colorScheme;
+    final isSmall = MediaQuery.of(context).size.width < 360;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.96, end: 1),
@@ -1137,19 +1133,18 @@ class _ProfilePageState extends State<ProfilePage> {
         return Transform.scale(scale: scale, child: child);
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
-
+        padding: EdgeInsets.symmetric(
+          horizontal: isSmall ? 14 : 20,
+          vertical: isSmall ? 14 : 18,
+        ),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.92),
-
-          borderRadius: BorderRadius.circular(30),
-
+          borderRadius: BorderRadius.circular(isSmall ? 22 : 30),
           border: Border.all(
             color: Theme.of(
               context,
             ).colorScheme.onSurface.withValues(alpha: 0.08),
           ),
-
           boxShadow: [
             BoxShadow(
               color: colors.shadow.withValues(alpha: 0.08),
@@ -1158,45 +1153,40 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ],
         ),
-
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
-
+              padding: EdgeInsets.all(isSmall ? 12 : 16),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF0066FF), Color(0xFF00C6FF)],
                 ),
-
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(isSmall ? 16 : 20),
               ),
-
-              child: Icon(icon, color: Colors.white, size: 26),
+              child: Icon(icon, color: Colors.white, size: isSmall ? 22 : 26),
             ),
-
-            const SizedBox(width: 18),
-
+            SizedBox(width: isSmall ? 12 : 18),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-
                 children: [
                   Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 14,
+                      fontSize: isSmall ? 12.5 : 14,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   Text(
                     value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 18,
+                      fontSize: isSmall ? 16 : 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -1205,44 +1195,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _statCard(String value, String label, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18),
-
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-
-        borderRadius: BorderRadius.circular(24),
-
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-      ),
-
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white),
-
-          const SizedBox(height: 10),
-
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-        ],
       ),
     );
   }

@@ -44,6 +44,7 @@ dependencies:
   image_cropper: ^9.1.0
   flutter_background_service: ^5.0.5
   provider: ^6.1.5
+  intl: ^0.19.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -77,6 +78,8 @@ flutter:
   assets:
     - assets/images/logo-login.png
     - assets/images/logo.png
+    - assets/images/logoLogin2.png
+    - assets/images/logoLoginDark.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

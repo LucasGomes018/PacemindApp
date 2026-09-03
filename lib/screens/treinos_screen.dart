@@ -507,197 +507,258 @@ class _TreinosPageState extends State<TreinosPage> {
   }
 
   void mostrarCriarTreino() {
-    final tipoController = TextEditingController();
+    final tipoController = TextEditingController(text: "Corrida");
     final distanciaController = TextEditingController();
+    final minutosController = TextEditingController();
+    final segundosController = TextEditingController();
+    final fcMediaController = TextEditingController();
+    final fcMaxController = TextEditingController();
+    final observacoesController = TextEditingController();
+    DateTime dataTreino = DateTime.now();
+    int sensacao = 5;
+    String status = "concluido";
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-
       builder: (context) {
-        final colors = Theme.of(context).colorScheme;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final colors = Theme.of(context).colorScheme;
 
-        return AnimatedPadding(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 55,
-                      height: 5,
-
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 26),
-
-                  Row(
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.fitness_center_rounded,
-                        color: Color(0xFF0066FF),
-                        size: 30,
+                      Center(
+                        child: Container(
+                          width: 55,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.directions_run_rounded,
+                            color: Color(0xFF0066FF),
+                            size: 30,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            "Novo Treino",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Registre as métricas completas de volume e intensidade.",
+                        style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Tipo e Status
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: TextField(
+                              controller: tipoController,
+                              decoration: const InputDecoration(
+                                labelText: "Tipo de treino",
+                                hintText: "Ex: Corrida, Longão, Intervalado",
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              initialValue: status,
+                              decoration: const InputDecoration(labelText: "Status"),
+                              items: const [
+                                DropdownMenuItem(value: "concluido", child: Text("Concluído")),
+                                DropdownMenuItem(value: "parcial", child: Text("Parcial")),
+                                DropdownMenuItem(value: "nao_feito", child: Text("Não feito")),
+                              ],
+                              onChanged: (v) {
+                                if (v != null) setModalState(() => status = v);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Distância e Tempo (Min e Seg)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: distanciaController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(
+                                labelText: "Distância (km)",
+                                hintText: "Ex: 5.0",
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: minutosController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: "Minutos",
+                                hintText: "30",
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: segundosController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: "Segundos",
+                                hintText: "0",
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Frequência Cardíaca Média e Máxima
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: fcMediaController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: "FC Média (bpm)",
+                                hintText: "Ex: 148",
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: fcMaxController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: "FC Máxima (bpm)",
+                                hintText: "Ex: 175",
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Sensação de Esforço RPE (1 a 10)
+                      Text(
+                        "Sensação de Esforço (RPE): $sensacao / 10",
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+                      ),
+                      Slider(
+                        value: sensacao.toDouble(),
+                        min: 1,
+                        max: 10,
+                        divisions: 9,
+                        activeColor: const Color(0xFF0066FF),
+                        onChanged: (val) {
+                          setModalState(() => sensacao = val.round());
+                        },
                       ),
 
-                      SizedBox(width: 10),
+                      // Observações
+                      TextField(
+                        controller: observacoesController,
+                        decoration: const InputDecoration(
+                          labelText: "Observações (opcional)",
+                          hintText: "Condições climáticas, terreno, sensações...",
+                        ),
+                      ),
+                      const SizedBox(height: 22),
 
-                      Text(
-                        "Novo Treino",
+                      // Botão Salvar
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final dist = double.tryParse(distanciaController.text.replaceAll(',', '.')) ?? 0.0;
+                            final min = int.tryParse(minutosController.text) ?? 0;
+                            final sec = int.tryParse(segundosController.text) ?? 0;
+                            final totalSeg = min * 60 + sec;
+                            final fcMed = int.tryParse(fcMediaController.text);
+                            final fcMax = int.tryParse(fcMaxController.text);
 
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: colors.onSurface,
+                            await Api.criarTreinoCompleto(
+                              tipo: tipoController.text,
+                              distanciaKm: dist,
+                              tempoSegundos: totalSeg,
+                              data: dataTreino.toIso8601String(),
+                              fcMedia: fcMed,
+                              fcMax: fcMax,
+                              sensacao: sensacao,
+                              observacoes: observacoesController.text,
+                              status: status,
+                            );
+
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            carregarTreinos();
+                          },
+                          icon: const Icon(Icons.check_rounded),
+                          label: const Text(
+                            "Salvar Treino Completo",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            elevation: 0,
+                            backgroundColor: const Color(0xFF0066FF),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    "Cadastre um novo treino na sua rotina.",
-                    style: TextStyle(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 15,
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  TextField(
-                    controller: tipoController,
-
-                    decoration: InputDecoration(
-                      hintText: "Ex: Corrida",
-                      labelText: "Tipo do treino",
-
-                      prefixIcon: const Icon(
-                        Icons.category_rounded,
-                        color: Color(0xFF0066FF),
-                      ),
-
-                      filled: true,
-                      fillColor: colors.surface,
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  TextField(
-                    controller: distanciaController,
-                    keyboardType: TextInputType.number,
-
-                    decoration: InputDecoration(
-                      hintText: "Ex: 5",
-                      labelText: "Distância em KM",
-
-                      prefixIcon: const Icon(
-                        Icons.straighten_rounded,
-                        color: Color(0xFF0066FF),
-                      ),
-
-                      filled: true,
-                      fillColor: colors.surface,
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  SizedBox(
-                    width: double.infinity,
-
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        await criarTreino(
-                          tipoController.text,
-                          distanciaController.text,
-                        );
-
-                        if (!context.mounted) return;
-
-                        Navigator.pop(context);
-                      },
-
-                      icon: const Icon(Icons.add),
-
-                      label: const Text(
-                        "Criar treino",
-
-                        style: TextStyle(fontSize: 17),
-                      ),
-
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-
-                        backgroundColor: const Color(0xFF0066FF),
-
-                        foregroundColor: Colors.white,
-
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
-  }
-
-  Future<void> criarTreino(String tipo, String distancia) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString("token");
-
-    await http.post(
-      Uri.parse("${Api.baseUrl}/treinos"),
-
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-
-      body: jsonEncode({
-        "data": DateTime.now().toIso8601String(),
-        "tipo": tipo,
-        "distancia_km": double.tryParse(distancia),
-      }),
-    );
-
-    carregarTreinos();
   }
 }

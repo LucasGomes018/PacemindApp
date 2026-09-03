@@ -779,10 +779,74 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
     );
   }
 
+  Widget _buildThemeSettingsItem() {
+    final isDark = context.watch<ThemeProvider>().darkMode;
+    final cardBg = Theme.of(context).cardColor;
+    final txtColor = Theme.of(context).colorScheme.onSurface;
+    final subColor = isDark ? Colors.grey.shade400 : lightTextColor;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: isDark ? const Color(0xFF1E3A8A) : lightBlue,
+          radius: 22,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 350),
+            transitionBuilder: (child, anim) => RotationTransition(
+              turns: anim,
+              child: FadeTransition(opacity: anim, child: child),
+            ),
+            child: Icon(
+              isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
+              key: ValueKey<bool>(isDark),
+              color: isDark ? Colors.amberAccent : Colors.orange,
+              size: 24,
+            ),
+          ),
+        ),
+        title: Text(
+          "Tema Escuro",
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            color: txtColor,
+          ),
+        ),
+        subtitle: Text(
+          isDark ? "Modo escuro ativado" : "Modo claro ativado",
+          style: TextStyle(fontSize: 13, color: subColor),
+        ),
+        trailing: _SmoothDayNightSwitch(
+          isDark: isDark,
+          onChanged: (value) {
+            context.read<ThemeProvider>().alterarTema(value);
+          },
+        ),
+        onTap: () {
+          context.read<ThemeProvider>().alterarTema(!isDark);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -855,14 +919,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
           ),
 
           _buildSectionTitle("Aparência"),
-          _buildSwitchSettingsItem(
-            icon: Icons.dark_mode_outlined,
-            title: "Tema escuro",
-            value: context.watch<ThemeProvider>().darkMode,
-            onChanged: (value) {
-              context.read<ThemeProvider>().alterarTema(value);
-            },
-          ),
+          _buildThemeSettingsItem(),
 
           _buildSectionTitle("PaceMind AI"),
           _buildSettingsItem(
@@ -923,6 +980,91 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
 
           const SizedBox(height: 40),
         ],
+      ),
+    );
+  }
+}
+
+class _SmoothDayNightSwitch extends StatelessWidget {
+  final bool isDark;
+  final ValueChanged<bool> onChanged;
+
+  const _SmoothDayNightSwitch({
+    required this.isDark,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!isDark),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+        width: 66,
+        height: 36,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF0F172A), const Color(0xFF1E3A8A)]
+                : [const Color(0xFF60A5FA), const Color(0xFF38BDF8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? const Color(0xFF1E3A8A).withValues(alpha: 0.4)
+                  : const Color(0xFF38BDF8).withValues(alpha: 0.4),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            AnimatedAlign(
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeInOutBack,
+              alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: isDark
+                        ? const Icon(
+                            Icons.nightlight_round,
+                            key: ValueKey("moon"),
+                            size: 16,
+                            color: Color(0xFF1E3A8A),
+                          )
+                        : const Icon(
+                            Icons.wb_sunny_rounded,
+                            key: ValueKey("sun"),
+                            size: 16,
+                            color: Color(0xFFF59E0B),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

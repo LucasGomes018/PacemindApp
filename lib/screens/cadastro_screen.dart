@@ -284,8 +284,8 @@ class _CadastroPageState extends State<CadastroPage> {
                   ),
                 ),
                 Image.asset(
-                  "assets/images/logo.png",
-                  width: 1000,
+                  "assets/images/logoLogin2.png",
+                  width: 320,
 
                   errorBuilder: (context, error, stackTrace) {
                     return const Text("❌ IMAGEM NÃO CARREGOU");
