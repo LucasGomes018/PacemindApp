@@ -25,6 +25,8 @@ class _EventosPageState extends State<EventosPage> {
 
   Color corAcao = Colors.green;
 
+  int filtroSelecionado = 0;
+
   @override
   void initState() {
     super.initState();
@@ -47,7 +49,8 @@ class _EventosPageState extends State<EventosPage> {
       context: context,
       barrierDismissible: false,
       useRootNavigator: true,
-      builder: (_) {
+      builder: (dialogCtx) {
+        final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
         return PopScope(
           canPop: false,
           child: Center(
@@ -57,8 +60,20 @@ class _EventosPageState extends State<EventosPage> {
                 width: 270,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(dialogCtx).cardColor,
                   borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : Colors.black.withValues(alpha: 0.06),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark ? Colors.black54 : Colors.black12,
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -74,12 +89,16 @@ class _EventosPageState extends State<EventosPage> {
                           )
                         : Icon(icone, size: 55, color: cor),
 
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 20),
 
                     Text(
                       mensagem,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16, color: Colors.black),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(dialogCtx).colorScheme.onSurface,
+                      ),
                     ),
                   ],
                 ),
@@ -312,28 +331,28 @@ class _EventosPageState extends State<EventosPage> {
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
 
-        builder: (_) {
+        builder: (sheetCtx) {
+          final isDark = Theme.of(sheetCtx).brightness == Brightness.dark;
+          final cardBg = Theme.of(sheetCtx).cardColor;
+          final onSurface = Theme.of(sheetCtx).colorScheme.onSurface;
+          final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
           return Container(
-            height: MediaQuery.of(context).size.height * 0.75,
-
+            height: MediaQuery.of(sheetCtx).size.height * 0.75,
             padding: const EdgeInsets.all(24),
-
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFD),
-
-              borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+            decoration: BoxDecoration(
+              color: Theme.of(sheetCtx).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
             ),
-
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
                   child: Container(
-                    width: 60,
+                    width: 50,
                     height: 5,
-
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
@@ -342,55 +361,55 @@ class _EventosPageState extends State<EventosPage> {
                 const SizedBox(height: 24),
 
                 Text(
-                  evento["nome"],
-                  style: const TextStyle(
-                    fontSize: 28,
+                  evento["nome"] ?? "Inscritos no Evento",
+                  style: TextStyle(
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent,
+                    color: onSurface,
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
 
                 Text(
-                  "${data["total"]} inscritos",
-                  style: const TextStyle(color: Colors.grey, fontSize: 16),
+                  "${data["total"] ?? inscritos.length} atletas inscritos",
+                  style: TextStyle(color: subColor, fontSize: 15),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
                 Expanded(
                   child: inscritos.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            "Nenhum inscrito",
-                            style: TextStyle(color: Colors.grey),
+                            "Nenhum inscrito ainda",
+                            style: TextStyle(color: subColor),
                           ),
                         )
                       : ListView.builder(
                           itemCount: inscritos.length,
-
                           itemBuilder: (_, index) {
                             final inscrito = inscritos[index];
 
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 14),
-
+                              margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(16),
-
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: cardBg,
                                 borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.06)
+                                      : Colors.black.withValues(alpha: 0.04),
+                                ),
                               ),
-
                               child: Row(
                                 children: [
                                   CircleAvatar(
-                                    radius: 24,
-                                    backgroundColor: Colors.blue.withValues(
-                                      alpha: 0.1,
+                                    radius: 22,
+                                    backgroundColor: const Color(0xFF0066FF).withValues(
+                                      alpha: 0.12,
                                     ),
-
                                     child: const Icon(
                                       Icons.person,
                                       color: Color(0xFF0066FF),
@@ -401,28 +420,22 @@ class _EventosPageState extends State<EventosPage> {
 
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          inscrito["nome_usuario"] ??
-                                              "Sem nome",
-
-                                          style: const TextStyle(
+                                          inscrito["nome_usuario"] ?? "Atleta",
+                                          style: TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: Colors.black87,
+                                            fontSize: 15,
+                                            color: onSurface,
                                           ),
                                         ),
-
-                                        const SizedBox(height: 4),
-
+                                        const SizedBox(height: 2),
                                         Text(
                                           inscrito["email"] ?? "",
-
-                                          style: const TextStyle(
-                                            color: Colors.grey,
+                                          style: TextStyle(
+                                            color: subColor,
+                                            fontSize: 13,
                                           ),
                                         ),
                                       ],
@@ -434,21 +447,18 @@ class _EventosPageState extends State<EventosPage> {
                                       horizontal: 12,
                                       vertical: 6,
                                     ),
-
                                     decoration: BoxDecoration(
-                                      color: Colors.green.withValues(
-                                        alpha: 0.1,
+                                      color: const Color(0xFF10B981).withValues(
+                                        alpha: 0.12,
                                       ),
-
                                       borderRadius: BorderRadius.circular(30),
                                     ),
-
                                     child: Text(
-                                      inscrito["status"],
-
+                                      inscrito["status"] ?? "Confirmado",
                                       style: const TextStyle(
-                                        color: Colors.green,
+                                        color: Color(0xFF10B981),
                                         fontWeight: FontWeight.bold,
+                                        fontSize: 12,
                                       ),
                                     ),
                                   ),
@@ -490,59 +500,57 @@ class _EventosPageState extends State<EventosPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
 
-      builder: (_) {
+      builder: (editCtx) {
+        final isDark = Theme.of(editCtx).brightness == Brightness.dark;
+        final onSurface = Theme.of(editCtx).colorScheme.onSurface;
+        final fillBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+
         return Container(
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
             top: 24,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            bottom: MediaQuery.of(editCtx).viewInsets.bottom + 24,
           ),
-
-          decoration: const BoxDecoration(
-            color: Color(0xFFF8FAFD),
-
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          decoration: BoxDecoration(
+            color: Theme.of(editCtx).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           ),
-
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 60,
+                  width: 50,
                   height: 5,
-
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                const Row(
+                Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.edit_calendar_rounded,
                       color: Colors.orange,
-                      size: 30,
+                      size: 28,
                     ),
-
-                    SizedBox(width: 10),
-
+                    const SizedBox(width: 10),
                     Text(
                       "Editar Evento",
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: onSurface,
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
 
                 _campo(
                   controller: nomeController,
@@ -597,31 +605,26 @@ class _EventosPageState extends State<EventosPage> {
                       }
                     }
                   },
-
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 18,
                       vertical: 18,
                     ),
-
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: fillBg,
                       borderRadius: BorderRadius.circular(18),
                     ),
-
                     child: Row(
                       children: [
                         const Icon(
                           Icons.calendar_month_rounded,
                           color: Color(0xFF0066FF),
                         ),
-
                         const SizedBox(width: 14),
-
                         Text(
                           formatarData(dataSelecionada.toIso8601String()),
-                          style: const TextStyle(
-                            color: Colors.black87,
+                          style: TextStyle(
+                            color: onSurface,
                             fontSize: 16,
                           ),
                         ),

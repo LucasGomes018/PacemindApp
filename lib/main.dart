@@ -76,7 +76,7 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: theme.currentTheme,
-            themeAnimationDuration: const Duration(milliseconds: 500),
+            themeAnimationDuration: const Duration(milliseconds: 400),
             themeAnimationCurve: Curves.easeInOut,
 
             initialRoute: isAuthenticated ? "/home" : "/",

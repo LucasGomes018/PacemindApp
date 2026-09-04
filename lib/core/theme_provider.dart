@@ -22,12 +22,14 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   Future<void> alterarTema(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    if (_darkMode == value) return;
 
     _darkMode = value;
-
-    await prefs.setBool("temaEscuro", value);
-
     notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool("temaEscuro", value);
+    } catch (_) {}
   }
 }

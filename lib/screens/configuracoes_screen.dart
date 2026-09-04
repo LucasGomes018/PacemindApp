@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/core/api.dart'; // Assumindo que este caminho está correto
 import 'package:provider/provider.dart';
 import '../core/theme_provider.dart';
+import '../core/theme.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -25,19 +26,12 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
   static const Color darkBlue = Color(
     0xFF1A237E,
   ); // Azul escuro para textos e ícones importantes
-  static const Color backgroundColor = Color(
-    0xFFF8F9FA,
-  ); // Fundo quase branco para a tela
-  static const Color cardColor = Colors.white; // Branco puro para os cartões
   static const Color textColor = Color(
     0xFF212529,
   ); // Cor de texto principal (quase preto)
   static const Color lightTextColor = Color(
     0xFF6C757D,
   ); // Cor de texto secundário (cinza médio)
-  static const Color dividerColor = Color(
-    0xFFE9ECEF,
-  ); // Cor para divisores sutis
   static const Color errorRed = Color(
     0xFFDC3545,
   ); // Vermelho para ações de erro/logout
@@ -622,16 +616,22 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
   }
 
   Widget _buildSectionTitle(String texto) {
+    final customTheme = Theme.of(context).extension<AppCustomTheme>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sectionTitleColor = customTheme?.sectionTitle ??
+        (isDark ? const Color(0xFF64B5F6) : darkBlue);
+
     return Padding(
       padding: const EdgeInsets.only(left: 20, top: 32, bottom: 12),
-      child: Text(
-        texto,
+      child: AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
         style: TextStyle(
           fontSize: 17,
           fontWeight: FontWeight.w600,
-          color: isDark ? const Color(0xFF64B5F6) : darkBlue,
+          color: sectionTitleColor,
         ),
+        child: Text(texto),
       ),
     );
   }
@@ -644,20 +644,28 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
     Widget? trailing,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = Theme.of(context).cardColor;
+    final customTheme = Theme.of(context).extension<AppCustomTheme>();
+    final cardBg = customTheme?.cardBackground ?? Theme.of(context).cardColor;
+    final cardShadow = customTheme?.cardShadow ??
+        (isDark ? const Color(0x4D000000) : const Color(0x14000000));
+    final avatarBg = customTheme?.avatarBackground ??
+        (isDark ? const Color(0xFF1E3A8A) : lightBlue);
+    final avatarIconColor = customTheme?.avatarIcon ??
+        (isDark ? const Color(0xFF60A5FA) : primaryBlue);
     final txtColor = Theme.of(context).colorScheme.onSurface;
-    final subColor = isDark ? Colors.grey.shade400 : lightTextColor;
+    final subColor = customTheme?.subtitleText ??
+        (isDark ? const Color(0xFF94A3B8) : lightTextColor);
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
+            color: cardShadow,
             spreadRadius: 0,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -673,13 +681,28 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: isDark ? const Color(0xFF1E3A8A) : lightBlue,
-                  radius: 22,
-                  child: Icon(
-                    icon,
-                    color: isDark ? Colors.lightBlueAccent : primaryBlue,
-                    size: 24,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: avatarBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: TweenAnimationBuilder<Color?>(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut,
+                      tween: ColorTween(end: avatarIconColor),
+                      builder: (context, color, _) {
+                        return Icon(
+                          icon,
+                          color: color,
+                          size: 24,
+                        );
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -687,26 +710,39 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeInOut,
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
                           color: txtColor,
                         ),
+                        child: Text(title),
                       ),
                       if (subtitle != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 2.0),
-                          child: Text(
-                            subtitle,
+                          child: AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeInOut,
                             style: TextStyle(fontSize: 13, color: subColor),
+                            child: Text(subtitle),
                           ),
                         ),
                     ],
                   ),
                 ),
-                trailing ?? Icon(Icons.chevron_right_rounded, color: subColor),
+                trailing ??
+                    TweenAnimationBuilder<Color?>(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut,
+                      tween: ColorTween(end: subColor),
+                      builder: (context, color, _) => Icon(
+                        Icons.chevron_right_rounded,
+                        color: color,
+                      ),
+                    ),
               ],
             ),
           ),
@@ -722,21 +758,29 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = Theme.of(context).cardColor;
+    final isDark = context.watch<ThemeProvider>().darkMode;
+    final customTheme = Theme.of(context).extension<AppCustomTheme>();
+    final cardBg = customTheme?.cardBackground ?? Theme.of(context).cardColor;
+    final cardShadow = customTheme?.cardShadow ??
+        (isDark ? const Color(0x4D000000) : const Color(0x14000000));
+    final avatarBg = customTheme?.avatarBackground ??
+        (isDark ? const Color(0xFF1E3A8A) : lightBlue);
+    final avatarIconColor = customTheme?.avatarIcon ??
+        (isDark ? const Color(0xFF60A5FA) : primaryBlue);
     final txtColor = Theme.of(context).colorScheme.onSurface;
-    final subColor = isDark ? Colors.grey.shade400 : lightTextColor;
+    final subColor = customTheme?.subtitleText ??
+        (isDark ? const Color(0xFF94A3B8) : lightTextColor);
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
+            color: cardShadow,
             spreadRadius: 0,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -751,24 +795,46 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
         inactiveTrackColor: isDark
             ? Colors.grey.shade800
             : Colors.grey.shade200,
-        title: Text(
-          title,
+        title: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
           style: TextStyle(
             fontWeight: FontWeight.w500,
             fontSize: 16,
             color: txtColor,
           ),
+          child: Text(title),
         ),
         subtitle: subtitle == null
             ? null
-            : Text(subtitle, style: TextStyle(fontSize: 13, color: subColor)),
-        secondary: CircleAvatar(
-          backgroundColor: isDark ? const Color(0xFF1E3A8A) : lightBlue,
-          radius: 22,
-          child: Icon(
-            icon,
-            color: isDark ? Colors.lightBlueAccent : primaryBlue,
-            size: 24,
+            : AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+                style: TextStyle(fontSize: 13, color: subColor),
+                child: Text(subtitle),
+              ),
+        secondary: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: avatarBg,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: TweenAnimationBuilder<Color?>(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+              tween: ColorTween(end: avatarIconColor),
+              builder: (context, color, _) {
+                return Icon(
+                  icon,
+                  color: color,
+                  size: 24,
+                );
+              },
+            ),
           ),
         ),
         value: value,
@@ -781,20 +847,26 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
 
   Widget _buildThemeSettingsItem() {
     final isDark = context.watch<ThemeProvider>().darkMode;
-    final cardBg = Theme.of(context).cardColor;
+    final customTheme = Theme.of(context).extension<AppCustomTheme>();
+    final cardBg = customTheme?.cardBackground ?? Theme.of(context).cardColor;
+    final cardShadow = customTheme?.cardShadow ??
+        (isDark ? const Color(0x4D000000) : const Color(0x14000000));
+    final avatarBg = customTheme?.avatarBackground ??
+        (isDark ? const Color(0xFF1E3A8A) : lightBlue);
     final txtColor = Theme.of(context).colorScheme.onSurface;
-    final subColor = isDark ? Colors.grey.shade400 : lightTextColor;
+    final subColor = customTheme?.subtitleText ??
+        (isDark ? const Color(0xFF94A3B8) : lightTextColor);
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
+            color: cardShadow,
             spreadRadius: 0,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -803,34 +875,50 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: isDark ? const Color(0xFF1E3A8A) : lightBlue,
-          radius: 22,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
-            transitionBuilder: (child, anim) => RotationTransition(
-              turns: anim,
-              child: FadeTransition(opacity: anim, child: child),
-            ),
-            child: Icon(
-              isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-              key: ValueKey<bool>(isDark),
-              color: isDark ? Colors.amberAccent : Colors.orange,
-              size: 24,
+        leading: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: avatarBg,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              transitionBuilder: (child, anim) => RotationTransition(
+                turns: anim,
+                child: FadeTransition(opacity: anim, child: child),
+              ),
+              child: Icon(
+                isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
+                key: ValueKey<bool>(isDark),
+                color: isDark ? Colors.amberAccent : Colors.orange,
+                size: 24,
+              ),
             ),
           ),
         ),
-        title: Text(
-          "Tema Escuro",
+        title: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
             color: txtColor,
           ),
+          child: const Text("Tema Escuro"),
         ),
-        subtitle: Text(
-          isDark ? "Modo escuro ativado" : "Modo claro ativado",
-          style: TextStyle(fontSize: 13, color: subColor),
+        subtitle: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, anim) =>
+              FadeTransition(opacity: anim, child: child),
+          child: Text(
+            isDark ? "Modo escuro ativado" : "Modo claro ativado",
+            key: ValueKey<bool>(isDark),
+            style: TextStyle(fontSize: 13, color: subColor),
+          ),
         ),
         trailing: _SmoothDayNightSwitch(
           isDark: isDark,
@@ -999,7 +1087,7 @@ class _SmoothDayNightSwitch extends StatelessWidget {
     return GestureDetector(
       onTap: () => onChanged(!isDark),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 350),
+        duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
         width: 66,
         height: 36,
@@ -1026,7 +1114,7 @@ class _SmoothDayNightSwitch extends StatelessWidget {
         child: Stack(
           children: [
             AnimatedAlign(
-              duration: const Duration(milliseconds: 350),
+              duration: const Duration(milliseconds: 400),
               curve: Curves.easeInOutBack,
               alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
               child: Container(

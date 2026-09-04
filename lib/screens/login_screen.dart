@@ -69,6 +69,9 @@ class _LoginPageState extends State<LoginPage> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final logoAsset = isDark
+        ? "assets/images/logoLoginDark.png"
+        : "assets/images/logoLogin2.png";
     final accent = isDark ? colors.secondary : Colors.lightBlue;
     final fieldFill = isDark ? colors.surface : Colors.grey.shade100;
 
@@ -92,17 +95,21 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  "assets/images/logoLogin2.png",
-                  width: 320,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(
-                      Icons.directions_run_rounded,
-                      size: 92,
-                      color: accent,
-                    );
-                  },
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Image.asset(
+                    logoAsset,
+                    key: ValueKey<String>(logoAsset),
+                    width: 320,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.directions_run_rounded,
+                        size: 92,
+                        color: accent,
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 40),
                 TextField(

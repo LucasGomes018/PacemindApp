@@ -247,10 +247,13 @@ class _CadastroPageState extends State<CadastroPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final fieldFill = Theme.of(context).brightness == Brightness.dark
-        ? colors.surface
-        : Colors.grey.shade100;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colors = theme.colorScheme;
+    final fieldFill = isDark ? colors.surface : Colors.grey.shade100;
+    final logoAsset = isDark
+        ? "assets/images/logoLoginDark.png"
+        : "assets/images/logoLogin2.png";
 
     return Scaffold(
       body: SafeArea(
@@ -283,13 +286,21 @@ class _CadastroPageState extends State<CadastroPage> {
                     ),
                   ),
                 ),
-                Image.asset(
-                  "assets/images/logoLogin2.png",
-                  width: 320,
-
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Text("❌ IMAGEM NÃO CARREGOU");
-                  },
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Image.asset(
+                    logoAsset,
+                    key: ValueKey<String>(logoAsset),
+                    width: 320,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.directions_run_rounded,
+                        size: 92,
+                        color: Colors.blue,
+                      );
+                    },
+                  ),
                 ),
                 const Text(
                   "Criar conta",

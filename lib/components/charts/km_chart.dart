@@ -1,132 +1,439 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class KmChart extends StatefulWidget {
   final List<dynamic> dados;
+  final bool isBarChart;
 
-  const KmChart({super.key, required this.dados});
+  const KmChart({
+    super.key,
+    required this.dados,
+    this.isBarChart = false,
+  });
 
   @override
   State<KmChart> createState() => _KmChartState();
 }
 
 class _KmChartState extends State<KmChart> {
-  int? indexHover;
+  int? touchedIndex;
+
+  String _formatDiaLabel(dynamic raw, int index) {
+    if (raw == null || raw.toString().trim().isEmpty) {
+      const fallbackDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+      return index < fallbackDays.length ? fallbackDays[index] : "${index + 1}";
+    }
+    final s = raw.toString().trim();
+    if (s.length <= 4) return s;
+    return s.substring(0, 3);
+  }
+
+  String _getDiaCompleto(dynamic raw, int index) {
+    if (raw == null || raw.toString().trim().isEmpty) {
+      const fallbackDays = [
+        "Segunda-feira",
+        "Terça-feira",
+        "Quarta-feira",
+        "Quinta-feira",
+        "Sexta-feira",
+        "Sábado",
+        "Domingo"
+      ];
+      return index < fallbackDays.length ? fallbackDays[index] : "Dia ${index + 1}";
+    }
+    return raw.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gridColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
+    final axisTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     if (widget.dados.isEmpty) {
-      return const Center(child: Text("Sem dados"));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0066FF).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.directions_run_rounded,
+                color: Color(0xFF0066FF),
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Nenhum treino registrado",
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Seus quilômetros semanais aparecerão aqui.",
+              style: TextStyle(
+                fontSize: 13,
+                color: axisTextColor,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
-    // 🔥 pega maior valor pra normalizar gráfico
-    final maxKm = widget.dados
-        .map((e) {
-          final v = e["km"];
-          return v is num ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0;
-        })
-        .fold(0.0, (a, b) => a > b ? a : b);
+    final kmList = widget.dados.map((e) {
+      final v = e["km"];
+      if (v is num) return v.toDouble();
+      return double.tryParse(v.toString()) ?? 0.0;
+    }).toList();
+
+    final maxKm = kmList.fold(0.0, (a, b) => a > b ? a : b);
+    final maxY = maxKm <= 0 ? 5.0 : (maxKm * 1.25).ceilToDouble();
+    final intervalY = maxY <= 5 ? 1.0 : (maxY / 4).ceilToDouble();
 
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 400),
-      child: LayoutBuilder(
-        key: ValueKey(widget.dados.length),
-        builder: (context, constraints) {
-          final maxHeight = constraints.maxHeight;
+      duration: const Duration(milliseconds: 350),
+      child: widget.isBarChart
+          ? _buildBarChart(kmList, maxY, intervalY, gridColor, axisTextColor, isDark)
+          : _buildLineChart(kmList, maxY, intervalY, gridColor, axisTextColor, isDark),
+    );
+  }
 
-          return Column(
-            children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: List.generate(widget.dados.length, (index) {
-                    final item = widget.dados[index];
+  Widget _buildLineChart(
+    List<double> kmList,
+    double maxY,
+    double intervalY,
+    Color gridColor,
+    Color axisTextColor,
+    bool isDark,
+  ) {
+    final spots = kmList.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value);
+    }).toList();
 
-                    final kmRaw = item["km"];
-                    final km = kmRaw is num
-                        ? kmRaw.toDouble()
-                        : double.tryParse(kmRaw.toString()) ?? 0.0;
+    return LineChart(
+      LineChartData(
+        minX: 0,
+        maxX: (kmList.length - 1).toDouble().clamp(1.0, double.infinity),
+        minY: 0,
+        maxY: maxY,
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: intervalY,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: gridColor,
+            strokeWidth: 1,
+            dashArray: [4, 4],
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        titlesData: FlTitlesData(
+          show: true,
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 36,
+              interval: intervalY,
+              getTitlesWidget: (value, meta) {
+                if (value == 0 || value > maxY) return const SizedBox.shrink();
+                return Text(
+                  "${value.toInt()}k",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: axisTextColor,
+                  ),
+                );
+              },
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 26,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index < 0 || index >= widget.dados.length) {
+                  return const SizedBox.shrink();
+                }
+                final raw = widget.dados[index]["semana"];
+                final label = _formatDiaLabel(raw, index);
+                final isSelected = touchedIndex == index;
 
-                    final isHover = indexHover == index;
-
-                    // 🎯 altura proporcional ao maior valor
-                    final alturaMax = maxHeight * 0.7;
-                    final altura = maxKm == 0 ? 10.0 : (km / maxKm) * alturaMax;
-
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            indexHover = index;
-                          });
-                        },
-                        child: MouseRegion(
-                          onEnter: (_) {
-                            setState(() {
-                              indexHover = index;
-                            });
-                          },
-                          onExit: (_) {
-                            setState(() {
-                              indexHover = null;
-                            });
-                          },
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              // 🧠 espaço fixo evita overflow
-                              SizedBox(
-                                height: 28,
-                                child: AnimatedOpacity(
-                                  duration: const Duration(milliseconds: 200),
-                                  opacity: isHover ? 1 : 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blueGrey,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      "${km.toStringAsFixed(1)} km",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              // 📊 BARRA
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 500),
-                                curve: Curves.easeInOut,
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
-                                height: isHover
-                                    ? (altura + 8).clamp(10, alturaMax)
-                                    : altura.clamp(10, alturaMax),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                  color: isHover
-                                      ? Colors.lightBlueAccent
-                                      : Colors.blue,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected
+                          ? const Color(0xFF0066FF)
+                          : axisTextColor,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            curveSmoothness: 0.35,
+            preventCurveOverShooting: true,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0066FF), Color(0xFF00C6FF)],
+            ),
+            barWidth: 3.5,
+            isStrokeCapRound: true,
+            shadow: Shadow(
+              color: const Color(0xFF0066FF).withValues(alpha: 0.35),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                final isSelected = touchedIndex == index;
+                return FlDotCirclePainter(
+                  radius: isSelected ? 6 : 4,
+                  color: Colors.white,
+                  strokeWidth: isSelected ? 3.5 : 2.5,
+                  strokeColor: isSelected
+                      ? const Color(0xFF00C6FF)
+                      : const Color(0xFF0066FF),
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFF0066FF).withValues(alpha: 0.32),
+                  const Color(0xFF00C6FF).withValues(alpha: 0.03),
+                ],
               ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
+        lineTouchData: LineTouchData(
+          handleBuiltInTouches: true,
+          touchCallback: (event, response) {
+            if (response?.lineBarSpots != null &&
+                response!.lineBarSpots!.isNotEmpty) {
+              setState(() {
+                touchedIndex = response.lineBarSpots!.first.spotIndex;
+              });
+            } else {
+              setState(() {
+                touchedIndex = null;
+              });
+            }
+          },
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => isDark
+                ? const Color(0xFF1E293B)
+                : const Color(0xFF0F172A),
+            tooltipRoundedRadius: 12,
+            tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                final index = spot.spotIndex;
+                final raw = widget.dados[index]["semana"];
+                final dia = _getDiaCompleto(raw, index);
+                return LineTooltipItem(
+                  "$dia\n",
+                  const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: "${spot.y.toStringAsFixed(1)} km",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBarChart(
+    List<double> kmList,
+    double maxY,
+    double intervalY,
+    Color gridColor,
+    Color axisTextColor,
+    bool isDark,
+  ) {
+    final barGroups = List.generate(kmList.length, (index) {
+      final km = kmList[index];
+      final isSelected = touchedIndex == index;
+
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: km,
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: isSelected
+                  ? const [Color(0xFF00C6FF), Color(0xFF38BDF8)]
+                  : const [Color(0xFF0066FF), Color(0xFF00C6FF)],
+            ),
+            width: 18,
+            borderRadius: BorderRadius.circular(6),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              toY: maxY,
+              color: isDark
+                  ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+                  : const Color(0xFFF1F5F9),
+            ),
+          ),
+        ],
+      );
+    });
+
+    return BarChart(
+      BarChartData(
+        maxY: maxY,
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: intervalY,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: gridColor,
+            strokeWidth: 1,
+            dashArray: [4, 4],
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        titlesData: FlTitlesData(
+          show: true,
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 36,
+              interval: intervalY,
+              getTitlesWidget: (value, meta) {
+                if (value == 0 || value > maxY) return const SizedBox.shrink();
+                return Text(
+                  "${value.toInt()}k",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: axisTextColor,
+                  ),
+                );
+              },
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 26,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index < 0 || index >= widget.dados.length) {
+                  return const SizedBox.shrink();
+                }
+                final raw = widget.dados[index]["semana"];
+                final label = _formatDiaLabel(raw, index);
+                final isSelected = touchedIndex == index;
+
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected
+                          ? const Color(0xFF0066FF)
+                          : axisTextColor,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        barGroups: barGroups,
+        barTouchData: BarTouchData(
+          handleBuiltInTouches: true,
+          touchCallback: (event, response) {
+            if (response?.spot != null) {
+              setState(() {
+                touchedIndex = response!.spot!.touchedBarGroupIndex;
+              });
+            } else {
+              setState(() {
+                touchedIndex = null;
+              });
+            }
+          },
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => isDark
+                ? const Color(0xFF1E293B)
+                : const Color(0xFF0F172A),
+            tooltipRoundedRadius: 12,
+            tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final raw = widget.dados[groupIndex]["semana"];
+              final dia = _getDiaCompleto(raw, groupIndex);
+              return BarTooltipItem(
+                "$dia\n",
+                const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+                children: [
+                  TextSpan(
+                    text: "${rod.toY.toStringAsFixed(1)} km",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
       ),
     );
   }

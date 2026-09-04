@@ -162,13 +162,19 @@ class _DashboardPageState extends State<DashboardPage> {
     final ritmo = asDouble(resumo["ritmo_medio"]);
     final metaKm = asDouble(resumo["meta_km"]);
     final ultimosTreinos = (d["treinos"] as List? ?? []);
-
-    final consistencia = d["consistencia"] ?? {};
-    final insight1 = "Treinos concluídos: ${asInt(consistencia["concluidos"])}";
-
     final treinosConcluidos = ultimosTreinos.where((t) {
       return asString(t["status"]).toLowerCase() == "concluido";
     }).toList();
+
+    final consistencia = d["consistencia"] ?? {};
+    String formatarRitmoMinKm(double segundos) {
+      if (segundos <= 0) return "-";
+      final minutos = (segundos ~/ 60);
+      final segs = (segundos % 60).round();
+      return "$minutos:${segs.toString().padLeft(2, '0')} min/km";
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return RefreshIndicator(
       onRefresh: carregarDados,
@@ -224,44 +230,259 @@ class _DashboardPageState extends State<DashboardPage> {
 
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.04),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: .05),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.3)
+                        : const Color(0xFF6366F1).withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Insight da semana",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 19,
-                      color: Color(0xFF0066FF),
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.insights_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Insight da Semana",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              "Análise de desempenho",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          "PaceMind AI",
+                          style: TextStyle(
+                            color: Color(0xFF6366F1),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    insight1,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+
+                  const SizedBox(height: 18),
+
+                  Row(
+                    children: [
+                      // Pace Médio Formatado
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF1E293B).withValues(alpha: 0.6)
+                                : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.black.withValues(alpha: 0.04),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0066FF).withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.speed_rounded,
+                                  color: Color(0xFF0066FF),
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Pace Médio",
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark
+                                            ? const Color(0xFF94A3B8)
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      formatarRitmoMinKm(ritmo),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      // Treinos Concluídos
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF1E293B).withValues(alpha: 0.6)
+                                : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.black.withValues(alpha: 0.04),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  color: Color(0xFF10B981),
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Consistência",
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark
+                                            ? const Color(0xFF94A3B8)
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      "${asInt(consistencia["concluidos"])} feitos",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    "Pace médio: ${ritmo == 0 ? "-" : "${ritmo.toStringAsFixed(0)} s/km"}",
-                    style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey.shade400
-                          : Colors.grey.shade600,
+
+                  const SizedBox(height: 14),
+
+                  // Dica contextual
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.lightbulb_outline_rounded,
+                          color: Color(0xFF6366F1),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            ritmo > 0
+                                ? "Seu ritmo médio está em ${formatarRitmoMinKm(ritmo)}. Manter um ritmo controlado nos treinos longos melhora a economia de corrida."
+                                : "Registre suas primeiras corridas da semana para acompanhar o ritmo médio e desbloquear insights da IA.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              height: 1.35,
+                              color: isDark
+                                  ? const Color(0xFFCBD5E1)
+                                  : const Color(0xFF475569),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

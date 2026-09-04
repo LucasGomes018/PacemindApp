@@ -64,6 +64,16 @@ class AppTheme {
         scaffoldBackgroundColor: AppColors.background,
         cardColor: AppColors.card,
         dividerColor: const Color(0xFFE2E8F0),
+        extensions: const [
+          AppCustomTheme(
+            cardBackground: AppColors.card,
+            cardShadow: Color(0x14000000),
+            avatarBackground: Color(0xFFEBF5FF),
+            avatarIcon: AppColors.primary,
+            sectionTitle: Color(0xFF1A237E),
+            subtitleText: AppColors.secondaryText,
+          ),
+        ],
         colorScheme: const ColorScheme.light(
           primary: AppColors.primary,
           secondary: AppColors.accent,
@@ -111,6 +121,16 @@ class AppTheme {
         scaffoldBackgroundColor: AppColors.darkBackground,
         cardColor: AppColors.darkCard,
         dividerColor: const Color(0xFF334155),
+        extensions: const [
+          AppCustomTheme(
+            cardBackground: AppColors.darkCard,
+            cardShadow: Color(0x4D000000),
+            avatarBackground: Color(0xFF1E3A8A),
+            avatarIcon: Color(0xFF60A5FA),
+            sectionTitle: Color(0xFF64B5F6),
+            subtitleText: AppColors.darkSecondaryText,
+          ),
+        ],
         colorScheme: const ColorScheme.dark(
           primary: AppColors.primary,
           secondary: AppColors.accent,
@@ -150,4 +170,57 @@ class AppTheme {
           ),
         ),
       );
+}
+
+@immutable
+class AppCustomTheme extends ThemeExtension<AppCustomTheme> {
+  final Color cardBackground;
+  final Color cardShadow;
+  final Color avatarBackground;
+  final Color avatarIcon;
+  final Color sectionTitle;
+  final Color subtitleText;
+
+  const AppCustomTheme({
+    required this.cardBackground,
+    required this.cardShadow,
+    required this.avatarBackground,
+    required this.avatarIcon,
+    required this.sectionTitle,
+    required this.subtitleText,
+  });
+
+  @override
+  AppCustomTheme copyWith({
+    Color? cardBackground,
+    Color? cardShadow,
+    Color? avatarBackground,
+    Color? avatarIcon,
+    Color? sectionTitle,
+    Color? subtitleText,
+  }) {
+    return AppCustomTheme(
+      cardBackground: cardBackground ?? this.cardBackground,
+      cardShadow: cardShadow ?? this.cardShadow,
+      avatarBackground: avatarBackground ?? this.avatarBackground,
+      avatarIcon: avatarIcon ?? this.avatarIcon,
+      sectionTitle: sectionTitle ?? this.sectionTitle,
+      subtitleText: subtitleText ?? this.subtitleText,
+    );
+  }
+
+  @override
+  AppCustomTheme lerp(ThemeExtension<AppCustomTheme>? other, double t) {
+    if (other is! AppCustomTheme) {
+      return this;
+    }
+    return AppCustomTheme(
+      cardBackground: Color.lerp(cardBackground, other.cardBackground, t) ?? cardBackground,
+      cardShadow: Color.lerp(cardShadow, other.cardShadow, t) ?? cardShadow,
+      avatarBackground: Color.lerp(avatarBackground, other.avatarBackground, t) ?? avatarBackground,
+      avatarIcon: Color.lerp(avatarIcon, other.avatarIcon, t) ?? avatarIcon,
+      sectionTitle: Color.lerp(sectionTitle, other.sectionTitle, t) ?? sectionTitle,
+      subtitleText: Color.lerp(subtitleText, other.subtitleText, t) ?? subtitleText,
+    );
+  }
 }
