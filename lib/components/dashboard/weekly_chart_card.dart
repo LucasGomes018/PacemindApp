@@ -91,7 +91,7 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                       ),
                     ),
                     Text(
-                      "Volume de corrida",
+                      "Quilometragem (km)",
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),

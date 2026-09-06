@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/api.dart';
+import '../utils/date_utils.dart';
 
 class ExamesPage extends StatefulWidget {
   const ExamesPage({super.key});
@@ -198,7 +199,7 @@ class _ExamesPageState extends State<ExamesPage> {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text("Data: $data", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            Text("Data: ${AppDateUtils.formatarData(data)}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
                             if (vef1 != null || cvf != null) ...[
                               const SizedBox(height: 10),
                               Row(
@@ -323,7 +324,7 @@ class _ExamesPageState extends State<ExamesPage> {
 
                       await Api.salvarExame({
                         "tipo_exame": tipoController.text,
-                        "data_exame": DateTime.now().toIso8601String().split("T")[0],
+                        "data_exame": AppDateUtils.paraIsoLocal(DateTime.now()).split("T")[0],
                         "vef1_percentual": vef1,
                         "cvf_percentual": cvf,
                         "laudo": laudoController.text,

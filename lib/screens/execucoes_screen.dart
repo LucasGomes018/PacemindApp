@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/api.dart';
+import '../utils/date_utils.dart';
 
 class ExecucoesPage extends StatefulWidget {
   const ExecucoesPage({super.key});
@@ -38,9 +39,9 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
         setState(() {
           treinos = mapa.values.toList();
           treinos.sort((a, b) {
-            final dataA = a["data"]?.toString() ?? "";
-            final dataB = b["data"]?.toString() ?? "";
-            return dataB.compareTo(dataA);
+            final dtA = AppDateUtils.extrairDataPura(a["data"]) ?? DateTime(2000);
+            final dtB = AppDateUtils.extrairDataPura(b["data"]) ?? DateTime(2000);
+            return dtB.compareTo(dtA);
           });
           loading = false;
         });
@@ -182,7 +183,7 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                       final fcMax = t["fc_max"];
                       final rpe = t["sensacao"] ?? 5;
                       final obs = t["observacoes"]?.toString();
-                      final dataStr = t["data"]?.toString() ?? "";
+                      final dataStr = AppDateUtils.formatarData(t["data"]);
                       final tipo = t["tipo"]?.toString() ?? "Corrida";
 
                       return Container(
@@ -378,6 +379,7 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
     final fcMedController = TextEditingController();
     final fcMaxController = TextEditingController();
     final obsController = TextEditingController();
+    DateTime dataExecucao = DateTime.now();
     int sensacao = 5;
     String status = "concluido";
 
@@ -422,6 +424,57 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.onSurface),
                     ),
                     const SizedBox(height: 16),
+
+                    // Data da Execução
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: ctx,
+                          initialDate: dataExecucao,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setModalState(() {
+                            dataExecucao = DateTime(
+                              picked.year,
+                              picked.month,
+                              picked.day,
+                              DateTime.now().hour,
+                              DateTime.now().minute,
+                            );
+                          });
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded, size: 20, color: Color(0xFF0066FF)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text("Data da Execução", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                  Text(
+                                    AppDateUtils.formatarData(dataExecucao),
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
                     // Tipo e Status
                     Row(
@@ -547,7 +600,7 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                             tipo: tipoController.text,
                             distanciaKm: dist,
                             tempoSegundos: totalSeg,
-                            data: DateTime.now().toIso8601String(),
+                            data: AppDateUtils.paraDataPura(dataExecucao),
                             fcMedia: fcMed,
                             fcMax: fcMax,
                             sensacao: sensacao,

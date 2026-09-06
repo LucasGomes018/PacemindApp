@@ -11,9 +11,11 @@ import '/components/bottom_menu.dart';
 import '/screens/perfil_screen.dart';
 import '/screens/map_screen.dart';
 import '/screens/treinos_screen.dart';
+import '/screens/metas_screen.dart';
 import '../services/notificacao_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '/components/drawer_menu.dart';
+import '../utils/date_utils.dart';
 
 DateTime? semanaSelecionada;
 
@@ -53,14 +55,23 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final dashboard = await Api.getDashboard(semana: semanaSelecionada);
       List<dynamic> treinosConcluidos = [];
+      List<dynamic> metasUsuario = [];
 
       try {
         treinosConcluidos = await Api.listarTreinosConcluidos();
       } catch (_) {}
 
+      try {
+        metasUsuario = await Api.listarMetas();
+      } catch (_) {}
+
       if (!mounted) return;
 
-      final resultado = {...dashboard, "treinos": treinosConcluidos};
+      final resultado = {
+        ...dashboard,
+        "treinos": treinosConcluidos,
+        "metas": metasUsuario,
+      };
 
       setState(() {
         data = resultado;
@@ -153,18 +164,77 @@ class _DashboardPageState extends State<DashboardPage> {
         ? asInt(d["carga"][0]["carga"])
         : 0;
 
-    final kmPorSemana = (d["semanal"] as List? ?? []).map<Map<String, dynamic>>(
-      (item) {
-        return {"semana": asString(item["semana"]), "km": asDouble(item["km"])};
-      },
-    ).toList();
-
-    final ritmo = asDouble(resumo["ritmo_medio"]);
-    final metaKm = asDouble(resumo["meta_km"]);
     final ultimosTreinos = (d["treinos"] as List? ?? []);
     final treinosConcluidos = ultimosTreinos.where((t) {
       return asString(t["status"]).toLowerCase() == "concluido";
     }).toList();
+
+    // Calcula os 7 dias da semana atual (Segunda a Domingo)
+    final agora = DateTime.now();
+    final hoje = DateTime(agora.year, agora.month, agora.day);
+    final inicioSemana = hoje.subtract(Duration(days: hoje.weekday - 1));
+
+    const diasNomes = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+    const diasCompletos = [
+      "Segunda-feira",
+      "Terça-feira",
+      "Quarta-feira",
+      "Quinta-feira",
+      "Sexta-feira",
+      "Sábado",
+      "Domingo"
+    ];
+
+    final kmPorDiaSemana = List.generate(7, (i) {
+      final diaAlvo = inicioSemana.add(Duration(days: i));
+      double kmNoDia = 0.0;
+
+      for (var t in treinosConcluidos) {
+        final dt = AppDateUtils.extrairDataPura(t["data"]);
+        if (dt != null &&
+            dt.year == diaAlvo.year &&
+            dt.month == diaAlvo.month &&
+            dt.day == diaAlvo.day) {
+          kmNoDia += asDouble(t["distancia_km"] ?? t["km"]);
+        }
+      }
+
+      final diaFormatado = "${diaAlvo.day.toString().padLeft(2, '0')}/${diaAlvo.month.toString().padLeft(2, '0')}";
+
+      return {
+        "dia": diasNomes[i],
+        "dia_completo": "${diasCompletos[i]} ($diaFormatado)",
+        "km": kmNoDia,
+        "data": diaAlvo,
+      };
+    });
+
+    final ritmo = asDouble(resumo["ritmo_medio"]);
+    final listaMetas = (d["metas"] as List? ?? []);
+    dynamic metaAtiva;
+
+    // 1. Procura primeiro meta em aberto de km
+    for (var m in listaMetas) {
+      if (m["concluida"] != true && (m["tipo"]?.toString().toLowerCase() == "km")) {
+        metaAtiva = m;
+        break;
+      }
+    }
+    // 2. Se não houver, procura qualquer meta em aberto
+    if (metaAtiva == null) {
+      for (var m in listaMetas) {
+        if (m["concluida"] != true) {
+          metaAtiva = m;
+          break;
+        }
+      }
+    }
+    // 3. Se todas concluídas, pega a última criada
+    if (metaAtiva == null && listaMetas.isNotEmpty) {
+      metaAtiva = listaMetas.last;
+    }
+
+
 
     final consistencia = d["consistencia"] ?? {};
     String formatarRitmoMinKm(double segundos) {
@@ -195,16 +265,34 @@ class _DashboardPageState extends State<DashboardPage> {
               treinos: treinos,
             ),
 
-            const SizedBox(height: 22),
+            // const SizedBox(height: 4),
 
             WeeklyGoalCard(
               kmAtual: kmSemana,
-              metaKm: metaKm == 0 ? 30 : metaKm,
+              meta: metaAtiva,
+              onCriarMeta: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MetasPage(abrirCriarMetaAoIniciar: true),
+                  ),
+                );
+                carregarDados();
+              },
+              onVerMetas: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MetasPage(),
+                  ),
+                );
+                carregarDados();
+              },
             ),
 
             const SizedBox(height: 22),
 
-            WeeklyChartCard(dados: kmPorSemana),
+            WeeklyChartCard(dados: kmPorDiaSemana),
 
             const SizedBox(height: 22),
 

@@ -93,6 +93,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       case "alerta":
         return Icons.warning_amber_rounded;
 
+      case "evento":
+        return Icons.campaign_rounded;
+
       default:
         return Icons.notifications;
     }
@@ -108,6 +111,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
       case "alerta":
         return Colors.orange;
+
+      case "evento":
+        return const Color(0xFF8B5CF6);
 
       default:
         return Colors.grey;

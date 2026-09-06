@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api.dart';
+import '../utils/date_utils.dart';
 
 class TreinosPage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -23,8 +24,8 @@ class _TreinosPageState extends State<TreinosPage> {
   final List<String> filtros = [
     "Todos",
     "Corrida",
-    "Musculação",
-    "Bike",
+    // "Musculação",
+    // "Bike",
     "Caminhada",
   ];
 
@@ -368,7 +369,7 @@ class _TreinosPageState extends State<TreinosPage> {
                                         const SizedBox(height: 4),
 
                                         Text(
-                                          treino["data"] ?? "",
+                                          AppDateUtils.formatarData(treino["data"]),
 
                                           style: TextStyle(
                                             color: colors.onSurfaceVariant,
@@ -581,6 +582,57 @@ class _TreinosPageState extends State<TreinosPage> {
                       ),
                       const SizedBox(height: 20),
 
+                      // Data do Treino
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: dataTreino,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                          );
+                          if (picked != null) {
+                            setModalState(() {
+                              dataTreino = DateTime(
+                                picked.year,
+                                picked.month,
+                                picked.day,
+                                DateTime.now().hour,
+                                DateTime.now().minute,
+                              );
+                            });
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today_rounded, size: 20, color: Color(0xFF0066FF)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("Data do Treino", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                    Text(
+                                      AppDateUtils.formatarData(dataTreino),
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
                       // Tipo e Status
                       Row(
                         children: [
@@ -724,7 +776,7 @@ class _TreinosPageState extends State<TreinosPage> {
                               tipo: tipoController.text,
                               distanciaKm: dist,
                               tempoSegundos: totalSeg,
-                              data: dataTreino.toIso8601String(),
+                              data: AppDateUtils.paraDataPura(dataTreino),
                               fcMedia: fcMed,
                               fcMax: fcMax,
                               sensacao: sensacao,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/date_utils.dart';
 
 class RecentWorkoutsCard extends StatelessWidget {
   final List treinos;
@@ -107,7 +108,7 @@ class RecentWorkoutsCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          (treino["data"] ?? "Data não informada").toString(),
+                          AppDateUtils.formatarData(treino["data"]),
                           style: TextStyle(
                             color: colors.onSurfaceVariant,
                             fontSize: 12,

@@ -88,7 +88,11 @@ class MyApp extends StatelessWidget {
               "/notificacoes": (context) => const NotificationsPage(),
               "/eventos": (context) => const EventosPage(),
               "/treinos": (context) => const TreinosPage(),
-              "/metas": (context) => const MetasPage(),
+              "/metas": (context) {
+                final args = ModalRoute.of(context)?.settings.arguments;
+                final abrirDireto = args is Map && args["abrirCriarMeta"] == true;
+                return MetasPage(abrirCriarMetaAoIniciar: abrirDireto);
+              },
               "/recomendacoes": (context) => const RecomendacoesPage(),
               "/configuracoes": (context) => const ConfiguracoesPage(),
               "/testes": (context) => const TestesPage(),

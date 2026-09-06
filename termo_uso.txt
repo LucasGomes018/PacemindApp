@@ -1,0 +1,204 @@
+TERMOS DE USO DO PACEMIND
+Última atualização: [DATA]
+Bem-vindo ao PaceMind.
+Estes Termos de Uso ("Termos") estabelecem as regras para acesso e utilização do aplicativo PaceMind ("Aplicativo", "PaceMind" ou "Serviço"), destinado ao acompanhamento, organização e análise de atividades relacionadas à corrida e ao treinamento físico.
+Ao criar uma conta, acessar ou utilizar o PaceMind, você declara que leu, compreendeu e concorda com estes Termos. Caso não concorde com qualquer disposição, não deverá utilizar o Aplicativo.
+1. SOBRE O PACEMIND
+O PaceMind é uma plataforma destinada a auxiliar usuários no acompanhamento de seus treinamentos de corrida por meio da organização, registro e análise de informações relacionadas às atividades físicas.
+Entre suas funcionalidades podem estar incluídas:
+registro de treinos;
+acompanhamento de distância e tempo;
+análise de ritmo e velocidade;
+acompanhamento de frequência cardíaca;
+zonas de intensidade;
+evolução do volume de treinamento;
+metas de treinamento;
+histórico de atividades;
+indicadores de consistência;
+utilização de GPS para acompanhamento de atividades;
+notificações e lembretes;
+recomendações personalizadas;
+recursos de inteligência artificial;
+visualização de estatísticas e gráficos.
+As funcionalidades disponíveis podem ser alteradas, aprimoradas, adicionadas ou removidas ao longo do desenvolvimento do PaceMind.
+2. ACEITAÇÃO DOS TERMOS
+Ao utilizar o PaceMind, o usuário declara que:
+possui capacidade legal para aceitar estes Termos;
+fornecerá informações verdadeiras e atualizadas;
+utilizará o Aplicativo de maneira legal e responsável;
+não utilizará o Serviço para prejudicar terceiros ou comprometer seu funcionamento;
+respeitará estes Termos e demais políticas aplicáveis ao Aplicativo.
+Caso o usuário seja menor de idade, a utilização do PaceMind deverá ocorrer de acordo com as regras aplicáveis à sua idade e, quando necessário, mediante autorização de seu responsável legal.
+3. CRIAÇÃO E RESPONSABILIDADE PELA CONTA
+Para utilizar determinadas funcionalidades, poderá ser necessário criar uma conta.
+O usuário é responsável por:
+fornecer informações corretas durante o cadastro;
+manter seus dados atualizados;
+proteger suas credenciais de acesso;
+não compartilhar sua senha com terceiros;
+comunicar qualquer suspeita de acesso não autorizado.
+O usuário será responsável pelas atividades realizadas por meio de sua conta quando decorrentes de sua própria conduta ou da falta de proteção adequada de suas credenciais.
+O PaceMind não solicita que o usuário forneça sua senha para terceiros.
+4. DADOS E INFORMAÇÕES DOS TREINOS
+O PaceMind poderá permitir o registro e armazenamento de informações relacionadas aos treinamentos, incluindo, conforme as funcionalidades utilizadas:
+distância percorrida;
+duração;
+ritmo;
+velocidade;
+frequência cardíaca;
+zonas de frequência cardíaca;
+volume de treinamento;
+histórico de atividades;
+metas;
+evolução de desempenho;
+períodos de descanso;
+indicadores de consistência;
+informações inseridas voluntariamente pelo usuário.
+Essas informações poderão ser utilizadas para fornecer estatísticas, gráficos, análises e recomendações dentro do Aplicativo.
+O usuário é responsável pela veracidade das informações inseridas manualmente.
+5. GPS E LOCALIZAÇÃO
+Algumas funcionalidades do PaceMind podem utilizar informações de localização por GPS para registrar ou acompanhar atividades físicas.
+Quando disponível, o Aplicativo poderá permitir o funcionamento do GPS em segundo plano, desde que essa funcionalidade seja autorizada pelo usuário e pelo sistema operacional do dispositivo.
+O usuário poderá desativar permissões de localização nas configurações do dispositivo ou do Aplicativo, quando essa opção estiver disponível.
+A desativação da localização poderá impedir ou limitar determinadas funcionalidades que dependam do GPS.
+O tratamento de dados pessoais relacionados à localização também está sujeito à Política de Privacidade do PaceMind.
+6. PACEMIND AI
+O PaceMind poderá oferecer recursos de inteligência artificial ("PaceMind AI") destinados a auxiliar o usuário na interpretação de seus dados e na obtenção de recomendações relacionadas aos seus treinamentos.
+A PaceMind AI poderá considerar informações como:
+histórico de treinos;
+distância;
+duração;
+ritmo;
+frequência cardíaca;
+zonas de intensidade;
+volume;
+evolução;
+metas;
+consistência;
+períodos de descanso;
+informações fornecidas pelo próprio usuário durante conversas com a IA.
+As respostas geradas pela inteligência artificial possuem caráter informativo e auxiliar.
+A PaceMind AI não substitui médicos, nutricionistas, fisioterapeutas, educadores físicos ou outros profissionais qualificados.
+O usuário não deverá utilizar uma recomendação gerada pela IA como diagnóstico médico ou como determinação profissional para tratamento, medicamento ou condição de saúde.
+As respostas da inteligência artificial podem apresentar erros, imprecisões ou interpretações inadequadas. O usuário deve utilizar seu próprio julgamento e, quando necessário, buscar orientação profissional.
+7. SEGURANÇA DURANTE OS TREINOS
+O PaceMind é uma ferramenta de acompanhamento e análise e não garante que uma determinada atividade física seja segura ou adequada para o usuário.
+O usuário deve considerar sua própria condição física, experiência, ambiente, clima e demais circunstâncias antes de realizar qualquer atividade.
+Caso apresente dor, mal-estar, tontura, falta de ar incomum ou qualquer outro sinal preocupante durante uma atividade, o usuário deverá interromper a atividade e procurar orientação profissional adequada.
+O PaceMind não se responsabiliza por decisões tomadas exclusivamente com base em informações, estatísticas ou recomendações apresentadas pelo Aplicativo.
+8. USO ADEQUADO DO APLICATIVO
+O usuário concorda em não:
+utilizar o PaceMind para atividades ilegais;
+tentar obter acesso não autorizado aos sistemas;
+interferir no funcionamento do Aplicativo;
+realizar engenharia reversa do Serviço quando proibido pela legislação aplicável;
+explorar vulnerabilidades de segurança;
+utilizar métodos automatizados que possam sobrecarregar a infraestrutura;
+inserir conteúdo malicioso;
+utilizar a conta de outra pessoa sem autorização;
+tentar acessar dados pertencentes a outros usuários;
+copiar, reproduzir ou distribuir partes do Aplicativo sem autorização;
+utilizar o Serviço para finalidade que possa prejudicar o PaceMind ou seus usuários.
+9. PROPRIEDADE INTELECTUAL
+O PaceMind, incluindo sua identidade visual, nome, logotipo, interface, código-fonte, funcionalidades, textos, elementos gráficos, banco de dados e demais componentes, pertence ao responsável pelo Aplicativo ou é utilizado mediante autorização/licença.
+O uso do PaceMind não concede ao usuário qualquer direito de propriedade sobre esses elementos.
+É proibida a reprodução, distribuição, modificação ou exploração comercial não autorizada de qualquer parte do Aplicativo, salvo quando permitido pela legislação aplicável.
+10. CONTEÚDO INSERIDO PELO USUÁRIO
+O usuário permanece responsável pelas informações e conteúdos que inserir no PaceMind.
+O usuário declara possuir os direitos necessários para fornecer essas informações ao Aplicativo.
+O usuário concede ao PaceMind as permissões necessárias para armazenar, processar e utilizar essas informações com a finalidade de fornecer as funcionalidades solicitadas, de acordo com estes Termos e com a Política de Privacidade.
+11. DISPONIBILIDADE DO SERVIÇO
+O PaceMind busca manter o Aplicativo disponível e funcionando corretamente, porém não garante disponibilidade ininterrupta.
+O Serviço poderá ficar temporariamente indisponível devido a:
+manutenção;
+atualizações;
+problemas de infraestrutura;
+falhas de rede;
+indisponibilidade de serviços de terceiros;
+problemas no dispositivo do usuário;
+eventos fora do controle razoável do responsável pelo Aplicativo.
+Sempre que possível, serão adotadas medidas para restabelecer o funcionamento normal do Serviço.
+12. SERVIÇOS DE TERCEIROS
+O funcionamento do PaceMind poderá depender de serviços fornecidos por terceiros, incluindo serviços de:
+hospedagem;
+banco de dados;
+autenticação;
+inteligência artificial;
+notificações;
+armazenamento;
+mapas e localização;
+monitoramento e infraestrutura.
+A disponibilidade desses serviços poderá afetar determinadas funcionalidades do PaceMind.
+Os serviços de terceiros poderão possuir seus próprios termos e políticas.
+13. NOTIFICAÇÕES
+O PaceMind poderá enviar notificações relacionadas a:
+lembretes de treinamento;
+metas;
+atividades;
+informações do Aplicativo;
+recomendações;
+avisos importantes.
+O usuário poderá controlar as permissões de notificação por meio das configurações disponíveis no Aplicativo ou no sistema operacional.
+14. ALTERAÇÕES NAS FUNCIONALIDADES
+O PaceMind poderá modificar, atualizar, substituir ou descontinuar funcionalidades do Aplicativo.
+Essas alterações poderão ocorrer para:
+melhorar a experiência do usuário;
+corrigir problemas;
+aumentar a segurança;
+introduzir novas funcionalidades;
+adaptar o Serviço a novas tecnologias;
+atender requisitos legais ou técnicos.
+Quando uma alteração for relevante, o responsável pelo Aplicativo poderá informar os usuários por meios apropriados.
+15. SUSPENSÃO OU ENCERRAMENTO DA CONTA
+O usuário poderá deixar de utilizar o PaceMind e solicitar o encerramento de sua conta conforme os mecanismos disponibilizados pelo Aplicativo.
+O responsável pelo PaceMind poderá restringir ou suspender uma conta quando houver indícios de:
+violação destes Termos;
+uso fraudulento;
+tentativa de comprometer a segurança do Serviço;
+utilização ilegal;
+comportamento que prejudique outros usuários ou o funcionamento da plataforma.
+Sempre que apropriado e possível, o usuário poderá ser informado sobre o motivo da suspensão.
+16. EXCLUSÃO DA CONTA
+O usuário poderá solicitar a exclusão de sua conta e de seus dados pessoais conforme os procedimentos disponibilizados pelo PaceMind e pela legislação aplicável.
+A exclusão poderá resultar na perda do acesso ao histórico de treinamentos, metas, conversas com a IA e demais informações associadas à conta, conforme as políticas de retenção aplicáveis.
+Algumas informações poderão precisar ser mantidas quando houver obrigação legal ou outra base legítima para sua conservação.
+17. PRIVACIDADE E PROTEÇÃO DE DADOS
+O tratamento de dados pessoais realizado pelo PaceMind é descrito em sua Política de Privacidade.
+A Política de Privacidade explica, entre outros aspectos:
+quais dados podem ser coletados;
+como os dados são utilizados;
+como informações de localização podem ser tratadas;
+como os dados podem ser utilizados pela PaceMind AI;
+com quem os dados podem ser compartilhados;
+medidas de segurança;
+períodos de retenção;
+direitos dos titulares.
+O uso do PaceMind está sujeito também à Política de Privacidade.
+18. LIMITAÇÃO DE RESPONSABILIDADE
+Na medida permitida pela legislação aplicável, o PaceMind não será responsável por:
+problemas causados pelo dispositivo do usuário;
+falhas de conexão com a internet;
+informações incorretamente inseridas pelo usuário;
+indisponibilidade de serviços de terceiros;
+decisões tomadas pelo usuário com base em informações fornecidas pelo Aplicativo;
+resultados esportivos ou físicos decorrentes da utilização do Serviço;
+utilização inadequada do Aplicativo.
+Nenhuma disposição destes Termos pretende excluir direitos que não possam ser legalmente excluídos ou limitados.
+19. ALTERAÇÕES DESTES TERMOS
+Estes Termos poderão ser atualizados periodicamente.
+A versão mais recente ficará disponível no Aplicativo ou em local indicado pelo responsável pelo PaceMind.
+Quando alterações relevantes forem realizadas, o usuário poderá ser informado de maneira apropriada.
+A continuidade de utilização do Aplicativo após a entrada em vigor das alterações poderá representar a aceitação da nova versão, quando permitido pela legislação aplicável.
+20. LEGISLAÇÃO APLICÁVEL
+Estes Termos serão interpretados de acordo com a legislação brasileira, respeitados os direitos garantidos pela legislação aplicável aos usuários e consumidores.
+Eventuais conflitos deverão ser solucionados preferencialmente por meio de contato com o responsável pelo PaceMind.
+21. CONTATO
+Para dúvidas, solicitações ou informações relacionadas a estes Termos de Uso, o usuário poderá entrar em contato por:
+Responsável: [NOME DO RESPONSÁVEL OU EMPRESA]
+E-mail: [E-MAIL DE CONTATO]
+Endereço: [ENDEREÇO, SE APLICÁVEL]
+22. ACEITAÇÃO
+Ao criar uma conta ou utilizar o PaceMind, o usuário declara que teve acesso a estes Termos de Uso, compreendeu suas disposições e concorda em respeitá-las.
+PaceMind
+[Nome do responsável/empresa]
+Última atualização: [DATA]

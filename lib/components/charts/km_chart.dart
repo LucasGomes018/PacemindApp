@@ -19,29 +19,41 @@ class _KmChartState extends State<KmChart> {
   int? touchedIndex;
 
   String _formatDiaLabel(dynamic raw, int index) {
-    if (raw == null || raw.toString().trim().isEmpty) {
-      const fallbackDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-      return index < fallbackDays.length ? fallbackDays[index] : "${index + 1}";
+    const fallbackDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+    if (widget.dados.isNotEmpty && index < widget.dados.length) {
+      final item = widget.dados[index];
+      if (item is Map) {
+        if (item["dia"] != null && item["dia"].toString().trim().isNotEmpty) {
+          return item["dia"].toString().trim();
+        }
+      }
     }
-    final s = raw.toString().trim();
-    if (s.length <= 4) return s;
-    return s.substring(0, 3);
+    if (raw != null && raw.toString().trim().isNotEmpty) {
+      final s = raw.toString().trim();
+      if (fallbackDays.contains(s) || s.length <= 4) return s;
+    }
+    return index < fallbackDays.length ? fallbackDays[index] : "${index + 1}";
   }
 
   String _getDiaCompleto(dynamic raw, int index) {
-    if (raw == null || raw.toString().trim().isEmpty) {
-      const fallbackDays = [
-        "Segunda-feira",
-        "Terça-feira",
-        "Quarta-feira",
-        "Quinta-feira",
-        "Sexta-feira",
-        "Sábado",
-        "Domingo"
-      ];
-      return index < fallbackDays.length ? fallbackDays[index] : "Dia ${index + 1}";
+    const fallbackDays = [
+      "Segunda-feira",
+      "Terça-feira",
+      "Quarta-feira",
+      "Quinta-feira",
+      "Sexta-feira",
+      "Sábado",
+      "Domingo"
+    ];
+    if (widget.dados.isNotEmpty && index < widget.dados.length) {
+      final item = widget.dados[index];
+      if (item is Map) {
+        if (item["dia_completo"] != null && item["dia_completo"].toString().trim().isNotEmpty) {
+          return item["dia_completo"].toString().trim();
+        }
+      }
     }
-    return raw.toString();
+    return index < fallbackDays.length ? fallbackDays[index] : "Dia ${index + 1}";
   }
 
   @override
@@ -145,15 +157,15 @@ class _KmChartState extends State<KmChart> {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 36,
+              reservedSize: 44,
               interval: intervalY,
               getTitlesWidget: (value, meta) {
                 if (value == 0 || value > maxY) return const SizedBox.shrink();
                 return Text(
-                  "${value.toInt()}k",
+                  "${value.toInt()} km",
                   style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
                     color: axisTextColor,
                   ),
                 );
@@ -170,7 +182,7 @@ class _KmChartState extends State<KmChart> {
                 if (index < 0 || index >= widget.dados.length) {
                   return const SizedBox.shrink();
                 }
-                final raw = widget.dados[index]["semana"];
+                final raw = widget.dados[index]["dia"] ?? widget.dados[index]["semana"];
                 final label = _formatDiaLabel(raw, index);
                 final isSelected = touchedIndex == index;
 
@@ -257,7 +269,7 @@ class _KmChartState extends State<KmChart> {
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 final index = spot.spotIndex;
-                final raw = widget.dados[index]["semana"];
+                final raw = widget.dados[index]["dia"] ?? widget.dados[index]["semana"];
                 final dia = _getDiaCompleto(raw, index);
                 return LineTooltipItem(
                   "$dia\n",
@@ -344,15 +356,15 @@ class _KmChartState extends State<KmChart> {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 36,
+              reservedSize: 44,
               interval: intervalY,
               getTitlesWidget: (value, meta) {
                 if (value == 0 || value > maxY) return const SizedBox.shrink();
                 return Text(
-                  "${value.toInt()}k",
+                  "${value.toInt()} km",
                   style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
                     color: axisTextColor,
                   ),
                 );
@@ -369,7 +381,7 @@ class _KmChartState extends State<KmChart> {
                 if (index < 0 || index >= widget.dados.length) {
                   return const SizedBox.shrink();
                 }
-                final raw = widget.dados[index]["semana"];
+                final raw = widget.dados[index]["dia"] ?? widget.dados[index]["semana"];
                 final label = _formatDiaLabel(raw, index);
                 final isSelected = touchedIndex == index;
 
@@ -411,7 +423,7 @@ class _KmChartState extends State<KmChart> {
             tooltipRoundedRadius: 12,
             tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              final raw = widget.dados[groupIndex]["semana"];
+              final raw = widget.dados[groupIndex]["dia"] ?? widget.dados[groupIndex]["semana"];
               final dia = _getDiaCompleto(raw, groupIndex);
               return BarTooltipItem(
                 "$dia\n",

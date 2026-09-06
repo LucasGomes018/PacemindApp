@@ -1,0 +1,208 @@
+Política de Privacidade do PaceMind
+Última atualização: 04 de setembro de 2026
+A presente Política de Privacidade descreve como o PaceMind coleta, utiliza, armazena, protege e, quando necessário, compartilha dados pessoais de seus usuários.
+Ao utilizar o PaceMind, o usuário declara estar ciente das práticas descritas nesta Política.
+1. Sobre o PaceMind
+O PaceMind é um aplicativo voltado ao acompanhamento e gerenciamento de treinos de corrida.
+O aplicativo permite ao usuário registrar e acompanhar informações relacionadas aos seus treinos, visualizar seu desempenho, acompanhar sua evolução e receber recomendações personalizadas.
+O PaceMind também poderá utilizar recursos de Inteligência Artificial (IA) para analisar informações fornecidas pelo usuário e apresentar recomendações relacionadas aos seus treinamentos.
+2. Quem é responsável pelo tratamento dos dados?
+O responsável pelo tratamento dos dados pessoais é:
+Responsável: [NOME DO RESPONSÁVEL/EMPRESA]
+Nome do aplicativo: PaceMind
+E-mail para assuntos de privacidade: [E-MAIL]
+Endereço: [ENDEREÇO, SE APLICÁVEL]
+Caso o PaceMind seja operado por uma empresa, as informações empresariais deverão ser apresentadas nesta seção.
+3. Quais dados podemos coletar?
+Dependendo das funcionalidades utilizadas, o PaceMind poderá coletar as seguintes categorias de dados:
+3.1. Dados de cadastro
+Podemos coletar:
+Nome;
+Endereço de e-mail;
+Senha de acesso;
+Foto de perfil, caso fornecida;
+Dados necessários para autenticação da conta.
+A senha deve ser armazenada de forma segura e, idealmente, utilizando mecanismos de hash, não em texto puro.
+3.2. Dados de treinamento
+Para fornecer as funcionalidades de acompanhamento de desempenho, podemos tratar informações como:
+Distância percorrida;
+Tempo de treino;
+Ritmo/pace;
+Velocidade;
+Frequência cardíaca, quando fornecida;
+Zonas de intensidade;
+Quantidade de treinos;
+Quilometragem semanal e mensal;
+Treinos longos;
+Evolução do desempenho;
+Carga de treinamento;
+Histórico de atividades;
+Metas de treinamento;
+Períodos de descanso e consistência.
+3.3. Dados de localização
+Quando o usuário autorizar o acesso à localização, o PaceMind poderá coletar dados de GPS durante os treinos.
+Esses dados podem ser utilizados para:
+Registrar o percurso realizado;
+Calcular distância;
+Calcular velocidade e ritmo;
+Acompanhar o deslocamento durante o treino;
+Permitir funcionalidades de acompanhamento em segundo plano, quando ativadas pelo usuário.
+O acesso à localização poderá ser desativado pelo usuário nas configurações do dispositivo ou do aplicativo, quando essa opção estiver disponível.
+3.4. Dados técnicos
+Podemos coletar informações técnicas necessárias para o funcionamento e segurança do aplicativo, como:
+Sistema operacional;
+Modelo do dispositivo;
+Versão do aplicativo;
+Informações relacionadas a erros e falhas;
+Informações necessárias para autenticação e segurança da sessão.
+4. Como utilizamos os dados?
+Os dados pessoais poderão ser utilizados para:
+Criar e administrar a conta do usuário;
+Realizar autenticação;
+Armazenar o histórico de treinos;
+Registrar atividades físicas;
+Apresentar estatísticas e gráficos;
+Calcular métricas de desempenho;
+Acompanhar evolução;
+Comparar períodos de treinamento;
+Criar recomendações personalizadas;
+Auxiliar no planejamento dos treinos;
+Processar informações relacionadas às metas;
+Permitir o funcionamento do GPS;
+Enviar notificações e lembretes, quando autorizados;
+Melhorar a segurança e funcionamento do aplicativo;
+Identificar e corrigir erros;
+Cumprir obrigações legais ou regulatórias;
+Atender solicitações do usuário relacionadas aos seus dados.
+O tratamento deverá observar princípios como finalidade, adequação, necessidade, transparência e segurança previstos na LGPD. �
+Serviços e Informações do Brasil
+5. Inteligência Artificial do PaceMind
+O PaceMind poderá utilizar recursos de Inteligência Artificial para oferecer uma experiência personalizada.
+A IA poderá analisar informações relacionadas ao usuário, incluindo, quando disponíveis:
+Histórico de treinos;
+Distâncias;
+Ritmos;
+Tempos;
+Frequência cardíaca;
+Zonas de intensidade;
+Volume de treinamento;
+Evolução do desempenho;
+Metas;
+Consistência dos treinos;
+Períodos de descanso;
+Informações fornecidas pelo próprio usuário durante as conversas.
+Essas informações poderão ser utilizadas para gerar respostas e recomendações personalizadas.
+Por exemplo, a IA poderá identificar tendências no histórico de treinamento e sugerir ajustes ou cuidados relacionados à rotina de treinamento.
+Importante
+As recomendações produzidas pela IA possuem caráter informativo e de apoio e não substituem a avaliação de profissionais qualificados, como médicos, nutricionistas ou profissionais de educação física.
+O PaceMind não garante que uma recomendação gerada automaticamente seja adequada para todas as situações individuais.
+6. Conversas com a Inteligência Artificial
+Quando o usuário utilizar o chat da IA, as mensagens enviadas poderão ser armazenadas para:
+Manter o histórico da conversa;
+Permitir que o usuário consulte conversas anteriores;
+Compreender o contexto das conversas;
+Produzir respostas personalizadas;
+Relacionar as perguntas do usuário aos seus dados de treinamento, quando necessário.
+O usuário poderá solicitar a exclusão do histórico da IA por meio das funcionalidades disponibilizadas pelo aplicativo ou pelo canal de privacidade indicado nesta Política.
+7. Compartilhamento de dados
+O PaceMind não comercializa dados pessoais dos usuários.
+Os dados poderão ser compartilhados somente quando necessário para o funcionamento do serviço, cumprimento de obrigação legal ou exercício regular de direitos.
+Isso poderá incluir prestadores de serviços responsáveis por:
+Hospedagem da aplicação;
+Armazenamento do banco de dados;
+Infraestrutura tecnológica;
+Serviços de autenticação;
+Processamento de Inteligência Artificial;
+Envio de notificações;
+Monitoramento técnico e segurança.
+Quando terceiros forem utilizados para realizar tratamento de dados em nome do PaceMind, deverão ser adotadas medidas contratuais e técnicas adequadas à proteção das informações.
+8. Serviços de terceiros
+Para disponibilizar determinadas funcionalidades, o PaceMind poderá utilizar serviços tecnológicos de terceiros.
+Dependendo da arquitetura utilizada pelo aplicativo, esses serviços poderão incluir plataformas de:
+Hospedagem;
+Banco de dados;
+Autenticação;
+Inteligência Artificial;
+Armazenamento;
+Notificações;
+Monitoramento de erros.
+Os dados enviados a esses serviços serão limitados ao necessário para a execução das respectivas funcionalidades.
+Observação para o desenvolvedor: nesta seção, quando o aplicativo estiver finalizado, é recomendável listar os fornecedores efetivamente utilizados, especialmente o provedor de IA e infraestrutura.
+9. Segurança dos dados
+O PaceMind adota medidas técnicas e administrativas destinadas a proteger os dados pessoais contra:
+Acesso não autorizado;
+Perda;
+Alteração indevida;
+Divulgação não autorizada;
+Destruição;
+Tratamento inadequado ou ilícito.
+Entre as medidas de segurança poderão estar:
+Autenticação de usuários;
+Controle de acesso;
+Tokens de autenticação;
+Criptografia durante a transmissão de dados;
+Armazenamento seguro;
+Controle de permissões;
+Monitoramento de falhas;
+Atualizações de segurança.
+A ANPD recomenda medidas administrativas e técnicas proporcionais ao risco para proteger dados pessoais. �
+Serviços e Informações do Brasil
+Apesar das medidas adotadas, nenhum sistema conectado à internet pode ser considerado completamente imune a incidentes de segurança.
+10. Retenção dos dados
+Os dados pessoais serão armazenados pelo período necessário para cumprir as finalidades descritas nesta Política, prestar os serviços do PaceMind e cumprir obrigações legais.
+Quando não houver mais necessidade de manutenção dos dados e não existir obrigação legal que justifique sua conservação, os dados poderão ser eliminados ou anonimizados.
+A eliminação poderá estar sujeita a limitações quando a manutenção dos dados for necessária para o cumprimento de obrigação legal ou para o exercício regular de direitos.
+11. Direitos do usuário
+Nos termos da LGPD, o usuário poderá exercer seus direitos em relação aos seus dados pessoais, incluindo, conforme aplicável:
+Confirmar a existência de tratamento;
+Solicitar acesso aos dados;
+Solicitar correção de dados incompletos, inexatos ou desatualizados;
+Solicitar anonimização, bloqueio ou eliminação de dados desnecessários ou tratados em desconformidade;
+Solicitar informações sobre compartilhamento de dados;
+Solicitar eliminação de dados tratados com base no consentimento, quando aplicável;
+Solicitar informações sobre as consequências de não fornecer determinado consentimento;
+Solicitar revisão de determinadas decisões tomadas exclusivamente com base em tratamento automatizado, quando aplicável.
+A LGPD prevê esses direitos ao titular dos dados pessoais. �
+Serviços e Informações do Brasil
+12. Exclusão da conta
+O usuário poderá solicitar a exclusão de sua conta e dos dados associados a ela, observadas as obrigações legais de conservação.
+A solicitação poderá ser realizada por:
+E-mail: [E-MAIL DE PRIVACIDADE]
+Quando possível, o aplicativo também poderá disponibilizar uma funcionalidade própria para exclusão da conta.
+Após a solicitação, os dados serão excluídos ou anonimizados quando não houver fundamento legal para sua manutenção.
+13. Notificações
+O PaceMind poderá enviar notificações relacionadas a:
+Lembretes de treinamento;
+Metas;
+Informações sobre atividades;
+Avisos importantes sobre o aplicativo;
+Outras funcionalidades relacionadas ao serviço.
+As notificações opcionais poderão ser desativadas pelo usuário nas configurações do aplicativo ou do dispositivo.
+14. Localização em segundo plano
+Quando o usuário habilitar a opção "GPS em segundo plano", o aplicativo poderá continuar utilizando a localização durante um treino mesmo quando o aplicativo não estiver em primeiro plano, conforme as permissões concedidas pelo sistema operacional.
+A localização será utilizada para as funcionalidades relacionadas ao acompanhamento do treino.
+O usuário poderá revogar essa permissão por meio das configurações do dispositivo.
+15. Crianças e adolescentes
+O PaceMind não deve coletar deliberadamente dados pessoais de crianças em desacordo com a legislação aplicável.
+Quando o usuário for criança ou adolescente, o tratamento de seus dados deverá observar as regras específicas previstas na legislação brasileira, considerando seu melhor interesse e, quando aplicável, as autorizações legalmente exigidas.
+16. Alterações nesta Política
+Esta Política de Privacidade poderá ser atualizada para refletir:
+Mudanças nas funcionalidades do PaceMind;
+Alterações na forma de tratamento dos dados;
+Mudanças tecnológicas;
+Alterações legislativas ou regulatórias;
+Melhorias de segurança.
+Quando houver alterações relevantes, o usuário poderá ser informado por meio do aplicativo ou de outros canais apropriados.
+A data da última atualização estará indicada no início desta Política.
+17. Canal de contato sobre privacidade
+Para dúvidas, solicitações ou reclamações relacionadas ao tratamento de dados pessoais, o usuário poderá entrar em contato pelo seguinte canal:
+E-mail: [E-MAIL DE PRIVACIDADE]
+Responsável pelo tratamento: [NOME/EMPRESA]
+Caso o PaceMind possua um encarregado de dados (DPO), suas informações poderão ser apresentadas aqui.
+Para agentes de tratamento de pequeno porte, a ANPD prevê algumas flexibilizações, mas isso não elimina as obrigações previstas na LGPD nem os direitos dos titulares. �
+Serviços e Informações do Brasil
+18. Legislação aplicável
+Esta Política será interpretada de acordo com a legislação brasileira, especialmente a Lei nº 13.709/2018, Lei Geral de Proteção de Dados Pessoais (LGPD), sem prejuízo de outras normas aplicáveis.
+19. Aceitação
+Ao criar uma conta e utilizar o PaceMind, o usuário declara que teve acesso a esta Política de Privacidade e tomou conhecimento das práticas nela descritas.
+Quando determinado tratamento depender de consentimento, o consentimento será solicitado de maneira específica e adequada à finalidade correspondente.
