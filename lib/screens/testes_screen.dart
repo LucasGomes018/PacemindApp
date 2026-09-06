@@ -229,7 +229,7 @@ class _TestesPageState extends State<TestesPage>
         child: Column(
           children: [
             SizedBox(
-              height: 440,
+              height: 480,
               child: TabBarView(
                 controller: _tabController,
                 children: [

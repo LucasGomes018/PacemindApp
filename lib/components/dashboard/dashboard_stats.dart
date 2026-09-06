@@ -39,7 +39,7 @@ class DashboardStats extends StatelessWidget {
       mainAxisSpacing: 8,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.9,
+      childAspectRatio: 1.6,
       children: [
         StatCard(
           icon: Icons.route,

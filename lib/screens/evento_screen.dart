@@ -484,6 +484,9 @@ class _EventosPageState extends State<EventosPage> {
             final fillBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
 
             return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.9,
+              ),
               padding: EdgeInsets.only(
                 left: 24,
                 right: 24,
@@ -529,25 +532,27 @@ class _EventosPageState extends State<EventosPage> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Novo Evento Esportivo",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: colors.onSurface,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Novo Evento Esportivo",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurface,
+                                ),
                               ),
-                            ),
-                            Text(
-                              "Crie uma prova e notifique todos os atletas",
-                              style: TextStyle(
-                                color: colors.onSurfaceVariant,
-                                fontSize: 12,
+                              Text(
+                                "Crie uma prova e notifique todos os atletas",
+                                style: TextStyle(
+                                  color: colors.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -877,6 +882,9 @@ class _EventosPageState extends State<EventosPage> {
             final fillBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
 
             return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.9,
+              ),
               padding: EdgeInsets.only(
                 left: 24,
                 right: 24,
@@ -906,12 +914,14 @@ class _EventosPageState extends State<EventosPage> {
                       children: [
                         const Icon(Icons.edit_calendar_rounded, color: Colors.orange, size: 26),
                         const SizedBox(width: 10),
-                        Text(
-                          "Editar Evento",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: colors.onSurface,
+                        Expanded(
+                          child: Text(
+                            "Editar Evento",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: colors.onSurface,
+                            ),
                           ),
                         ),
                       ],
@@ -1331,23 +1341,31 @@ class _EventosPageState extends State<EventosPage> {
                   ),
                   child: const Icon(Icons.emoji_events_rounded, color: Color(0xFF0066FF), size: 28),
                 ),
-                const SizedBox(width: 14),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "$total",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: colors.onSurface,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "$total",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
+                          ),
+                        ),
                       ),
-                    ),
-                    Text(
-                      "Provas Abertas",
-                      style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
-                    ),
-                  ],
+                      Text(
+                        "Provas Abertas",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1355,11 +1373,11 @@ class _EventosPageState extends State<EventosPage> {
           Container(
             width: 1,
             height: 40,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
             color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
           ),
           Expanded(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -1369,23 +1387,31 @@ class _EventosPageState extends State<EventosPage> {
                   ),
                   child: const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 28),
                 ),
-                const SizedBox(width: 14),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "$inscricoes",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: colors.onSurface,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "$inscricoes",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
+                          ),
+                        ),
                       ),
-                    ),
-                    Text(
-                      "Minhas Inscrições",
-                      style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
-                    ),
-                  ],
+                      Text(
+                        "Minhas Inscrições",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1644,7 +1670,11 @@ class _EventosPageState extends State<EventosPage> {
           const SizedBox(height: 18),
 
           // Rodapé: Status de Inscrição e Botão de Ação
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -1674,7 +1704,6 @@ class _EventosPageState extends State<EventosPage> {
                   ],
                 ),
               ),
-              const Spacer(),
               if (inscrito)
                 OutlinedButton.icon(
                   onPressed: () => cancelarInscricao(idEvento),

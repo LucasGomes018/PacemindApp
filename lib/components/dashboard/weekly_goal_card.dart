@@ -271,21 +271,34 @@ class WeeklyGoalCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Objetivo: ${formatarValor(objetivoSeguro)}",
-                style: TextStyle(
-                  color: colors.onSurfaceVariant,
-                  fontSize: 13,
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Objetivo: ${formatarValor(objetivoSeguro)}",
+                    style: TextStyle(
+                      color: colors.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
               ),
-              Text(
-                concluida
-                    ? "🎉 Meta atingida!"
-                    : "Faltam ${formatarValor(faltam)}",
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: concluida ? const Color(0xFF10B981) : colors.onSurface,
-                  fontSize: 13,
+              const SizedBox(width: 8),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    concluida
+                        ? "🎉 Meta atingida!"
+                        : "Faltam ${formatarValor(faltam)}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: concluida ? const Color(0xFF10B981) : colors.onSurface,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
               ),
             ],

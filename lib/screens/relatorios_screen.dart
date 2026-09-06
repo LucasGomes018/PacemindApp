@@ -328,9 +328,24 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(rotulo, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-          Text(valor, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+          Expanded(
+            flex: 5,
+            child: Text(
+              rotulo,
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            flex: 5,
+            child: Text(
+              valor,
+              textAlign: TextAlign.end,
+              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );

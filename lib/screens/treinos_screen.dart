@@ -483,27 +483,31 @@ class _TreinosPageState extends State<TreinosPage> {
   }
 
   Widget _info(BuildContext context, String titulo, String valor) {
-    return Column(
-      children: [
-        Text(
-          valor,
-
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
+    return Expanded(
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              valor,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
           ),
-        ),
-
-        const SizedBox(height: 4),
-
-        Text(
-          titulo,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          const SizedBox(height: 4),
+          Text(
+            titulo,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -535,6 +539,9 @@ class _TreinosPageState extends State<TreinosPage> {
                 bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
               child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.9,
+                ),
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
                 decoration: BoxDecoration(
                   color: colors.surface,

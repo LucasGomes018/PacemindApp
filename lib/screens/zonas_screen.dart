@@ -266,27 +266,34 @@ class _ZonasPageState extends State<ZonasPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 14,
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      color: cor,
-                                      shape: BoxShape.circle,
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 14,
+                                      height: 14,
+                                      decoration: BoxDecoration(
+                                        color: cor,
+                                        shape: BoxShape.circle,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    z["nome"] as String,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: cor,
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        z["nome"] as String,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: cor,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
@@ -322,10 +329,14 @@ class _ZonasPageState extends State<ZonasPage> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 4,
                             children: [
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.directions_run_rounded, size: 18, color: cor),
                                   const SizedBox(width: 6),
@@ -340,6 +351,7 @@ class _ZonasPageState extends State<ZonasPage> {
                                 ],
                               ),
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.favorite_rounded, size: 18, color: Colors.redAccent),
                                   const SizedBox(width: 6),

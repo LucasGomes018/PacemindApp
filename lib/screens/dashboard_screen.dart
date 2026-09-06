@@ -454,12 +454,17 @@ class _DashboardPageState extends State<DashboardPage> {
                                       ),
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
-                                      formatarRitmoMinKm(ritmo),
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        formatarRitmoMinKm(ritmo),
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -516,12 +521,17 @@ class _DashboardPageState extends State<DashboardPage> {
                                       ),
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
-                                      "${asInt(consistencia["concluidos"])} feitos",
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        "${asInt(consistencia["concluidos"])} feitos",
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
                                       ),
                                     ),
                                   ],

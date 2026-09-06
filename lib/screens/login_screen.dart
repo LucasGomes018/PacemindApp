@@ -76,42 +76,50 @@ class _LoginPageState extends State<LoginPage> {
     final fieldFill = isDark ? colors.surface : Colors.grey.shade100;
 
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: 1),
-            duration: const Duration(milliseconds: 650),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, 24 * (1 - value)),
-                  child: child,
-                ),
-              );
-            },
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: Image.asset(
-                    logoAsset,
-                    key: ValueKey<String>(logoAsset),
-                    width: 320,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.directions_run_rounded,
-                        size: 92,
-                        color: accent,
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 40),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 650),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 24 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.sizeOf(context).width * 0.85,
+                          maxHeight: 180,
+                        ),
+                        child: Image.asset(
+                          logoAsset,
+                          key: ValueKey<String>(logoAsset),
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.directions_run_rounded,
+                              size: 92,
+                              color: accent,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -239,6 +247,8 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

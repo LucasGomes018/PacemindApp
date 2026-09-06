@@ -165,9 +165,24 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("< 0.8: Pouco", style: TextStyle(fontSize: 11, color: Colors.grey)),
-                            Text("0.8 - 1.3: Ideal", style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
-                            Text("> 1.5: Perigo", style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text("< 0.8: Pouco", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              ),
+                            ),
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text("0.8 - 1.3: Ideal", style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text("> 1.5: Perigo", style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -352,12 +367,26 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
             child: Icon(icon, color: cor, size: 20),
           ),
           const SizedBox(height: 12),
-          Text(
-            valor,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: txtColor),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              valor,
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: txtColor),
+            ),
           ),
-          Text(titulo, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: cor)),
-          Text(subtitulo, style: const TextStyle(fontSize: 11.5, color: Colors.grey)),
+          Text(
+            titulo,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: cor),
+          ),
+          Text(
+            subtitulo,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11.5, color: Colors.grey),
+          ),
         ],
       ),
     );

@@ -260,48 +260,55 @@ class _CadastroPageState extends State<CadastroPage> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
 
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
 
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacementNamed(context, "/");
-                    },
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacementNamed(context, "/");
+                      },
 
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
 
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
 
-                      child: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: colors.onSurface,
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: colors.onSurface,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: Image.asset(
-                    logoAsset,
-                    key: ValueKey<String>(logoAsset),
-                    width: 320,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.directions_run_rounded,
-                        size: 92,
-                        color: Colors.blue,
-                      );
-                    },
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.sizeOf(context).width * 0.85,
+                        maxHeight: 180,
+                      ),
+                      child: Image.asset(
+                        logoAsset,
+                        key: ValueKey<String>(logoAsset),
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.directions_run_rounded,
+                            size: 92,
+                            color: Colors.blue,
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                ),
                 const Text(
                   "Criar conta",
                   style: TextStyle(
@@ -647,6 +654,7 @@ class _CadastroPageState extends State<CadastroPage> {
           ),
         ),
       ),
+    ),
     );
   }
 }

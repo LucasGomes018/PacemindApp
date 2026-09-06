@@ -84,6 +84,8 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                   children: [
                     Text(
                       "Evolução Semanal",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -92,6 +94,8 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                     ),
                     Text(
                       "Quilometragem (km)",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -102,18 +106,23 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
               ),
 
               // Badge de Total
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0066FF).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  "${totalKm.toStringAsFixed(1)} km",
-                  style: const TextStyle(
-                    color: Color(0xFF0066FF),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0066FF).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      "${totalKm.toStringAsFixed(1)} km",
+                      style: const TextStyle(
+                        color: Color(0xFF0066FF),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -175,7 +184,7 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
 
             // Mini Estatísticas
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _miniStat(
                   icon: Icons.emoji_events_outlined,
@@ -183,12 +192,14 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                   valor: "${maxKm.toStringAsFixed(1)} km",
                   isDark: isDark,
                 ),
+                const SizedBox(width: 6),
                 _miniStat(
                   icon: Icons.speed_rounded,
                   label: "Média Diária",
                   valor: "${mediaKm.toStringAsFixed(1)} km",
                   isDark: isDark,
                 ),
+                const SizedBox(width: 6),
                 _miniStat(
                   icon: Icons.calendar_today_rounded,
                   label: "Dias Ativos",
@@ -232,34 +243,46 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
     required String valor,
     required bool isDark,
   }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: const Color(0xFF0066FF),
-        ),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-              ),
+    return Expanded(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: const Color(0xFF0066FF),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    valor,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Text(
-              valor,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

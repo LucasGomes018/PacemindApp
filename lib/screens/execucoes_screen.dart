@@ -210,40 +210,52 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 20,
-                                      backgroundColor: const Color(0xFF0066FF).withValues(alpha: 0.12),
-                                      child: const Icon(
-                                        Icons.directions_run_rounded,
-                                        color: Color(0xFF0066FF),
-                                        size: 22,
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF0066FF).withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(14),
+                                        ),
+                                        child: const Icon(
+                                          Icons.directions_run_rounded,
+                                          color: Color(0xFF0066FF),
+                                          size: 22,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          tipo,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: txtColor,
-                                          ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              tipo,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                                color: txtColor,
+                                              ),
+                                            ),
+                                            Text(
+                                              dataStr,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        Text(
-                                          dataStr,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
@@ -279,10 +291,14 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                             const SizedBox(height: 12),
 
                             // Métricas de Intensidade: FC Média, FC Máx, Sensação RPE
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
+                              runSpacing: 6,
                               children: [
                                 Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     const Icon(Icons.favorite_rounded, size: 16, color: Colors.redAccent),
                                     const SizedBox(width: 6),
@@ -336,18 +352,25 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
   }
 
   Widget _metricaItem(String titulo, String valor, Color txtColor) {
-    return Column(
-      children: [
-        Text(
-          valor,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: txtColor),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          titulo,
-          style: const TextStyle(fontSize: 11.5, color: Colors.grey),
-        ),
-      ],
+    return Expanded(
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              valor,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: txtColor),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            titulo,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11.5, color: Colors.grey),
+          ),
+        ],
+      ),
     );
   }
 
@@ -393,6 +416,9 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
             final colors = Theme.of(ctx).colorScheme;
 
             return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.9,
+              ),
               padding: EdgeInsets.only(
                 top: 20,
                 left: 20,

@@ -53,12 +53,17 @@ class DashboardHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            nome,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 30,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              nome,
+              maxLines: 1,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 30,
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -70,13 +75,17 @@ class DashboardHeader extends StatelessWidget {
                 size: 18,
               ),
               const SizedBox(width: 8),
-              Text(
-                hoje,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
+              Expanded(
+                child: Text(
+                  hoje,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                  ),
                 ),
-              )
+              ),
             ],
           )
         ],

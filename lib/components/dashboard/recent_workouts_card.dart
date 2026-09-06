@@ -61,12 +61,16 @@ class RecentWorkoutsCard extends StatelessWidget {
             children: [
               Icon(Icons.history, color: colors.primary),
               const SizedBox(width: 8),
-              Text(
-                "Últimos treinos concluídos",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 19,
-                  color: colors.primary,
+              Expanded(
+                child: Text(
+                  "Últimos treinos concluídos",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 19,
+                    color: colors.primary,
+                  ),
                 ),
               ),
             ],

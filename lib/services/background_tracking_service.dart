@@ -56,6 +56,8 @@ void onStart(ServiceInstance service) {
           ),
         ).listen((Position pos) async {
           if (idCorrida == null) return;
+          // Ignora leituras com precisão ruim para não quebrar a rota
+          if (pos.accuracy > 25.0) return;
 
           try {
             await Api.salvarPosicao(

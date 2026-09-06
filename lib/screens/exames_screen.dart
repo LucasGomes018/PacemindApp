@@ -178,19 +178,25 @@ class _ExamesPageState extends State<ExamesPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
-                                  children: [
-                                    const CircleAvatar(
-                                      radius: 18,
-                                      backgroundColor: Color(0xFFE0F2FE),
-                                      child: Icon(Icons.description_rounded, color: Color(0xFF0066FF), size: 20),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      tipo,
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: txtColor),
-                                    ),
-                                  ],
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      const CircleAvatar(
+                                        radius: 18,
+                                        backgroundColor: Color(0xFFE0F2FE),
+                                        child: Icon(Icons.description_rounded, color: Color(0xFF0066FF), size: 20),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          tipo,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: txtColor),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
@@ -202,11 +208,12 @@ class _ExamesPageState extends State<ExamesPage> {
                             Text("Data: ${AppDateUtils.formatarData(data)}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
                             if (vef1 != null || cvf != null) ...[
                               const SizedBox(height: 10),
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
                                 children: [
                                   if (vef1 != null)
                                     Container(
-                                      margin: const EdgeInsets.only(right: 8),
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFF0066FF).withValues(alpha: 0.1),
@@ -253,6 +260,9 @@ class _ExamesPageState extends State<ExamesPage> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.9,
+          ),
           padding: EdgeInsets.only(
             top: 20,
             left: 20,

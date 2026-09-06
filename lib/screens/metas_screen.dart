@@ -227,6 +227,9 @@ class _MetasPageState extends State<MetasPage> {
         final isDark = theme.brightness == Brightness.dark;
 
         return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+          ),
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
@@ -237,20 +240,21 @@ class _MetasPageState extends State<MetasPage> {
             color: colors.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 48,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 48,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                 ),
-              ),
               const SizedBox(height: 20),
               Text(
                 "Ajustar Progresso",
@@ -310,8 +314,9 @@ class _MetasPageState extends State<MetasPage> {
               ),
             ],
           ),
-        );
-      },
+        ),
+      );
+    },
     );
   }
 
@@ -333,6 +338,9 @@ class _MetasPageState extends State<MetasPage> {
             final fillBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
 
             return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.9,
+              ),
               padding: EdgeInsets.only(
                 left: 24,
                 right: 24,
@@ -378,25 +386,27 @@ class _MetasPageState extends State<MetasPage> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Nova Meta",
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: colors.onSurface,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Nova Meta",
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurface,
+                                ),
                               ),
-                            ),
-                            Text(
-                              "Defina seu objetivo esportivo",
-                              style: TextStyle(
-                                color: colors.onSurfaceVariant,
-                                fontSize: 13,
+                              Text(
+                                "Defina seu objetivo esportivo",
+                                style: TextStyle(
+                                  color: colors.onSurfaceVariant,
+                                  fontSize: 13,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -709,27 +719,34 @@ class _MetasPageState extends State<MetasPage> {
                 child: const Icon(Icons.insights_rounded, color: Color(0xFF0066FF), size: 20),
               ),
               const SizedBox(width: 10),
-              Text(
-                "Desempenho Geral",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: colors.onSurface,
+              Expanded(
+                child: Text(
+                  "Desempenho Geral",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
-                  "${mediaProgresso.toStringAsFixed(0)}% médio",
-                  style: const TextStyle(
-                    color: Color(0xFF10B981),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    "${mediaProgresso.toStringAsFixed(0)}% médio",
+                    style: const TextStyle(
+                      color: Color(0xFF10B981),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),
@@ -756,17 +773,22 @@ class _MetasPageState extends State<MetasPage> {
         children: [
           Icon(icone, color: cor, size: 20),
           const SizedBox(height: 6),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: colors.onSurface,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              valor,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: colors.onSurface,
+              ),
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 12,
               color: colors.onSurfaceVariant,
@@ -970,47 +992,60 @@ class _MetasPageState extends State<MetasPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Progresso Atual",
-                    style: TextStyle(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Progresso Atual",
+                      style: TextStyle(
+                        color: colors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _formatarValor(progresso, tipo),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: colors.onSurface,
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        _formatarValor(progresso, tipo),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "Objetivo",
-                    style: TextStyle(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 12,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      "Objetivo",
+                      style: TextStyle(
+                        color: colors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _formatarValor(objetivo, tipo),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: colors.onSurface,
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        _formatarValor(objetivo, tipo),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -1040,7 +1075,11 @@ class _MetasPageState extends State<MetasPage> {
           const SizedBox(height: 14),
 
           // Rodapé do Card: Percentual e Ações Rápidas
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -1072,42 +1111,45 @@ class _MetasPageState extends State<MetasPage> {
                   ],
                 ),
               ),
-              const Spacer(),
-              if (!concluida) ...[
-                // Botão de incremento rápido (+1)
-                OutlinedButton(
-                  onPressed: () {
-                    _atualizarProgresso(meta, progresso + 1);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    side: BorderSide(
-                      color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+              if (!concluida)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Botão de incremento rápido (+1)
+                    OutlinedButton(
+                      onPressed: () {
+                        _atualizarProgresso(meta, progresso + 1);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        side: BorderSide(
+                          color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        "+1 $tipo",
+                        style: TextStyle(
+                          color: colors.onSurface,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      tooltip: "Ajustar progresso",
+                      style: IconButton.styleFrom(
+                        backgroundColor: cor.withValues(alpha: 0.12),
+                        foregroundColor: cor,
+                      ),
+                      icon: const Icon(Icons.edit_rounded, size: 16),
+                      onPressed: () => _abrirModalProgresso(meta),
                     ),
-                  ),
-                  child: Text(
-                    "+1 $tipo",
-                    style: TextStyle(
-                      color: colors.onSurface,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  tooltip: "Ajustar progresso",
-                  style: IconButton.styleFrom(
-                    backgroundColor: cor.withValues(alpha: 0.12),
-                    foregroundColor: cor,
-                  ),
-                  icon: const Icon(Icons.edit_rounded, size: 16),
-                  onPressed: () => _abrirModalProgresso(meta),
-                ),
-              ],
             ],
           ),
         ],

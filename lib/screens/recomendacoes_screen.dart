@@ -421,12 +421,16 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
               ),
             ),
             const SizedBox(width: 10),
-            Text(
-              _statusDigitando,
-              style: TextStyle(
-                color: colors.onSurfaceVariant,
-                fontSize: 13,
-                fontStyle: FontStyle.italic,
+            Flexible(
+              child: Text(
+                _statusDigitando,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
             const SizedBox(width: 8),

@@ -163,23 +163,30 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text("Esta Semana", style: TextStyle(color: Colors.white70, fontSize: 13)),
-                                const SizedBox(height: 2),
-                                Text(
-                                  "${semanaAtualKm.toStringAsFixed(1)} km",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text("Esta Semana", maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                  const SizedBox(height: 2),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      "${semanaAtualKm.toStringAsFixed(1)} km",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 color: diffKm >= 0
                                     ? Colors.greenAccent.withValues(alpha: 0.25)
@@ -187,6 +194,7 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
                                     diffKm >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
@@ -201,20 +209,27 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
                                 ],
                               ),
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const Text("Semana Anterior", style: TextStyle(color: Colors.white70, fontSize: 13)),
-                                const SizedBox(height: 2),
-                                Text(
-                                  "${semanaAnteriorKm.toStringAsFixed(1)} km",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  const Text("Semana Anterior", maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                  const SizedBox(height: 2),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      "${semanaAnteriorKm.toStringAsFixed(1)} km",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -436,17 +451,23 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
             child: Icon(icon, color: cor, size: 20),
           ),
           const SizedBox(height: 12),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.bold,
-              color: txtColor,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              valor,
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+                color: txtColor,
+              ),
             ),
           ),
           const SizedBox(height: 2),
           Text(
             titulo,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 12,
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -460,13 +481,18 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
   Widget _itemResumoIntensidade(String titulo, String valor, Color cor) {
     return Column(
       children: [
-        Text(
-          valor,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cor),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            valor,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cor),
+          ),
         ),
         const SizedBox(height: 2),
         Text(
           titulo,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],
