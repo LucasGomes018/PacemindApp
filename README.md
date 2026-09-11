@@ -1,7 +1,7 @@
 # 🏃 PaceMind
 
 <p align="center">
-  <img src="assets/icon/logo-app.png" width="150" alt="PaceMind">
+  <img src="assets/icon/logo-app2.png" width="150" alt="PaceMind">
 </p>
 
 <h3 align="center">
@@ -139,5 +139,5 @@ Uma das propostas do PaceMind é permitir que o corredor compare diferentes per�
 **Projeto desenvolvico por Lucas dos Santos Gomes**
 
 - **E-mail:** [lucasg16809@gmail.com](mailto:lucasg16809@gmail.com)
-- **Linkedin:** 
+- **Linkedin:** https://www.linkedin.com/in/lucas-gomes-350923371
 - **Repositório:** https://github.com/LucasGomes018/PacemindApp
