@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../services/notificacao_service.dart';
 import '../utils/date_utils.dart';
+import '../components/app_modal.dart';
+
 
 class EventosPage extends StatefulWidget {
   const EventosPage({super.key});
@@ -237,28 +239,14 @@ class _EventosPageState extends State<EventosPage> {
     final idInscricao = inscricoesUsuario[idEvento];
     if (idInscricao == null) return;
 
-    final confirmar = await showDialog<bool>(
+    final confirmar = await AppModal.showConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text("Cancelar Inscrição?"),
-        content: const Text("Tem certeza de que deseja abrir mão da sua vaga neste evento?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Voltar"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text("Confirmar Cancelamento"),
-          ),
-        ],
-      ),
+      title: "Cancelar Inscrição?",
+      message: "Tem certeza de que deseja abrir mão da sua vaga neste evento?",
+      confirmText: "Confirmar Cancelamento",
+      cancelText: "Voltar",
+      isDestructive: true,
+      icon: Icons.event_busy_rounded,
     );
 
     if (confirmar != true) return;
@@ -1092,37 +1080,14 @@ class _EventosPageState extends State<EventosPage> {
   }
 
   Future<void> _deletarEvento(dynamic evento) async {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
-    final confirmar = await showDialog<bool>(
+    final confirmar = await AppModal.showConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(
-          "Deletar Evento?",
-          style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          "Essa ação removerá o evento \"${evento["nome"]}\" e cancelará as inscrições de todos os atletas.",
-          style: TextStyle(color: colors.onSurfaceVariant),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text("Cancelar", style: TextStyle(color: colors.onSurfaceVariant)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text("Deletar"),
-          ),
-        ],
-      ),
+      title: "Deletar Evento?",
+      message: "Essa ação removerá o evento \"${evento["nome"]}\" e cancelará as inscrições de todos os atletas.",
+      confirmText: "Deletar",
+      cancelText: "Cancelar",
+      isDestructive: true,
+      icon: Icons.delete_forever_rounded,
     );
 
     if (confirmar == true) {

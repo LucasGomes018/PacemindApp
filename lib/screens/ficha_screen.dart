@@ -141,6 +141,7 @@ class _FichaPageState extends State<FichaPage> {
           : RefreshIndicator(
               onRefresh: _carregarFicha,
               child: ListView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 children: [
                   // Header de Identificação
@@ -198,50 +199,94 @@ class _FichaPageState extends State<FichaPage> {
                   // Biometria
                   _secaoTitulo("Dados Biométricos", Icons.accessibility_new_rounded, txtColor),
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _pesoController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: const InputDecoration(labelText: "Peso (kg)", hintText: "Ex: 72.5"),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _alturaController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: "Altura (cm)", hintText: "Ex: 178"),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _sangueController,
-                          decoration: const InputDecoration(labelText: "Tipo Sanguíneo", hintText: "Ex: O+"),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _sexo,
-                          decoration: const InputDecoration(labelText: "Sexo"),
-                          items: const [
-                            DropdownMenuItem(value: "M", child: Text("Masculino")),
-                            DropdownMenuItem(value: "F", child: Text("Feminino")),
-                            DropdownMenuItem(value: "Outro", child: Text("Outro")),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isCompact = constraints.maxWidth < 360;
+                      if (isCompact) {
+                        return Column(
+                          children: [
+                            TextField(
+                              controller: _pesoController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(labelText: "Peso (kg)", hintText: "Ex: 72.5"),
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _alturaController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(labelText: "Altura (cm)", hintText: "Ex: 178"),
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _sangueController,
+                              decoration: const InputDecoration(labelText: "Tipo Sanguíneo", hintText: "Ex: O+"),
+                            ),
+                            const SizedBox(height: 12),
+                            DropdownButtonFormField<String>(
+                              initialValue: _sexo,
+                              decoration: const InputDecoration(labelText: "Sexo"),
+                              items: const [
+                                DropdownMenuItem(value: "M", child: Text("Masculino")),
+                                DropdownMenuItem(value: "F", child: Text("Feminino")),
+                                DropdownMenuItem(value: "Outro", child: Text("Outro")),
+                              ],
+                              onChanged: (v) {
+                                if (v != null) setState(() => _sexo = v);
+                              },
+                            ),
                           ],
-                          onChanged: (v) {
-                            if (v != null) setState(() => _sexo = v);
-                          },
-                        ),
-                      ),
-                    ],
+                        );
+                      }
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _pesoController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: const InputDecoration(labelText: "Peso (kg)", hintText: "Ex: 72.5"),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  controller: _alturaController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(labelText: "Altura (cm)", hintText: "Ex: 178"),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _sangueController,
+                                  decoration: const InputDecoration(labelText: "Tipo Sanguíneo", hintText: "Ex: O+"),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  initialValue: _sexo,
+                                  decoration: const InputDecoration(labelText: "Sexo"),
+                                  items: const [
+                                    DropdownMenuItem(value: "M", child: Text("Masculino")),
+                                    DropdownMenuItem(value: "F", child: Text("Feminino")),
+                                    DropdownMenuItem(value: "Outro", child: Text("Outro")),
+                                  ],
+                                  onChanged: (v) {
+                                    if (v != null) setState(() => _sexo = v);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 24),

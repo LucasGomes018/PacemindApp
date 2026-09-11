@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api.dart';
+import 'app_modal.dart';
 
 class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
@@ -11,6 +12,7 @@ class AppDrawer extends StatefulWidget {
 
 class _AppDrawerState extends State<AppDrawer> {
   Map<String, dynamic>? perfil;
+  bool isAdmin = false;
 
   @override
   void initState() {
@@ -21,44 +23,29 @@ class _AppDrawerState extends State<AppDrawer> {
   Future<void> carregarPerfil() async {
     try {
       final data = await Api.getProfile();
+      Map<String, dynamic>? usuario;
+      try {
+        usuario = await Api.me();
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
         perfil = data;
+        isAdmin = (usuario?["tipo_usuario"] == "admin") || (data["tipo_usuario"] == "admin");
       });
     } catch (_) {}
   }
 
   Future<void> logout() async {
-    final confirmar = await showDialog<bool>(
+    final confirmar = await AppModal.showConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
-            SizedBox(width: 10),
-            Text("Sair da conta", style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: const Text("Deseja realmente sair da sua conta?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Sair"),
-          ),
-        ],
-      ),
+      title: "Sair da conta",
+      message: "Deseja realmente encerrar sua sessão e sair do aplicativo?",
+      confirmText: "Sair",
+      cancelText: "Cancelar",
+      icon: Icons.logout_rounded,
+      iconColor: const Color(0xFFEF4444),
+      confirmButtonColor: const Color(0xFFEF4444),
+      isDestructive: true,
     );
 
     if (confirmar != true) return;
@@ -222,6 +209,25 @@ class _AppDrawerState extends State<AppDrawer> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                   child: Divider(color: dividerColor, height: 1),
                 ),
+
+                // ADMINISTRAÇÃO (Exclusivo para Treinadores / Admins)
+                if (isAdmin) ...[
+                  _sectionHeader(
+                    title: "Administração",
+                    color: const Color(0xFFF59E0B),
+                    icon: Icons.admin_panel_settings_rounded,
+                  ),
+                  _drawerItem(
+                    icon: Icons.people_alt_rounded,
+                    title: "Gestão de Alunos",
+                    route: "/admin/usuarios",
+                    accentColor: const Color(0xFFF59E0B),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                    child: Divider(color: dividerColor, height: 1),
+                  ),
+                ],
 
                 // SISTEMA
                 _sectionHeader(

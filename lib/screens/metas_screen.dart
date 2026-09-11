@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/api.dart';
+import '../components/app_modal.dart';
 
 class MetasPage extends StatefulWidget {
   final bool abrirCriarMetaAoIniciar;
@@ -150,45 +151,16 @@ class _MetasPageState extends State<MetasPage> {
   }
 
   Future<void> _deletarMeta(dynamic meta) async {
-    final theme = Theme.of(context);
-
-    final confirmar = await showDialog<bool>(
+    final confirmar = await AppModal.showConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: theme.colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(
-          "Excluir Meta?",
-          style: TextStyle(
-            color: theme.colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          "Tem certeza de que deseja remover a meta \"${meta["titulo"]}\"?",
-          style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              "Cancelar",
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: const Text("Excluir"),
-          ),
-        ],
-      ),
+      title: "Excluir Meta?",
+      message: "Tem certeza de que deseja remover a meta \"${meta["titulo"]}\"?",
+      confirmText: "Excluir",
+      cancelText: "Cancelar",
+      icon: Icons.delete_outline_rounded,
+      iconColor: Colors.redAccent,
+      confirmButtonColor: Colors.redAccent,
+      isDestructive: true,
     );
 
     if (confirmar == true) {
@@ -217,106 +189,73 @@ class _MetasPageState extends State<MetasPage> {
           : progressoAtual.toString(),
     );
 
-    showModalBottomSheet(
+    AppModal.showBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
+      title: "Ajustar Progresso",
+      subtitle: "Meta: ${meta["titulo"]}",
+      icon: Icons.edit_road_rounded,
+      iconColor: const Color(0xFF0066FF),
+      maxChildSize: 0.65,
+      initialChildSize: 0.55,
+      builder: (ctx, scrollController) {
         final theme = Theme.of(ctx);
         final colors = theme.colorScheme;
         final isDark = theme.brightness == Brightness.dark;
 
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * 0.85,
-          ),
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+        return ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          children: [
+            Text(
+              "Atualize o quanto já conquistou para \"${meta["titulo"]}\":",
+              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              style: TextStyle(color: colors.onSurface, fontSize: 18),
+              decoration: InputDecoration(
+                labelText: "Progresso atual (${meta["tipo"]})",
+                labelStyle: TextStyle(color: colors.primary),
+                prefixIcon: Icon(Icons.edit_road_rounded, color: colors.primary),
+                filled: true,
+                fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
                   ),
                 ),
-              const SizedBox(height: 20),
-              Text(
-                "Ajustar Progresso",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: colors.onSurface,
-                ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                "Atualize o quanto já conquistou para \"${meta["titulo"]}\":",
-                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: controller,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                autofocus: true,
-                style: TextStyle(color: colors.onSurface, fontSize: 18),
-                decoration: InputDecoration(
-                  labelText: "Progresso atual (${meta["tipo"]})",
-                  labelStyle: TextStyle(color: colors.primary),
-                  prefixIcon: Icon(Icons.edit_road_rounded, color: colors.primary),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
+            ),
+            const SizedBox(height: 22),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  final valor = double.tryParse(controller.text.replaceAll(',', '.'));
+                  if (valor != null && valor >= 0) {
+                    Navigator.pop(ctx);
+                    _atualizarProgresso(meta, valor);
+                  }
+                },
+                icon: const Icon(Icons.check_rounded),
+                label: const Text("Salvar Progresso", style: TextStyle(fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0066FF),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide(
-                      color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
-                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    final valor = double.tryParse(controller.text.replaceAll(',', '.'));
-                    if (valor != null && valor >= 0) {
-                      Navigator.pop(ctx);
-                      _atualizarProgresso(meta, valor);
-                    }
-                  },
-                  icon: const Icon(Icons.check_rounded),
-                  label: const Text("Salvar Progresso", style: TextStyle(fontSize: 16)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0066FF),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -325,11 +264,15 @@ class _MetasPageState extends State<MetasPage> {
     final objetivoController = TextEditingController();
     String tipoSelecionado = "km";
 
-    await showModalBottomSheet(
+    await AppModal.showBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetCtx) {
+      title: "Nova Meta",
+      subtitle: "Defina seu objetivo esportivo",
+      icon: Icons.flag_rounded,
+      iconColor: const Color(0xFF0066FF),
+      maxChildSize: 0.92,
+      initialChildSize: 0.82,
+      builder: (sheetCtx, scrollController) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final theme = Theme.of(context);
@@ -337,238 +280,165 @@ class _MetasPageState extends State<MetasPage> {
             final isDark = theme.brightness == Brightness.dark;
             final fillBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
 
-            return Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.9,
-              ),
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 50,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+              children: [
+                // TÍTULO
+                TextField(
+                  controller: tituloController,
+                  style: TextStyle(color: colors.onSurface),
+                  decoration: InputDecoration(
+                    hintText: "Ex: Correr 100km esse mês",
+                    labelText: "Título da meta",
+                    hintStyle: TextStyle(color: colors.onSurfaceVariant.withValues(alpha: 0.7)),
+                    labelStyle: TextStyle(color: colors.primary),
+                    prefixIcon: Icon(Icons.edit_note_rounded, color: colors.primary),
+                    filled: true,
+                    fillColor: fillBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF0066FF), Color(0xFF00C6FF)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.flag_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Nova Meta",
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: colors.onSurface,
-                                ),
-                              ),
-                              Text(
-                                "Defina seu objetivo esportivo",
-                                style: TextStyle(
-                                  color: colors.onSurfaceVariant,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                  ),
+                ),
+                const SizedBox(height: 16),
 
-                    // TÍTULO
-                    TextField(
-                      controller: tituloController,
-                      style: TextStyle(color: colors.onSurface),
-                      decoration: InputDecoration(
-                        hintText: "Ex: Correr 100km esse mês",
-                        labelText: "Título da meta",
-                        hintStyle: TextStyle(color: colors.onSurfaceVariant.withValues(alpha: 0.7)),
-                        labelStyle: TextStyle(color: colors.primary),
-                        prefixIcon: Icon(Icons.edit_note_rounded, color: colors.primary),
-                        filled: true,
-                        fillColor: fillBg,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(
-                            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
-                          ),
-                        ),
+                // TIPO
+                DropdownButtonFormField<String>(
+                  initialValue: tipoSelecionado,
+                  dropdownColor: colors.surface,
+                  style: TextStyle(color: colors.onSurface, fontSize: 15),
+                  decoration: InputDecoration(
+                    labelText: "Tipo da meta",
+                    labelStyle: TextStyle(color: colors.primary),
+                    prefixIcon: Icon(Icons.category_rounded, color: colors.primary),
+                    filled: true,
+                    fillColor: fillBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    // TIPO
-                    DropdownButtonFormField<String>(
-                      initialValue: tipoSelecionado,
-                      dropdownColor: colors.surface,
-                      style: TextStyle(color: colors.onSurface, fontSize: 15),
-                      decoration: InputDecoration(
-                        labelText: "Tipo da meta",
-                        labelStyle: TextStyle(color: colors.primary),
-                        prefixIcon: Icon(Icons.category_rounded, color: colors.primary),
-                        filled: true,
-                        fillColor: fillBg,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(
-                            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: "km",
-                          child: Text("Quilometragem (km)"),
-                        ),
-                        DropdownMenuItem(
-                          value: "tempo",
-                          child: Text("Tempo em minutos"),
-                        ),
-                        DropdownMenuItem(
-                          value: "treinos",
-                          child: Text("Quantidade de treinos"),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setModalState(() {
-                            tipoSelecionado = value;
-                          });
-                        }
-                      },
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: "km",
+                      child: Text("Quilometragem (km)"),
                     ),
-                    const SizedBox(height: 16),
-
-                    // OBJETIVO NUMÉRICO
-                    TextField(
-                      controller: objetivoController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(color: colors.onSurface),
-                      decoration: InputDecoration(
-                        hintText: tipoSelecionado == "km"
-                            ? "Ex: 50"
-                            : tipoSelecionado == "tempo"
-                                ? "Ex: 300"
-                                : "Ex: 12",
-                        labelText: "Objetivo numérico ($tipoSelecionado)",
-                        hintStyle: TextStyle(color: colors.onSurfaceVariant.withValues(alpha: 0.7)),
-                        labelStyle: TextStyle(color: colors.primary),
-                        prefixIcon: Icon(Icons.track_changes_rounded, color: colors.primary),
-                        filled: true,
-                        fillColor: fillBg,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(
-                            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                      ),
+                    DropdownMenuItem(
+                      value: "tempo",
+                      child: Text("Tempo em minutos"),
                     ),
-                    const SizedBox(height: 28),
-
-                    // BOTÃO CRIAR
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          final objetivo = double.tryParse(
-                            objetivoController.text.replaceAll(',', '.'),
-                          );
-                          if (tituloController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Informe um título para sua meta."),
-                              ),
-                            );
-                            return;
-                          }
-                          if (objetivo == null || objetivo <= 0) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Informe um objetivo maior que zero."),
-                              ),
-                            );
-                            return;
-                          }
-
-                          try {
-                            await Api.criarMeta(
-                              titulo: tituloController.text.trim(),
-                              objetivo: objetivo,
-                              tipo: tipoSelecionado,
-                            );
-
-                            if (!context.mounted) return;
-                            Navigator.pop(context);
-                            carregarMetas();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("🎯 Meta criada com sucesso!"),
-                                backgroundColor: Color(0xFF10B981),
-                              ),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Erro ao criar meta")),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.flag_rounded),
-                        label: const Text(
-                          "Criar Meta",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0066FF),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
+                    DropdownMenuItem(
+                      value: "treinos",
+                      child: Text("Quantidade de treinos"),
                     ),
                   ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setModalState(() {
+                        tipoSelecionado = value;
+                      });
+                    }
+                  },
                 ),
-              ),
+                const SizedBox(height: 16),
+
+                // OBJETIVO NUMÉRICO
+                TextField(
+                  controller: objetivoController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(color: colors.onSurface),
+                  decoration: InputDecoration(
+                    hintText: tipoSelecionado == "km"
+                        ? "Ex: 50"
+                        : tipoSelecionado == "tempo"
+                            ? "Ex: 300"
+                            : "Ex: 12",
+                    labelText: "Objetivo numérico ($tipoSelecionado)",
+                    hintStyle: TextStyle(color: colors.onSurfaceVariant.withValues(alpha: 0.7)),
+                    labelStyle: TextStyle(color: colors.primary),
+                    prefixIcon: Icon(Icons.track_changes_rounded, color: colors.primary),
+                    filled: true,
+                    fillColor: fillBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                // BOTÃO CRIAR
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final objetivo = double.tryParse(
+                        objetivoController.text.replaceAll(',', '.'),
+                      );
+                      if (tituloController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Informe um título para sua meta."),
+                          ),
+                        );
+                        return;
+                      }
+                      if (objetivo == null || objetivo <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Informe um objetivo maior que zero."),
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        await Api.criarMeta(
+                          titulo: tituloController.text.trim(),
+                          objetivo: objetivo,
+                          tipo: tipoSelecionado,
+                        );
+
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                        carregarMetas();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("🎯 Meta criada com sucesso!"),
+                            backgroundColor: Color(0xFF10B981),
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Erro ao criar meta")),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.flag_rounded),
+                    label: const Text(
+                      "Criar Meta",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0066FF),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         );

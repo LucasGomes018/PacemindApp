@@ -1053,4 +1053,77 @@ class Api {
 
     return jsonDecode(response.body);
   }
+
+  // ===============================
+  // 👑 ADMINISTRAÇÃO & GESTÃO DE ALUNOS
+  // ===============================
+
+  /// Lista todos os usuários cadastrados (exclusivo para admin).
+  static Future<List<dynamic>> listarUsuariosAdmin() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/usuarios"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao buscar usuários");
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! List) return [];
+    return data;
+  }
+
+  /// Lista todos os perfis cadastrados (exclusivo para admin).
+  static Future<List<dynamic>> listarPerfisAdmin() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/perfis"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      return [];
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! List) return [];
+    return data;
+  }
+
+  /// Busca os treinos de um aluno específico pelo id_usuario.
+  static Future<List<dynamic>> buscarTreinosPorAluno(String idUsuario) async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/treinos?id_usuario=$idUsuario"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      return [];
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! List) return [];
+    return data;
+  }
+
+  /// Busca a ficha médica/anamnese de um aluno específico pelo id_usuario.
+  static Future<Map<String, dynamic>> buscarFichaPorAluno(String idUsuario) async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/ficha?id_usuario=$idUsuario"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      return {};
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>) return {};
+    return data;
+  }
 }
+

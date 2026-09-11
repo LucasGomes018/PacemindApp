@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../utils/date_utils.dart';
+import '../components/app_modal.dart';
+
 
 class ExamesPage extends StatefulWidget {
   const ExamesPage({super.key});
@@ -254,104 +256,96 @@ class _ExamesPageState extends State<ExamesPage> {
     final cvfController = TextEditingController();
     final laudoController = TextEditingController();
 
-    showModalBottomSheet(
+    AppModal.showBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * 0.9,
-          ),
-          padding: EdgeInsets.only(
-            top: 20,
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          decoration: BoxDecoration(
-            color: Theme.of(ctx).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Center(
-                  child: Container(
-                    width: 50,
-                    height: 5,
-                    decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text("Adicionar Novo Exame", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: tipoController,
-                  decoration: const InputDecoration(labelText: "Tipo de Exame (Espirometria, Teste Ergométrico...)"),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: vef1Controller,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: "VEF1 (%)", hintText: "Ex: 85"),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: cvfController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: "CVF (%)", hintText: "Ex: 92"),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: laudoController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(labelText: "Conclusão / Laudo do Médico"),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0066FF),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    onPressed: () async {
-                      final vef1 = double.tryParse(vef1Controller.text);
-                      final cvf = double.tryParse(cvfController.text);
-
-                      await Api.salvarExame({
-                        "tipo_exame": tipoController.text,
-                        "data_exame": AppDateUtils.paraIsoLocal(DateTime.now()).split("T")[0],
-                        "vef1_percentual": vef1,
-                        "cvf_percentual": cvf,
-                        "laudo": laudoController.text,
-                      });
-
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      _carregarExames();
-                    },
-                    icon: const Icon(Icons.check),
-                    label: const Text("Salvar Exame", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              ],
+      title: "Adicionar Novo Exame",
+      subtitle: "Registre resultados de espirometria ou testes clínicos",
+      icon: Icons.medical_services_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: tipoController,
+            decoration: InputDecoration(
+              labelText: "Tipo de Exame",
+              hintText: "Ex: Espirometria, Teste Ergométrico",
+              filled: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
-        );
-      },
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: vef1Controller,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "VEF1 (%)",
+                    hintText: "Ex: 85",
+                    filled: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: cvfController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "CVF (%)",
+                    hintText: "Ex: 92",
+                    filled: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: laudoController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: "Conclusão / Laudo do Médico",
+              filled: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0066FF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onPressed: () async {
+                final vef1 = double.tryParse(vef1Controller.text);
+                final cvf = double.tryParse(cvfController.text);
+
+                await Api.salvarExame({
+                  "tipo_exame": tipoController.text,
+                  "data_exame": AppDateUtils.paraIsoLocal(DateTime.now()).split("T")[0],
+                  "vef1_percentual": vef1,
+                  "cvf_percentual": cvf,
+                  "laudo": laudoController.text,
+                });
+
+                if (!mounted) return;
+                Navigator.pop(context);
+                _carregarExames();
+              },
+              icon: const Icon(Icons.check),
+              label: const Text("Salvar Exame", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

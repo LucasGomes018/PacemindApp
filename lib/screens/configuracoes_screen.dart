@@ -4,6 +4,7 @@ import '/core/api.dart'; // Assumindo que este caminho está correto
 import 'package:provider/provider.dart';
 import '../core/theme_provider.dart';
 import '../core/theme.dart';
+import '../components/app_modal.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -43,50 +44,16 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
   }
 
   Future<void> _logout() async {
-    final sair = await showDialog<bool>(
+    final sair = await AppModal.showConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              const Icon(Icons.logout_rounded, color: errorRed),
-              const SizedBox(width: 10),
-              Text(
-                "Sair da conta",
-                style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: const Text(
-            "Tem certeza que deseja sair da sua conta?\n\nSerá necessário fazer login novamente.",
-            style: TextStyle(height: 1.4, color: lightTextColor),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text(
-                "Cancelar",
-                style: TextStyle(color: primaryBlue),
-              ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context, true),
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text("Sair"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: errorRed,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+      title: "Sair da conta",
+      message: "Tem certeza que deseja sair da sua conta?\nSerá necessário fazer login novamente.",
+      confirmText: "Sair",
+      cancelText: "Cancelar",
+      icon: Icons.logout_rounded,
+      iconColor: errorRed,
+      confirmButtonColor: errorRed,
+      isDestructive: true,
     );
 
     if (sair != true) return;

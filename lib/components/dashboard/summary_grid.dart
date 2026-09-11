@@ -21,36 +21,44 @@ class SummaryGrid extends StatelessWidget {
       children: [
         Row(
           children: [
-            StatCard(
-              icon: Icons.route,
-              title: "KM",
-              value: km,
-              color: Colors.blue,
+            Expanded(
+              child: StatCard(
+                icon: Icons.route,
+                title: "KM",
+                value: km,
+                color: Colors.blue,
+              ),
             ),
             const SizedBox(width: 14),
-            StatCard(
-              icon: Icons.timer,
-              title: "Tempo",
-              value: tempo,
-              color: Colors.orange,
+            Expanded(
+              child: StatCard(
+                icon: Icons.timer,
+                title: "Tempo",
+                value: tempo,
+                color: Colors.orange,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 14),
         Row(
           children: [
-            StatCard(
-              icon: Icons.fitness_center,
-              title: "Treinos",
-              value: treinos,
-              color: Colors.green,
+            Expanded(
+              child: StatCard(
+                icon: Icons.fitness_center,
+                title: "Treinos",
+                value: treinos,
+                color: Colors.green,
+              ),
             ),
             const SizedBox(width: 14),
-            StatCard(
-              icon: Icons.bolt,
-              title: "Carga",
-              value: carga,
-              color: Colors.red,
+            Expanded(
+              child: StatCard(
+                icon: Icons.bolt,
+                title: "Carga",
+                value: carga,
+                color: Colors.red,
+              ),
             ),
           ],
         ),

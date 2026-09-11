@@ -574,15 +574,16 @@ class _QuestionariosPageState extends State<QuestionariosPage>
                 ),
                 const SizedBox(height: 14),
 
-                // Seletor horizontal de 0 a 6
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(7, (numOption) {
-                    final selecionado = valorSelecionado == numOption;
-                    final cor = _corParaACQ5(numOption);
+                // Seletor horizontal de 0 a 6 responsivo
+                LayoutBuilder(
+                  builder: (context, box) {
+                    final buttonWidth = (box.maxWidth - 24) / 7;
+                    final useScroll = buttonWidth < 36;
+                    final buttons = List.generate(7, (numOption) {
+                      final selecionado = valorSelecionado == numOption;
+                      final cor = _corParaACQ5(numOption);
 
-                    return Expanded(
-                      child: GestureDetector(
+                      Widget btn = GestureDetector(
                         onTap: () {
                           setState(() {
                             respostasACQ5[key] = numOption;
@@ -592,6 +593,7 @@ class _QuestionariosPageState extends State<QuestionariosPage>
                           duration: const Duration(milliseconds: 200),
                           margin: const EdgeInsets.symmetric(horizontal: 2),
                           padding: const EdgeInsets.symmetric(vertical: 10),
+                          width: useScroll ? 44 : null,
                           decoration: BoxDecoration(
                             color: selecionado
                                 ? cor
@@ -621,9 +623,22 @@ class _QuestionariosPageState extends State<QuestionariosPage>
                             ),
                           ),
                         ),
-                      ),
+                      );
+
+                      return useScroll ? btn : Expanded(child: btn);
+                    });
+
+                    if (useScroll) {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(children: buttons),
+                      );
+                    }
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: buttons,
                     );
-                  }),
+                  },
                 ),
 
                 const SizedBox(height: 10),
@@ -973,21 +988,23 @@ class _QuestionariosPageState extends State<QuestionariosPage>
           ),
           const SizedBox(height: 12),
 
-          // Seletor de 1 a 7
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(7, (idx) {
-              final numOption = idx + 1;
-              final selecionado = valorAtual == numOption;
-              final cor = _corParaMiniAQLQ(numOption);
+          // Seletor de 1 a 7 responsivo
+          LayoutBuilder(
+            builder: (context, box) {
+              final buttonWidth = (box.maxWidth - 24) / 7;
+              final useScroll = buttonWidth < 36;
+              final buttons = List.generate(7, (idx) {
+                final numOption = idx + 1;
+                final selecionado = valorAtual == numOption;
+                final cor = _corParaMiniAQLQ(numOption);
 
-              return Expanded(
-                child: GestureDetector(
+                Widget btn = GestureDetector(
                   onTap: () => onSelect(numOption),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     margin: const EdgeInsets.symmetric(horizontal: 2),
                     padding: const EdgeInsets.symmetric(vertical: 8),
+                    width: useScroll ? 44 : null,
                     decoration: BoxDecoration(
                       color: selecionado
                           ? cor
@@ -1017,9 +1034,22 @@ class _QuestionariosPageState extends State<QuestionariosPage>
                       ),
                     ),
                   ),
-                ),
+                );
+
+                return useScroll ? btn : Expanded(child: btn);
+              });
+
+              if (useScroll) {
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(children: buttons),
+                );
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: buttons,
               );
-            }),
+            },
           ),
 
           const SizedBox(height: 8),

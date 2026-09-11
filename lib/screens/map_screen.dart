@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api.dart';
+import '../components/app_modal.dart';
 import '../services/background_tracking_service.dart';
 import '../services/notificacao_service.dart';
 
@@ -255,169 +256,117 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     final colors = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    final resultado = await showModalBottomSheet<Map<String, dynamic>>(
+    final resultado = await AppModal.showBottomSheet<Map<String, dynamic>>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.78,
-          ),
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: 50,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white24 : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(30),
-                ),
+      title: "Vincular a um Treino",
+      subtitle: "Selecione um treino da planilha para atualizar seu progresso",
+      icon: Icons.fitness_center_rounded,
+      builder: (sheetCtx, scrollController) {
+        if (treinos.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(
+                "Nenhum treino planejado encontrado.",
+                style: TextStyle(color: colors.onSurfaceVariant),
               ),
-              const SizedBox(height: 20),
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0066FF).withValues(alpha: .12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.fitness_center_rounded,
-                  color: Color(0xFF0066FF),
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                "Vincular a um Treino",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: colors.onSurface,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                "Selecione um treino da sua planilha para atualizar seu progresso automaticamente.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: colors.onSurfaceVariant,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: treinos.isEmpty
-                    ? Center(
-                        child: Text(
-                          "Nenhum treino planejado encontrado.",
-                          style: TextStyle(color: colors.onSurfaceVariant),
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: treinos.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
-                        itemBuilder: (_, index) {
-                          final treino = treinos[index];
-                          final id = treino["id_treino"]?.toString() ?? "";
-                          final tipo = treino["tipo"] ?? "Treino";
-                          final dist = treino["distancia_km"] ?? "-";
+            ),
+          );
+        }
+        return ListView.separated(
+          controller: scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          itemCount: treinos.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemBuilder: (_, index) {
+            final treino = treinos[index];
+            final id = treino["id_treino"]?.toString() ?? "";
+            final tipo = treino["tipo"] ?? "Treino";
+            final dist = treino["distancia_km"] ?? "-";
 
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: () {
-                              Navigator.pop(context, {
-                                "id": id,
-                                "titulo": "$tipo ($dist km)",
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF0066FF).withValues(alpha: .12),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: const Icon(
-                                      Icons.directions_run_rounded,
-                                      color: Color(0xFF0066FF),
-                                      size: 22,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          tipo,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: colors.onSurface,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "$dist km planejados",
-                                          style: TextStyle(
-                                            color: colors.onSurfaceVariant,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.chevron_right_rounded,
-                                    color: colors.onSurfaceVariant,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 52),
-                    side: const BorderSide(color: Color(0xFF0066FF)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    "Continuar sem vincular",
-                    style: TextStyle(color: Color(0xFF0066FF), fontWeight: FontWeight.bold),
+            return InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                Navigator.pop(sheetCtx, {
+                  "id": id,
+                  "titulo": "$tipo ($dist km)",
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
                   ),
                 ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0066FF).withValues(alpha: .12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.directions_run_rounded,
+                        color: Color(0xFF0066FF),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tipo,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: colors.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "$dist km planejados",
+                            style: TextStyle(
+                              color: colors.onSurfaceVariant,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
+      floatingAction: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: () => Navigator.pop(context),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(0, 50),
+            side: const BorderSide(color: Color(0xFF0066FF)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: const Text(
+            "Continuar sem vincular",
+            style: TextStyle(color: Color(0xFF0066FF), fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
     );
 
     if (resultado != null) {
@@ -467,38 +416,22 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     required String mensagem,
     required Future<bool> Function() abrirConfiguracoes,
   }) async {
-    final abrir = await showDialog<bool>(
+    final abrir = await AppModal.showConfirmDialog(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-          title: Text(titulo),
-          content: Text(mensagem),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text("Agora não"),
-            ),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF0066FF),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              onPressed: () async {
-                await abrirConfiguracoes();
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext, true);
-                }
-              },
-              icon: const Icon(Icons.settings_rounded),
-              label: const Text("Abrir configurações"),
-            ),
-          ],
-        );
-      },
+      title: titulo,
+      message: mensagem,
+      confirmText: "Abrir configurações",
+      cancelText: "Agora não",
+      icon: Icons.location_on_rounded,
+      iconColor: const Color(0xFF0066FF),
+      confirmButtonColor: const Color(0xFF0066FF),
     );
 
-    return abrir ?? false;
+    if (abrir == true) {
+      await abrirConfiguracoes();
+      return true;
+    }
+    return false;
   }
 
   void iniciarCorrida() async {
@@ -597,46 +530,18 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   }
 
   Future<void> confirmarFinalizarCorrida() async {
-    final confirmar = await showDialog<bool>(
+    final distKm = (distanciaTotal / 1000).toStringAsFixed(2);
+    final tempo = formatarTempo();
+    final confirmar = await AppModal.showConfirmDialog(
       context: context,
-      builder: (dialogCtx) {
-        final colors = Theme.of(dialogCtx).colorScheme;
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.stop_rounded, color: Colors.redAccent, size: 24),
-              ),
-              const SizedBox(width: 12),
-              const Text("Encerrar Corrida?"),
-            ],
-          ),
-          content: Text(
-            "Você percorreu ${(distanciaTotal / 1000).toStringAsFixed(2)} km em ${formatarTempo()}.\nDeseja salvar e concluir este treino?",
-            style: TextStyle(color: colors.onSurfaceVariant),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text("Continuar Correndo"),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text("Sim, Concluir"),
-            ),
-          ],
-        );
-      },
+      title: "Encerrar Corrida?",
+      message: "Você percorreu $distKm km em $tempo.\nDeseja salvar e concluir este treino?",
+      confirmText: "Sim, Concluir",
+      cancelText: "Continuar Correndo",
+      icon: Icons.stop_rounded,
+      iconColor: const Color(0xFFEF4444),
+      confirmButtonColor: const Color(0xFFEF4444),
+      isDestructive: true,
     );
 
     if (confirmar == true) {

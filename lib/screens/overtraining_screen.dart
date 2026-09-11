@@ -192,34 +192,66 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
                   const SizedBox(height: 22),
 
                   // Cards Carga Aguda vs Carga Crônica
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _cardCarga(
-                          "Carga Aguda",
-                          "Últimos 7 dias",
-                          cargaAguda.toStringAsFixed(0),
-                          Icons.bolt_rounded,
-                          const Color(0xFF0066FF),
-                          cardBg,
-                          txtColor,
-                          isDark,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _cardCarga(
-                          "Carga Crônica",
-                          "Média 28 dias",
-                          cargaCronica.toStringAsFixed(0),
-                          Icons.timeline_rounded,
-                          const Color(0xFF8B5CF6),
-                          cardBg,
-                          txtColor,
-                          isDark,
-                        ),
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, box) {
+                      final isNarrow = box.maxWidth < 340;
+                      if (isNarrow) {
+                        return Column(
+                          children: [
+                            _cardCarga(
+                              "Carga Aguda",
+                              "Últimos 7 dias",
+                              cargaAguda.toStringAsFixed(0),
+                              Icons.bolt_rounded,
+                              const Color(0xFF0066FF),
+                              cardBg,
+                              txtColor,
+                              isDark,
+                            ),
+                            const SizedBox(height: 12),
+                            _cardCarga(
+                              "Carga Crônica",
+                              "Média 28 dias",
+                              cargaCronica.toStringAsFixed(0),
+                              Icons.timeline_rounded,
+                              const Color(0xFF8B5CF6),
+                              cardBg,
+                              txtColor,
+                              isDark,
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: _cardCarga(
+                              "Carga Aguda",
+                              "Últimos 7 dias",
+                              cargaAguda.toStringAsFixed(0),
+                              Icons.bolt_rounded,
+                              const Color(0xFF0066FF),
+                              cardBg,
+                              txtColor,
+                              isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _cardCarga(
+                              "Carga Crônica",
+                              "Média 28 dias",
+                              cargaCronica.toStringAsFixed(0),
+                              Icons.timeline_rounded,
+                              const Color(0xFF8B5CF6),
+                              cardBg,
+                              txtColor,
+                              isDark,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 22),

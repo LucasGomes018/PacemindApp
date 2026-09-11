@@ -226,20 +226,26 @@ class _TestesPageState extends State<TestesPage>
         ),
       ),
       body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           children: [
-            SizedBox(
-              height: 480,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildTab3km(isDark, cardBg, txtColor),
-                  _buildTabSprint(isDark, cardBg, txtColor),
-                ],
-              ),
+            AnimatedBuilder(
+              animation: _tabController,
+              builder: (context, _) {
+                if (_tabController.index == 0) {
+                  return _buildTab3km(isDark, cardBg, txtColor);
+                } else {
+                  return _buildTabSprint(isDark, cardBg, txtColor);
+                }
+              },
             ),
-            const Divider(height: 32),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(height: 32),
+            ),
             _buildHistoricoSection(isDark, cardBg, txtColor),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -247,8 +253,8 @@ class _TestesPageState extends State<TestesPage>
   }
 
   Widget _buildTab3km(bool isDark, Color cardBg, Color txtColor) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -374,8 +380,8 @@ class _TestesPageState extends State<TestesPage>
   }
 
   Widget _buildTabSprint(bool isDark, Color cardBg, Color txtColor) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

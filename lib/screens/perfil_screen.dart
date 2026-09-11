@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:image_cropper/image_cropper.dart';
+import '../components/app_modal.dart';
+
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -27,434 +29,265 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void abrirEditarPerfil() {
     final nomeController = TextEditingController(text: user!["nome_usuario"]);
-
     final objetivoController = TextEditingController(
       text: user!["objetivo_semanal_km"]?.toString(),
     );
-
     int paceAtual = user!["pace_referencia_segundos"] ?? 300;
-
     int minutosSelecionados = (paceAtual ~/ 60).clamp(3, 15);
-
     int segundosSelecionados = (paceAtual % 60).clamp(0, 59);
 
-    showDialog(
+    AppModal.showBottomSheet(
       context: context,
-      barrierColor: Colors.black54,
-      builder: (dialogContext) {
-        final screenWidth = MediaQuery.of(dialogContext).size.width;
-        final screenHeight = MediaQuery.of(dialogContext).size.height;
-        final isSmallScreen = screenWidth < 360;
+      title: "Editar perfil",
+      subtitle: "Mantenha seus dados atualizados",
+      icon: Icons.edit_rounded,
+      child: StatefulBuilder(
+        builder: (modalContext, setModalState) {
+          final isDark = Theme.of(modalContext).brightness == Brightness.dark;
+          final selectBackground = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+          final selectText = isDark ? Colors.white : const Color(0xFF0F172A);
+          final selectIcon = isDark ? Colors.cyanAccent : const Color(0xFF0284C7);
 
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 12 : 16,
-            vertical: 20,
-          ),
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: screenHeight * 0.88,
-              maxWidth: 460,
-            ),
-            padding: EdgeInsets.fromLTRB(
-              isSmallScreen ? 16 : 22,
-              18,
-              isSmallScreen ? 16 : 22,
-              22,
-            ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 👤 NOME
+              _customField(
+                controller: nomeController,
+                label: "Nome",
+                icon: Icons.person,
               ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withValues(alpha: 0.15),
-                  blurRadius: 30,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+
+              const SizedBox(height: 16),
+
+              // 🏃 PACE
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.lightBlueAccent.withValues(alpha: .14),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.edit_rounded,
-                          color: Colors.lightBlueAccent,
-                          size: 24,
+                      Icon(Icons.speed, color: isDark ? Colors.lightBlueAccent : const Color(0xFF0284C7)),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Pace de referência",
+                        style: TextStyle(
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Expanded(
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      // ⏱️ MINUTOS
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Editar perfil",
+                              "Minutos",
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 21,
-                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white54 : Colors.black54,
+                                fontSize: 12,
                               ),
                             ),
-                            SizedBox(height: 3),
-                            Text(
-                              "Mantenha seus dados atualizados",
-                              style: TextStyle(
-                                color: Colors.white54,
-                                fontSize: 12,
+                            const SizedBox(height: 7),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black12,
+                                ),
+                              ),
+                              child: DropdownButtonFormField<int>(
+                                isExpanded: true,
+                                initialValue: minutosSelecionados,
+                                dropdownColor: selectBackground,
+                                menuMaxHeight: 250,
+                                decoration: const InputDecoration(border: InputBorder.none),
+                                style: TextStyle(color: selectText, fontSize: 16, fontWeight: FontWeight.w500),
+                                icon: Icon(Icons.keyboard_arrow_down_rounded, color: selectIcon),
+                                items: List.generate(
+                                  13,
+                                  (index) => DropdownMenuItem(
+                                    value: index + 3,
+                                    child: Text(
+                                      "${index + 3} min",
+                                      style: TextStyle(color: selectText, fontSize: 16, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                ),
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    minutosSelecionados = value!;
+                                  });
+                                },
                               ),
                             ),
                           ],
                         ),
                       ),
-                      IconButton(
-                        tooltip: "Fechar",
-                        onPressed: () => Navigator.pop(dialogContext),
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  // 👤 NOME
-                  _customField(
-                    controller: nomeController,
-                    label: "Nome",
-                    icon: Icons.person,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 🏃 PACE
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.speed, color: Colors.lightBlueAccent),
-
-                          SizedBox(width: 8),
-
-                          Text(
-                            "Pace de referência",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                      const SizedBox(width: 12),
+                      // ⏱️ SEGUNDOS
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Segundos",
+                              style: TextStyle(
+                                color: isDark ? Colors.white54 : Colors.black54,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      StatefulBuilder(
-                        builder: (context, setModalState) {
-                          const selectBackground = Color(0xFF1E293B);
-                          const selectText = Colors.white;
-                          const selectIcon = Colors.cyanAccent;
-
-                          return Row(
-                            children: [
-                              // ⏱️ MINUTOS
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "Minutos",
-                                      style: TextStyle(
-                                        color: Colors.white54,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 7),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.05,
-                                        ),
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.08,
-                                          ),
-                                        ),
-                                      ),
-                                      child: DropdownButtonFormField<int>(
-                                        isExpanded: true,
-                                        initialValue: minutosSelecionados,
-
-                                        dropdownColor: selectBackground,
-
-                                        menuMaxHeight: 250,
-
-                                        decoration: const InputDecoration(
-                                          border: InputBorder.none,
-                                        ),
-
-                                        style: const TextStyle(
-                                          color: selectText,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-
-                                        icon: const Icon(
-                                          Icons.keyboard_arrow_down_rounded,
-                                          color: selectIcon,
-                                        ),
-
-                                        items: List.generate(
-                                          13,
-                                          (index) => DropdownMenuItem(
-                                            value: index + 3,
-                                            child: Text(
-                                              "${index + 3} min",
-                                              style: const TextStyle(
-                                                color: selectText,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-
-                                        onChanged: (value) {
-                                          setModalState(() {
-                                            minutosSelecionados = value!;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ],
+                            const SizedBox(height: 7),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black12,
                                 ),
                               ),
-
-                              const SizedBox(width: 12),
-
-                              // ⏱️ SEGUNDOS
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "Segundos",
-                                      style: TextStyle(
-                                        color: Colors.white54,
-                                        fontSize: 12,
-                                      ),
+                              child: DropdownButtonFormField<int>(
+                                isExpanded: true,
+                                initialValue: segundosSelecionados,
+                                menuMaxHeight: 250,
+                                dropdownColor: selectBackground,
+                                decoration: const InputDecoration(border: InputBorder.none),
+                                style: TextStyle(color: selectText, fontSize: 16, fontWeight: FontWeight.w500),
+                                icon: Icon(Icons.keyboard_arrow_down_rounded, color: selectIcon),
+                                items: List.generate(60, (index) {
+                                  final valor = index;
+                                  return DropdownMenuItem(
+                                    value: valor,
+                                    child: Text(
+                                      valor.toString().padLeft(2, '0'),
+                                      style: TextStyle(color: selectText, fontSize: 16, fontWeight: FontWeight.w500),
                                     ),
-                                    const SizedBox(height: 7),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.05,
-                                        ),
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.08,
-                                          ),
-                                        ),
-                                      ),
-                                      child: DropdownButtonFormField<int>(
-                                        isExpanded: true,
-                                        initialValue: segundosSelecionados,
-
-                                        menuMaxHeight: 250,
-
-                                        dropdownColor: selectBackground,
-
-                                        decoration: const InputDecoration(
-                                          border: InputBorder.none,
-                                        ),
-
-                                        style: const TextStyle(
-                                          color: selectText,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-
-                                        icon: const Icon(
-                                          Icons.keyboard_arrow_down_rounded,
-                                          color: selectIcon,
-                                        ),
-
-                                        items: List.generate(60, (index) {
-                                          final valor = index;
-
-                                          return DropdownMenuItem(
-                                            value: valor,
-                                            child: Text(
-                                              valor.toString().padLeft(2, '0'),
-                                              style: const TextStyle(
-                                                color: selectText,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          );
-                                        }),
-
-                                        onChanged: (value) {
-                                          setModalState(() {
-                                            segundosSelecionados = value!;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  );
+                                }),
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    segundosSelecionados = value!;
+                                  });
+                                },
                               ),
-                            ],
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // 🔥 PREVIEW
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Text(
-                          "Pace Atual: "
-                          "${minutosSelecionados.toString()}:"
-                          "${segundosSelecionados.toString().padLeft(2, '0')} min/km",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.lightBlueAccent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // 🎯 META
-                  _customField(
-                    controller: objetivoController,
-                    label: "Meta semanal (km)",
-                    icon: Icons.flag,
-                    keyboard: TextInputType.number,
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // 🔘 BOTÕES
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white70,
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.2),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: const Text("Cancelar"),
-                        ),
+                  const SizedBox(height: 12),
+                  // 🔥 PREVIEW
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      "Pace Atual: $minutosSelecionados:${segundosSelecionados.toString().padLeft(2, '0')} min/km",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.lightBlueAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
                       ),
-
-                      const SizedBox(width: 14),
-
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            try {
-                              final atualizado = await Api.atualizarPerfil(
-                                nome: nomeController.text,
-                                pace:
-                                    (minutosSelecionados * 60) +
-                                    segundosSelecionados,
-                                objetivo: double.tryParse(
-                                  objetivoController.text,
-                                ),
-                              );
-
-                              if (!mounted) return;
-                              setState(() {
-                                user = atualizado;
-                              });
-
-                              if (!dialogContext.mounted) return;
-                              Navigator.pop(dialogContext);
-
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Perfil atualizado!"),
-                                ),
-                              );
-                            } catch (e) {
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Erro ao atualizar"),
-                                ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            foregroundColor: Colors.white,
-                            elevation: 10,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: const Text(
-                            "Salvar",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ),
-        );
-      },
+
+              const SizedBox(height: 16),
+
+              // 🎯 META
+              _customField(
+                controller: objetivoController,
+                label: "Meta semanal (km)",
+                icon: Icons.flag,
+                keyboard: TextInputType.number,
+              ),
+
+              const SizedBox(height: 26),
+
+              // 🔘 BOTÕES
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(modalContext),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                        side: BorderSide(
+                          color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black12,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text("Cancelar"),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          final atualizado = await Api.atualizarPerfil(
+                            nome: nomeController.text,
+                            pace: (minutosSelecionados * 60) + segundosSelecionados,
+                            objetivo: double.tryParse(objetivoController.text),
+                          );
+
+                          if (!mounted) return;
+                          setState(() {
+                            user = atualizado;
+                          });
+
+                          if (!modalContext.mounted) return;
+                          Navigator.pop(modalContext);
+
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Perfil atualizado!")),
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Erro ao atualizar")),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0066FF),
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        "Salvar",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -522,106 +355,36 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void abrirOpcoesFoto() {
-    showModalBottomSheet(
+    AppModal.showBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black54,
-      builder: (bottomSheetContext) {
-        final screenWidth = MediaQuery.of(bottomSheetContext).size.width;
-        final isSmall = screenWidth < 360;
-
-        return Container(
-          margin: EdgeInsets.all(isSmall ? 8 : 12),
-          padding: EdgeInsets.all(isSmall ? 16 : 20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.blue.withValues(alpha: 0.15),
-                blurRadius: 30,
-                spreadRadius: 2,
-              ),
-            ],
+      title: "Alterar foto",
+      subtitle: "Escolha uma foto de perfil",
+      icon: Icons.photo_camera,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _fotoOption(
+            icon: Icons.camera_alt_rounded,
+            title: "Tirar foto",
+            subtitle: "Usar a câmera do dispositivo",
+            onTap: () {
+              Navigator.pop(context);
+              escolherImagem(ImageSource.camera);
+            },
           ),
-
-          child: SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 🔥 BARRINHA
-                  Container(
-                    width: 45,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.photo_camera,
-                        color: Colors.lightBlueAccent,
-                        size: 26,
-                      ),
-
-                      SizedBox(width: 10),
-
-                      Text(
-                        "Alterar foto",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // 📷 CAMERA
-                  _fotoOption(
-                    icon: Icons.camera_alt_rounded,
-                    title: "Tirar foto",
-                    subtitle: "Usar a câmera do dispositivo",
-                    onTap: () {
-                      Navigator.pop(bottomSheetContext);
-                      escolherImagem(ImageSource.camera);
-                    },
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // 🖼️ GALERIA
-                  _fotoOption(
-                    icon: Icons.photo_library_rounded,
-                    title: "Escolher da galeria",
-                    subtitle: "Selecionar imagem salva",
-                    onTap: () {
-                      Navigator.pop(bottomSheetContext);
-                      escolherImagem(ImageSource.gallery);
-                    },
-                  ),
-
-                  const SizedBox(height: 10),
-                ],
-              ),
-            ),
+          const SizedBox(height: 14),
+          _fotoOption(
+            icon: Icons.photo_library_rounded,
+            title: "Escolher da galeria",
+            subtitle: "Selecionar imagem salva",
+            onTap: () {
+              Navigator.pop(context);
+              escolherImagem(ImageSource.gallery);
+            },
           ),
-        );
-      },
+          const SizedBox(height: 10),
+        ],
+      ),
     );
   }
 

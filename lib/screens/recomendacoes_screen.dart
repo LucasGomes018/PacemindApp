@@ -23,13 +23,13 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
   String _statusDigitando = "PaceMind IA está digitando...";
 
   final List<String> _chipsRapidos = [
+    "🏃 Crie um treino de 5km amanhã",
+    "🎯 Crie uma meta de 60km",
+    "⚡ Salvar corrida de 6km em 32 min",
     "📊 Analisar meus dados",
     "⏱️ Como baixar meu pace?",
     "🛌 Devo descansar hoje?",
-    "🎯 Minhas metas no app",
-    "🏁 Dicas para provas",
     "🫁 Respiração e asma",
-    "⚡ Overtraining e carga",
     "🥗 O que comer pré-treino?",
   ];
 
@@ -115,29 +115,35 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
     // Salva mensagem do usuário no backend em background
     Api.salvarMensagemChat(mensagem: texto, enviadaPeloUsuario: true).catchError((_) {});
 
-    // Processa a pergunta no motor de IA próprio
-    final respostasSequenciais = await _iaService.processarPergunta(texto);
+    // Processa a pergunta ou comando no motor do agente
+    final resposta = await _iaService.processarComandoOuPergunta(texto);
 
     if (!mounted) return;
 
     // Envia cada mensagem sequencialmente, dividindo como em uma conversa real
-    for (int i = 0; i < respostasSequenciais.length; i++) {
-      final msg = respostasSequenciais[i];
+    for (int i = 0; i < resposta.mensagens.length; i++) {
+      final msg = resposta.mensagens[i];
+      final isUltima = i == resposta.mensagens.length - 1;
 
       setState(() {
         _statusDigitando = i == 0
             ? "PaceMind IA formulando resposta..."
-            : "PaceMind IA digitando...";
+            : "PaceMind IA concluindo...";
       });
 
       // Pausa humanizada proporcional ao tamanho da mensagem
-      final delayMs = (500 + (msg.length * 10)).clamp(750, 1400);
+      final delayMs = (400 + (msg.length * 8)).clamp(600, 1100);
       await Future.delayed(Duration(milliseconds: delayMs));
 
       if (!mounted) return;
 
       setState(() {
-        _mensagens.add({"texto": msg, "usuario": false, "hora": ""});
+        _mensagens.add({
+          "texto": msg,
+          "usuario": false,
+          "hora": "",
+          "acao": isUltima ? resposta.acao : null,
+        });
       });
       _rolarParaFim();
 
@@ -255,6 +261,7 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
                           context,
                           texto: mensagem["texto"] as String,
                           usuario: mensagem["usuario"] as bool,
+                          acao: mensagem["acao"] as AcaoAgente?,
                           isDark: isDark,
                           colors: colors,
                         );
@@ -318,6 +325,7 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
     BuildContext context, {
     required String texto,
     required bool usuario,
+    AcaoAgente? acao,
     required bool isDark,
     required ColorScheme colors,
   }) {
@@ -326,7 +334,7 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.82,
+          maxWidth: MediaQuery.of(context).size.width * 0.86,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
@@ -363,17 +371,105 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
             ),
           ],
         ),
-        child: SelectableText(
-          texto,
-          style: TextStyle(
-            color: usuario
-                ? Colors.white
-                : colors.onSurface,
-            fontSize: 14.5,
-            height: 1.45,
-            fontWeight: usuario ? FontWeight.w500 : FontWeight.normal,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SelectableText(
+              texto,
+              style: TextStyle(
+                color: usuario
+                    ? Colors.white
+                    : colors.onSurface,
+                fontSize: 14.5,
+                height: 1.45,
+                fontWeight: usuario ? FontWeight.w500 : FontWeight.normal,
+              ),
+            ),
+            if (acao != null) ...[
+              const SizedBox(height: 12),
+              _buildCardAcao(context, acao, isDark),
+            ],
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCardAcao(BuildContext context, AcaoAgente acao, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.4 : 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  size: 16,
+                  color: Color(0xFF10B981),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  acao.titulo,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF10B981),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            acao.descricao,
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? Colors.white70 : Colors.black87,
+              height: 1.3,
+            ),
+          ),
+          if (acao.rotaNavegacao != null) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: () {
+                  Navigator.pushNamed(context, acao.rotaNavegacao!);
+                },
+                icon: const Icon(Icons.arrow_forward_rounded, size: 15),
+                label: Text(
+                  acao.textoBotao ?? "Ver no aplicativo",
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
