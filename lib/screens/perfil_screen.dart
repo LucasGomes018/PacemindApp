@@ -311,16 +311,19 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final response = await Api.uploadFoto(imagemSelecionada!);
 
-      // backend deve retornar foto_url
-      setState(() {
-        user!["foto_url"] = response["foto_url"];
-      });
+      if (!mounted) return;
+
+      if (user != null && response["foto_url"] != null) {
+        setState(() {
+          user!["foto_url"] = response["foto_url"];
+        });
+      }
 
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Foto atualizada!")));
     } catch (e) {
-      print(e);
+      if (!mounted) return;
 
       ScaffoldMessenger.of(
         context,
@@ -409,7 +412,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("token");
 
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     Navigator.pushNamedAndRemoveUntil(context, "/", (route) => false);
   }

@@ -27,9 +27,6 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
   static const Color darkBlue = Color(
     0xFF1A237E,
   ); // Azul escuro para textos e ícones importantes
-  static const Color textColor = Color(
-    0xFF212529,
-  ); // Cor de texto principal (quase preto)
   static const Color lightTextColor = Color(
     0xFF6C757D,
   ); // Cor de texto secundário (cinza médio)
@@ -122,9 +119,9 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
       barrierDismissible: false,
       builder: (_) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (dialogContext, setState) {
             return Dialog(
-              backgroundColor: Theme.of(context).colorScheme.surface,
+              backgroundColor: Theme.of(dialogContext).colorScheme.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
@@ -471,7 +468,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                               child: OutlinedButton(
                                 onPressed: carregando
                                     ? null
-                                    : () => Navigator.pop(context),
+                                    : () => Navigator.pop(dialogContext),
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 15,
@@ -513,10 +510,11 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                                                 .trim(),
                                           );
 
+                                          if (!dialogContext.mounted) return;
+
+                                          Navigator.pop(dialogContext);
+
                                           if (!mounted) return;
-
-                                          Navigator.pop(context);
-
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
@@ -527,17 +525,19 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                                             ),
                                           );
                                         } catch (e) {
-                                          setState(() {
-                                            carregando = false;
-                                          });
+                                          if (dialogContext.mounted) {
+                                            setState(() {
+                                              carregando = false;
+                                            });
 
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(e.toString()),
-                                            ),
-                                          );
+                                            ScaffoldMessenger.of(
+                                              dialogContext,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(e.toString()),
+                                              ),
+                                            );
+                                          }
                                         }
                                       },
                                 style: ElevatedButton.styleFrom(

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/api.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -33,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("https://pacemind-api.vercel.app/usuarios/login"),
+        Uri.parse("${Api.baseUrl}/usuarios/login"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": emailController.text,

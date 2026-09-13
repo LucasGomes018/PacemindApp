@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import '../core/api.dart';
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -67,7 +68,7 @@ class _CadastroPageState extends State<CadastroPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("https://pacemind-api.vercel.app/usuarios/cadastro"),
+        Uri.parse("${Api.baseUrl}/usuarios/cadastro"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "nome": nomeController.text,
@@ -76,15 +77,12 @@ class _CadastroPageState extends State<CadastroPage> {
         }),
       );
 
-      print("STATUS: ${response.statusCode}");
-      print("BODY: ${response.body}");
-
       final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
 
       if (response.statusCode == 201) {
         // 🔐 LOGIN AUTOMÁTICO
         final loginResponse = await http.post(
-          Uri.parse("https://pacemind-api.vercel.app/usuarios/login"),
+          Uri.parse("${Api.baseUrl}/usuarios/login"),
 
           headers: {"Content-Type": "application/json"},
 
@@ -101,20 +99,23 @@ class _CadastroPageState extends State<CadastroPage> {
 
           await prefs.setString("token", loginData["token"]);
 
-          if (!context.mounted) return;
+          if (!mounted) return;
 
           Navigator.pushReplacementNamed(context, "/home");
         } else {
+          if (!mounted) return;
           setState(() {
             erro = "Conta criada, mas falhou no login automático";
           });
         }
       } else {
+        if (!mounted) return;
         setState(() {
           erro = data["message"] ?? "Erro ao cadastrar";
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         erro = "Erro de conexão";
       });
@@ -132,18 +133,16 @@ class _CadastroPageState extends State<CadastroPage> {
       setState(() {
         enviandoCodigo = true;
       });
-      print("EMAIL: ${emailController.text}");
       final response = await http.post(
-        Uri.parse("https://pacemind-api.vercel.app/usuarios/otp/enviar"),
+        Uri.parse("${Api.baseUrl}/usuarios/otp/enviar"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"email": emailController.text}),
       );
-      print("STATUS: ${response.statusCode}");
-      print("BODY: ${response.body}");
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        if (!mounted) return;
         setState(() {
           codigoEnviado = true;
           erro = null;
@@ -151,11 +150,8 @@ class _CadastroPageState extends State<CadastroPage> {
         });
 
         iniciarContagem();
-
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(content: Text("Código enviado para seu email")),
-        // );
       } else {
+        if (!mounted) return;
         setState(() {
           erro = data["message"];
           enviandoCodigo = false;
@@ -177,7 +173,7 @@ class _CadastroPageState extends State<CadastroPage> {
       });
 
       final response = await http.post(
-        Uri.parse("https://pacemind-api.vercel.app/usuarios/otp/verificar"),
+        Uri.parse("${Api.baseUrl}/usuarios/otp/verificar"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": emailController.text,

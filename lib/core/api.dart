@@ -10,8 +10,6 @@ class Api {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
 
-    print("TOKEN NA API: $token");
-
     return token;
   }
 
@@ -116,9 +114,6 @@ class Api {
     final response = await request.send();
 
     final responseData = await response.stream.bytesToString();
-
-    print(response.statusCode);
-    print(responseData);
 
     return jsonDecode(responseData);
   }
@@ -373,9 +368,6 @@ class Api {
       Uri.parse("$baseUrl/eventos/$id/inscricoes"),
       headers: {"Authorization": "Bearer $token"},
     );
-
-    print("STATUS INSCRIÇÕES: ${response.statusCode}");
-    print("BODY INSCRIÇÕES: ${response.body}");
 
     if (response.statusCode != 200) {
       throw Exception(response.body);

@@ -91,7 +91,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("token");
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, "/", (route) => false);
   }
 
