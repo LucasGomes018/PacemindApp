@@ -38,6 +38,7 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = Theme.of(context).cardColor;
     final txtColor = Theme.of(context).colorScheme.onSurface;
+    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     final cargaAguda = double.tryParse(overtrainingData?["carga_aguda"]?.toString() ?? "0") ?? 0.0;
     final cargaCronica = double.tryParse(overtrainingData?["carga_cronica"]?.toString() ?? "0") ?? 0.0;
@@ -162,22 +163,22 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Flexible(
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
-                                child: Text("< 0.8: Pouco", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                child: Text("< 0.8: Pouco", style: TextStyle(fontSize: 11, color: subColor)),
                               ),
                             ),
-                            Flexible(
+                            const Flexible(
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text("0.8 - 1.3: Ideal", style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
                               ),
                             ),
-                            Flexible(
+                            const Flexible(
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text("> 1.5: Perigo", style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
@@ -381,6 +382,7 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
     Color txtColor,
     bool isDark,
   ) {
+    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -417,7 +419,7 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
             subtitulo,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11.5, color: Colors.grey),
+            style: TextStyle(fontSize: 11.5, color: subColor),
           ),
         ],
       ),

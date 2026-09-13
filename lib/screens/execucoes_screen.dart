@@ -117,6 +117,7 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = Theme.of(context).cardColor;
     final txtColor = Theme.of(context).colorScheme.onSurface;
+    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Scaffold(
       appBar: AppBar(
@@ -164,11 +165,11 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.directions_run_rounded, size: 50, color: Colors.grey.shade400),
+                          Icon(Icons.directions_run_rounded, size: 50, color: subColor.withValues(alpha: 0.6)),
                           const SizedBox(height: 10),
-                          const Text(
+                          Text(
                             "Nenhum treino encontrado para este filtro.",
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                            style: TextStyle(color: subColor, fontSize: 14),
                           ),
                         ],
                       ),
@@ -281,9 +282,9 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                _metricaItem("Distância", "${dist.toStringAsFixed(2)} km", txtColor),
-                                _metricaItem("Tempo", _formatarTempo(tempoSeg), txtColor),
-                                _metricaItem("Pace Médio", _formatarPace(paceSeg), txtColor),
+                                _metricaItem("Distância", "${dist.toStringAsFixed(2)} km", txtColor, subColor),
+                                _metricaItem("Tempo", _formatarTempo(tempoSeg), txtColor, subColor),
+                                _metricaItem("Pace Médio", _formatarPace(paceSeg), txtColor, subColor),
                               ],
                             ),
 
@@ -352,7 +353,7 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
     );
   }
 
-  Widget _metricaItem(String titulo, String valor, Color txtColor) {
+  Widget _metricaItem(String titulo, String valor, Color txtColor, Color subColor) {
     return Expanded(
       child: Column(
         children: [
@@ -368,7 +369,7 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
             titulo,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11.5, color: Colors.grey),
+            style: TextStyle(fontSize: 11.5, color: subColor),
           ),
         ],
       ),
@@ -418,6 +419,10 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
       builder: (ctx, scrollController) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
+            final isDarkModal = Theme.of(ctx).brightness == Brightness.dark;
+            final txtColorModal = Theme.of(ctx).colorScheme.onSurface;
+            final subColorModal = isDarkModal ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
             return ListView(
               controller: scrollController,
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
@@ -447,7 +452,9 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                      border: Border.all(
+                        color: isDarkModal ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      ),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
@@ -458,15 +465,15 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text("Data da Execução", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              Text("Data da Execução", style: TextStyle(fontSize: 11, color: subColorModal)),
                               Text(
                                 AppDateUtils.formatarData(dataExecucao),
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: txtColorModal),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+                        Icon(Icons.keyboard_arrow_down_rounded, color: subColorModal),
                       ],
                     ),
                   ),

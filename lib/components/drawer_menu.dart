@@ -12,6 +12,7 @@ class AppDrawer extends StatefulWidget {
 
 class _AppDrawerState extends State<AppDrawer> {
   Map<String, dynamic>? perfil;
+  Map<String, dynamic>? usuario;
   bool isAdmin = false;
 
   @override
@@ -23,16 +24,26 @@ class _AppDrawerState extends State<AppDrawer> {
   Future<void> carregarPerfil() async {
     try {
       final data = await Api.getProfile();
-      Map<String, dynamic>? usuario;
+      Map<String, dynamic>? u;
       try {
-        usuario = await Api.me();
+        u = await Api.me();
       } catch (_) {}
       if (!mounted) return;
       setState(() {
         perfil = data;
-        isAdmin = (usuario?["tipo_usuario"] == "admin") || (data["tipo_usuario"] == "admin");
+        usuario = u;
+        isAdmin = (u?["tipo_usuario"] == "admin") || (data["tipo_usuario"] == "admin");
       });
-    } catch (_) {}
+    } catch (_) {
+      try {
+        final u = await Api.me();
+        if (!mounted) return;
+        setState(() {
+          usuario = u;
+          isAdmin = u["tipo_usuario"] == "admin";
+        });
+      } catch (_) {}
+    }
   }
 
   Future<void> logout() async {
@@ -260,9 +271,33 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
+  String? _resolverFotoUrl(dynamic url) {
+    if (url == null) return null;
+    final str = url.toString().trim();
+    if (str.isEmpty || str == "null") return null;
+    if (str.startsWith("http://") || str.startsWith("https://")) {
+      return str;
+    }
+    final base = Api.baseUrl.endsWith("/")
+        ? Api.baseUrl.substring(0, Api.baseUrl.length - 1)
+        : Api.baseUrl;
+    final path = str.startsWith("/") ? str : "/$str";
+    return "$base$path";
+  }
+
+  String _obterIniciais(String nome) {
+    final partes = nome.trim().split(" ");
+    if (partes.isEmpty) return "A";
+    if (partes.length > 1) {
+      return "${partes.first[0]}${partes.last[0]}".toUpperCase();
+    }
+    return partes.first.substring(0, partes.first.length.clamp(1, 2)).toUpperCase();
+  }
+
   Widget _buildDrawerHeader(BuildContext context) {
-    final nome = perfil?["nome_usuario"] ?? "Atleta";
-    final fotoUrl = perfil?["foto_url"];
+    final nome = perfil?["nome_usuario"] ?? usuario?["nome"] ?? usuario?["nome_usuario"] ?? "Atleta";
+    final rawFoto = perfil?["foto_url"] ?? usuario?["foto_url"];
+    final fotoUrl = _resolverFotoUrl(rawFoto);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 54, 20, 24),
@@ -303,16 +338,35 @@ class _AppDrawerState extends State<AppDrawer> {
                 child: CircleAvatar(
                   radius: 30,
                   backgroundColor: const Color(0xFFEBF5FF),
-                  backgroundImage: fotoUrl != null
-                      ? NetworkImage("${Api.baseUrl}$fotoUrl")
-                      : null,
-                  child: fotoUrl == null
-                      ? const Icon(
-                          Icons.person_rounded,
-                          size: 32,
-                          color: Color(0xFF0066FF),
-                        )
-                      : null,
+                  child: ClipOval(
+                    child: (fotoUrl != null)
+                        ? Image.network(
+                            fotoUrl,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Center(
+                              child: Text(
+                                _obterIniciais(nome),
+                                style: const TextStyle(
+                                  color: Color(0xFF0066FF),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Text(
+                              _obterIniciais(nome),
+                              style: const TextStyle(
+                                color: Color(0xFF0066FF),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                  ),
                 ),
               ),
 
@@ -501,7 +555,9 @@ class _AppDrawerState extends State<AppDrawer> {
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 18,
-                  color: Colors.grey.shade400,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
                 ),
               ],
             ),

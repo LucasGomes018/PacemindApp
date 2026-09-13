@@ -64,6 +64,10 @@ class AppTheme {
         scaffoldBackgroundColor: AppColors.background,
         cardColor: AppColors.card,
         dividerColor: const Color(0xFFE2E8F0),
+        textTheme: ThemeData.light().textTheme.apply(
+          bodyColor: AppColors.text,
+          displayColor: AppColors.text,
+        ),
         extensions: const [
           AppCustomTheme(
             cardBackground: AppColors.card,
@@ -99,6 +103,8 @@ class AppTheme {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
+          hintStyle: const TextStyle(color: AppColors.secondaryText),
+          labelStyle: const TextStyle(color: AppColors.secondaryText),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -121,6 +127,10 @@ class AppTheme {
         scaffoldBackgroundColor: AppColors.darkBackground,
         cardColor: AppColors.darkCard,
         dividerColor: const Color(0xFF334155),
+        textTheme: ThemeData.dark().textTheme.apply(
+          bodyColor: AppColors.darkText,
+          displayColor: AppColors.darkText,
+        ),
         extensions: const [
           AppCustomTheme(
             cardBackground: AppColors.darkCard,
@@ -156,6 +166,8 @@ class AppTheme {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: AppColors.darkSurface,
+          hintStyle: const TextStyle(color: AppColors.darkSecondaryText),
+          labelStyle: const TextStyle(color: AppColors.darkSecondaryText),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: Color(0xFF334155)),

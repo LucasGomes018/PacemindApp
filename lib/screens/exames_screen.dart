@@ -48,6 +48,7 @@ class _ExamesPageState extends State<ExamesPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = Theme.of(context).cardColor;
     final txtColor = Theme.of(context).colorScheme.onSurface;
+    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Scaffold(
       appBar: AppBar(
@@ -133,16 +134,16 @@ class _ExamesPageState extends State<ExamesPage> {
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.folder_open_rounded, size: 48, color: Colors.grey.shade400),
+                          Icon(Icons.folder_open_rounded, size: 48, color: subColor.withValues(alpha: 0.6)),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             "Nenhum exame cadastrado.",
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                            style: TextStyle(color: subColor, fontSize: 14),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             "Toque no botão abaixo para adicionar seu primeiro laudo.",
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            style: TextStyle(color: subColor, fontSize: 12),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -207,7 +208,7 @@ class _ExamesPageState extends State<ExamesPage> {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text("Data: ${AppDateUtils.formatarData(data)}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            Text("Data: ${AppDateUtils.formatarData(data)}", style: TextStyle(fontSize: 12, color: subColor)),
                             if (vef1 != null || cvf != null) ...[
                               const SizedBox(height: 10),
                               Wrap(

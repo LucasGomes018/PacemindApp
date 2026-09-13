@@ -19,6 +19,8 @@ import 'screens/ficha_screen.dart';
 import 'screens/exames_screen.dart';
 import 'screens/relatorios_screen.dart';
 import 'screens/admin_usuarios_screen.dart';
+import 'screens/politica_privacidade_screen.dart';
+import 'screens/termos_uso_screen.dart';
 import 'services/background_tracking_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -106,6 +108,8 @@ class MyApp extends StatelessWidget {
               "/exames": (context) => const ExamesPage(),
               "/relatorios": (context) => const RelatoriosPage(),
               "/admin/usuarios": (context) => const AdminUsuariosPage(),
+              "/politica-privacidade": (context) => const PoliticaPrivacidadePage(),
+              "/termos-uso": (context) => const TermosUsoPage(),
             },
           );
         },

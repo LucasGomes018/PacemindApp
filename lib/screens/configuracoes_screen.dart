@@ -120,6 +120,13 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
       builder: (_) {
         return StatefulBuilder(
           builder: (dialogContext, setState) {
+            final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+            final textColor = Theme.of(dialogContext).colorScheme.onSurface;
+            final subTextColor = isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600;
+            final inputBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
+            final borderColor = isDark ? const Color(0xFF334155) : Colors.grey.shade300;
+            final hintColor = isDark ? const Color(0xFF64748B) : Colors.grey.shade400;
+
             return Dialog(
               backgroundColor: Theme.of(dialogContext).colorScheme.surface,
               shape: RoundedRectangleBorder(
@@ -154,7 +161,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: textColor,
                           ),
                         ),
 
@@ -164,7 +171,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                           "Sua nova senha deve ser segura e diferente da anterior.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: subTextColor,
                             height: 1.4,
                           ),
                         ),
@@ -176,13 +183,13 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                           obscureText: !verAtual,
                           decoration: InputDecoration(
                             labelText: "Senha atual",
-                            labelStyle: const TextStyle(
-                              color: Colors.grey,
+                            labelStyle: TextStyle(
+                              color: subTextColor,
                               fontWeight: FontWeight.w500,
                             ),
 
                             hintText: "Digite sua senha",
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            hintStyle: TextStyle(color: hintColor),
 
                             prefixIcon: const Icon(
                               Icons.lock_outline_rounded,
@@ -194,7 +201,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                                 verAtual
                                     ? Icons.visibility_off_rounded
                                     : Icons.visibility_rounded,
-                                color: Colors.grey.shade600,
+                                color: subTextColor,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -204,7 +211,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                             ),
 
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: inputBg,
 
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 18,
@@ -214,7 +221,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(18),
                               borderSide: BorderSide(
-                                color: Colors.grey.shade300,
+                                color: borderColor,
                                 width: 1.2,
                               ),
                             ),
@@ -245,10 +252,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                               ),
                             ),
                           ),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF1E293B), // Cor do texto digitado
+                            color: textColor,
                           ),
                           cursorColor: const Color(0xFF0066FF),
                           validator: (v) {
@@ -267,13 +274,13 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                           onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
                             labelText: "Nova senha",
-                            labelStyle: const TextStyle(
-                              color: Colors.grey,
+                            labelStyle: TextStyle(
+                              color: subTextColor,
                               fontWeight: FontWeight.w500,
                             ),
 
                             hintText: "Digite sua nova senha",
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            hintStyle: TextStyle(color: hintColor),
 
                             prefixIcon: const Icon(
                               Icons.password_rounded,
@@ -285,7 +292,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                                 verNova
                                     ? Icons.visibility_off_rounded
                                     : Icons.visibility_rounded,
-                                color: Colors.grey.shade600,
+                                color: subTextColor,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -295,7 +302,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                             ),
 
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: inputBg,
 
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 18,
@@ -305,7 +312,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(18),
                               borderSide: BorderSide(
-                                color: Colors.grey.shade300,
+                                color: borderColor,
                                 width: 1.2,
                               ),
                             ),
@@ -336,10 +343,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                               ),
                             ),
                           ),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF1E293B),
+                            color: textColor,
                           ),
                           cursorColor: const Color(0xFF0066FF),
                           validator: (v) {
@@ -377,13 +384,13 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                           obscureText: !verConfirmar,
                           decoration: InputDecoration(
                             labelText: "Confirmar senha",
-                            labelStyle: const TextStyle(
-                              color: Colors.grey,
+                            labelStyle: TextStyle(
+                              color: subTextColor,
                               fontWeight: FontWeight.w500,
                             ),
 
                             hintText: "Confirme sua nova senha",
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            hintStyle: TextStyle(color: hintColor),
 
                             prefixIcon: const Icon(
                               Icons.verified_user_rounded,
@@ -395,7 +402,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                                 verConfirmar
                                     ? Icons.visibility_off_rounded
                                     : Icons.visibility_rounded,
-                                color: Colors.grey.shade600,
+                                color: subTextColor,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -405,7 +412,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                             ),
 
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: inputBg,
 
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 18,
@@ -415,7 +422,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(18),
                               borderSide: BorderSide(
-                                color: Colors.grey.shade300,
+                                color: borderColor,
                                 width: 1.2,
                               ),
                             ),
@@ -446,10 +453,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                               ),
                             ),
                           ),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF1E293B),
+                            color: textColor,
                           ),
                           cursorColor: const Color(0xFF0066FF),
                           validator: (v) {
@@ -990,7 +997,9 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
           _buildSectionTitle("Dados"),
           _buildSettingsItem(
             icon: Icons.download_outlined,
-            title: "Exportar treinos",
+            title: "Exportar treinos e relatórios",
+            subtitle: "Gerar e compartilhar PDF completo com métricas",
+            onTap: () => Navigator.pushNamed(context, "/relatorios"),
           ),
           _buildSettingsItem(icon: Icons.backup_outlined, title: "Backup"),
 
@@ -1003,10 +1012,12 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
           _buildSettingsItem(
             icon: Icons.privacy_tip_outlined,
             title: "Política de Privacidade",
+            onTap: () => Navigator.pushNamed(context, "/politica-privacidade"),
           ),
           _buildSettingsItem(
             icon: Icons.description_outlined,
             title: "Termos de Uso",
+            onTap: () => Navigator.pushNamed(context, "/termos-uso"),
           ),
 
           const SizedBox(height: 32),

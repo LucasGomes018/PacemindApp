@@ -535,6 +535,10 @@ class _TreinosPageState extends State<TreinosPage> {
       builder: (modalContext, scrollController) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final isDarkModal = Theme.of(context).brightness == Brightness.dark;
+            final txtColorModal = Theme.of(context).colorScheme.onSurface;
+            final subColorModal = isDarkModal ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
             return ListView(
               controller: scrollController,
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -564,7 +568,9 @@ class _TreinosPageState extends State<TreinosPage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                      border: Border.all(
+                        color: isDarkModal ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      ),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
@@ -575,15 +581,15 @@ class _TreinosPageState extends State<TreinosPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text("Data do Treino", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              Text("Data do Treino", style: TextStyle(fontSize: 11, color: subColorModal)),
                               Text(
                                 AppDateUtils.formatarData(dataTreino),
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: txtColorModal),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+                        Icon(Icons.keyboard_arrow_down_rounded, color: subColorModal),
                       ],
                     ),
                   ),

@@ -1080,6 +1080,8 @@ class _QuestionariosPageState extends State<QuestionariosPage>
   // 📜 SEÇÃO HISTÓRICO DE QUESTIONÁRIOS
   // ==========================================
   Widget _buildHistoricoSection(bool isDark, Color cardBg, Color txtColor) {
+    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1121,11 +1123,11 @@ class _QuestionariosPageState extends State<QuestionariosPage>
             ),
             child: Column(
               children: [
-                Icon(Icons.assignment_outlined, size: 42, color: Colors.grey.shade400),
+                Icon(Icons.assignment_outlined, size: 42, color: subColor.withValues(alpha: 0.6)),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   "Nenhum questionário registrado ainda.",
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  style: TextStyle(color: subColor, fontSize: 14),
                 ),
               ],
             ),

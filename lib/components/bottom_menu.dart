@@ -37,7 +37,7 @@ class BottomMenu extends StatelessWidget {
           children: [
             _item(Icons.home, 0),
             _item(Icons.location_on, 1),
-            _item(Icons.fitness_center, 2),
+            // _item(Icons.fitness_center, 2),
             _item(Icons.person, 3),
           ],
         ),

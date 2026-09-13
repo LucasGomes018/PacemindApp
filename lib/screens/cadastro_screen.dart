@@ -586,7 +586,7 @@ class _CadastroPageState extends State<CadastroPage> {
                             ? Icons.visibility_off_rounded
                             : Icons.visibility_rounded,
 
-                        color: Colors.grey,
+                        color: isDark ? Colors.white60 : Colors.grey,
                       ),
                     ),
 
@@ -642,7 +642,7 @@ class _CadastroPageState extends State<CadastroPage> {
                               letterSpacing: 1,
                               color: emailValidado
                                   ? Colors.white
-                                  : Colors.black,
+                                  : (isDark ? Colors.white38 : Colors.black38),
                             ),
                           ),
                   ),

@@ -70,6 +70,7 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = Theme.of(context).cardColor;
     final txtColor = Theme.of(context).colorScheme.onSurface;
+    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     // Métricas
     final resumo = dashboardData?["resumo"] ?? {};
@@ -319,10 +320,10 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
                       ),
                     ),
                     child: semanalList.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Text(
                               "Registre treinos para visualizar o gráfico de volume semanal.",
-                              style: TextStyle(color: Colors.grey, fontSize: 13),
+                              style: TextStyle(color: subColor, fontSize: 13),
                               textAlign: TextAlign.center,
                             ),
                           )
@@ -352,10 +353,10 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
                       ),
                     ),
                     child: cargaList.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Text(
                               "Adicione sensações de esforço nos treinos para acompanhar a carga.",
-                              style: TextStyle(color: Colors.grey, fontSize: 13),
+                              style: TextStyle(color: subColor, fontSize: 13),
                               textAlign: TextAlign.center,
                             ),
                           )
@@ -408,9 +409,9 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _itemResumoIntensidade("Treinos Salvos", "$totalTreinos", Colors.blue),
-                            _itemResumoIntensidade("Volume Total", "${kmTotal.toStringAsFixed(0)} km", Colors.green),
-                            _itemResumoIntensidade("Pace Médio", _formatarPace(ritmoMedio), Colors.purple),
+                            _itemResumoIntensidade("Treinos Salvos", "$totalTreinos", Colors.blue, subColor),
+                            _itemResumoIntensidade("Volume Total", "${kmTotal.toStringAsFixed(0)} km", Colors.green, subColor),
+                            _itemResumoIntensidade("Pace Médio", _formatarPace(ritmoMedio), Colors.purple, subColor),
                           ],
                         ),
                       ],
@@ -478,7 +479,7 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
     );
   }
 
-  Widget _itemResumoIntensidade(String titulo, String valor, Color cor) {
+  Widget _itemResumoIntensidade(String titulo, String valor, Color cor, Color subColor) {
     return Column(
       children: [
         FittedBox(
@@ -493,7 +494,7 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
           titulo,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(fontSize: 12, color: subColor),
         ),
       ],
     );
