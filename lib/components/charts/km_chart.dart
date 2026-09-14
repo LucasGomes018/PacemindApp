@@ -184,6 +184,7 @@ class _KmChartState extends State<KmChart> {
                 }
                 final raw = widget.dados[index]["dia"] ?? widget.dados[index]["semana"];
                 final label = _formatDiaLabel(raw, index);
+                final isHoje = widget.dados[index]["is_hoje"] == true;
                 final isSelected = touchedIndex == index;
 
                 return Padding(
@@ -192,10 +193,10 @@ class _KmChartState extends State<KmChart> {
                     label,
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: (isSelected || isHoje) ? FontWeight.bold : FontWeight.w500,
                       color: isSelected
-                          ? const Color(0xFF0066FF)
-                          : axisTextColor,
+                          ? const Color(0xFF00C6FF)
+                          : (isHoje ? const Color(0xFF0066FF) : axisTextColor),
                     ),
                   ),
                 );
@@ -383,6 +384,7 @@ class _KmChartState extends State<KmChart> {
                 }
                 final raw = widget.dados[index]["dia"] ?? widget.dados[index]["semana"];
                 final label = _formatDiaLabel(raw, index);
+                final isHoje = widget.dados[index]["is_hoje"] == true;
                 final isSelected = touchedIndex == index;
 
                 return Padding(
@@ -391,10 +393,10 @@ class _KmChartState extends State<KmChart> {
                     label,
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: (isSelected || isHoje) ? FontWeight.bold : FontWeight.w500,
                       color: isSelected
-                          ? const Color(0xFF0066FF)
-                          : axisTextColor,
+                          ? const Color(0xFF00C6FF)
+                          : (isHoje ? const Color(0xFF0066FF) : axisTextColor),
                     ),
                   ),
                 );

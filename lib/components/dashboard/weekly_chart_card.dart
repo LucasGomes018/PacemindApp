@@ -3,8 +3,15 @@ import '../../components/charts/km_chart.dart';
 
 class WeeklyChartCard extends StatefulWidget {
   final List<Map<String, dynamic>> dados;
+  final String titulo;
+  final String subtitulo;
 
-  const WeeklyChartCard({super.key, required this.dados});
+  const WeeklyChartCard({
+    super.key,
+    required this.dados,
+    this.titulo = "Volume Semanal",
+    this.subtitulo = "Quilômetros por dia",
+  });
 
   @override
   State<WeeklyChartCard> createState() => _WeeklyChartCardState();
@@ -15,13 +22,14 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = Theme.of(context).cardColor;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = theme.cardColor;
 
     final kmList = widget.dados.map((e) {
       final v = e["km"];
       if (v is num) return v.toDouble();
-      return double.tryParse(v.toString()) ?? 0.0;
+      return double.tryParse(v?.toString() ?? "0") ?? 0.0;
     }).toList();
 
     final totalKm = kmList.fold(0.0, (a, b) => a + b);
@@ -36,7 +44,7 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
+              ? Colors.white.withValues(alpha: 0.07)
               : Colors.black.withValues(alpha: 0.04),
         ),
         boxShadow: [
@@ -72,7 +80,7 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                   ],
                 ),
                 child: const Icon(
-                  Icons.trending_up_rounded,
+                  Icons.show_chart_rounded,
                   color: Colors.white,
                   size: 20,
                 ),
@@ -83,21 +91,21 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Evolução Semanal",
+                      widget.titulo,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 17,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     Text(
-                      "Quilometragem (km)",
+                      widget.subtitulo,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                     ),
@@ -105,24 +113,19 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                 ),
               ),
 
-              // Badge de Total
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0066FF).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      "${totalKm.toStringAsFixed(1)} km",
-                      style: const TextStyle(
-                        color: Color(0xFF0066FF),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
+              // Badge de Total da Semana
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0066FF).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  "${totalKm.toStringAsFixed(1)} km",
+                  style: const TextStyle(
+                    color: Color(0xFF0066FF),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
                   ),
                 ),
               ),
@@ -161,7 +164,7 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
             ],
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // Gráfico
           SizedBox(
@@ -173,18 +176,17 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
           ),
 
           if (widget.dados.isNotEmpty) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Divider(
               height: 1,
               color: isDark
                   ? Colors.white.withValues(alpha: 0.08)
                   : Colors.black.withValues(alpha: 0.06),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            // Mini Estatísticas
+            // Mini Estatísticas Responsivas
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _miniStat(
                   icon: Icons.emoji_events_outlined,
@@ -192,14 +194,14 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                   valor: "${maxKm.toStringAsFixed(1)} km",
                   isDark: isDark,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 _miniStat(
                   icon: Icons.speed_rounded,
                   label: "Média Diária",
                   valor: "${mediaKm.toStringAsFixed(1)} km",
                   isDark: isDark,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 _miniStat(
                   icon: Icons.calendar_today_rounded,
                   label: "Dias Ativos",
@@ -230,7 +232,7 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
         ),
         child: Icon(
           icon,
-          size: 18,
+          size: 17,
           color: isActive ? Colors.white : Colors.grey.shade500,
         ),
       ),
@@ -263,7 +265,7 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 10.5,
                     color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                   ),
                 ),
@@ -273,7 +275,7 @@ class _WeeklyChartCardState extends State<WeeklyChartCard> {
                   child: Text(
                     valor,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

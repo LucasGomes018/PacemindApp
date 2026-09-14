@@ -169,20 +169,22 @@ class Api {
     required String titulo,
     required String mensagem,
     String tipo = "treino",
+    bool global = false,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final token = prefs.getString("token");
+    final token = await _getToken();
 
     await http.post(
       Uri.parse("$baseUrl/notificacoes"),
-
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
       },
-
-      body: jsonEncode({"titulo": titulo, "mensagem": mensagem, "tipo": tipo}),
+      body: jsonEncode({
+        "titulo": titulo,
+        "mensagem": mensagem,
+        "tipo": tipo,
+        "global": global || tipo == "evento",
+      }),
     );
   }
 
@@ -1116,6 +1118,97 @@ class Api {
     final data = jsonDecode(response.body);
     if (data is! Map<String, dynamic>) return {};
     return data;
+  }
+
+  /// Exclui um treino pelo ID.
+  static Future<void> deletarTreino(dynamic idTreino) async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/treinos/$idTreino"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception("Erro ao excluir treino");
+    }
+  }
+
+  // ===============================
+  // 🔔 NOTIFICAÇÕES
+  // ===============================
+
+  static Future<List<dynamic>> listarNotificacoes() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/notificacoes"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception("Erro ao buscar notificações");
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! List) return [];
+    return data;
+  }
+
+  static Future<void> marcarNotificacaoLida(dynamic idNotificacao, {bool lida = true}) async {
+    final token = await _getToken();
+    final response = await http.patch(
+      Uri.parse("$baseUrl/notificacoes/$idNotificacao"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"lida": lida}),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      // Tenta fallback com rota /lida caso seja versão alternativa
+      try {
+        await http.patch(
+          Uri.parse("$baseUrl/notificacoes/$idNotificacao/lida"),
+          headers: {"Authorization": "Bearer $token"},
+        );
+      } catch (_) {}
+    }
+  }
+
+  static Future<void> marcarTodasNotificacoesLidas() async {
+    final token = await _getToken();
+    final response = await http.patch(
+      Uri.parse("$baseUrl/notificacoes"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception("Erro ao marcar notificações como lidas");
+    }
+  }
+
+  static Future<void> deletarNotificacao(dynamic idNotificacao) async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/notificacoes/$idNotificacao"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception("Erro ao deletar notificação");
+    }
+  }
+
+  static Future<void> limparTodasNotificacoes() async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/notificacoes"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception("Erro ao limpar notificações");
+    }
   }
 }
 

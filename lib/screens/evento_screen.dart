@@ -704,12 +704,13 @@ class _EventosPageState extends State<EventosPage> {
                             final corpoNotificacao =
                                 "Inscrições abertas! Venha encarar os ${dist.toStringAsFixed(0)} km em $localEv no dia ${formatarData(dataIso)}. Garanta já a sua vaga!";
 
-                            // 1. Notificação no backend para todos os usuários
+                            // 1. Notificação no backend para todos os usuários (broadcast global)
                             try {
                               await Api.criarNotificacao(
                                 titulo: tituloNotificacao,
                                 mensagem: corpoNotificacao,
                                 tipo: "evento",
+                                global: true,
                               );
                             } catch (_) {}
 

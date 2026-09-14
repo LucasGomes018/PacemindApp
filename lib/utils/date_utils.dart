@@ -123,4 +123,80 @@ class AppDateUtils {
     }
     return data.toIso8601String();
   }
+
+  /// Formata data/hora para exibição relativa amigável no app ("Agora mesmo", "há 15 min", "Hoje às 14:30", "Ontem às 08:20", "12/09/2026")
+  static String formatarTempoRelativo(dynamic dataRaw) {
+    if (dataRaw == null) return "Hoje";
+
+    DateTime? dt;
+    if (dataRaw is DateTime) {
+      dt = dataRaw;
+    } else {
+      final str = dataRaw.toString().trim();
+      if (str.isEmpty) return "Hoje";
+
+      // Padrão brasileiro DD/MM/YYYY com ou sem hora (ex: "14/09/2026 às 15:30" ou "14/09/2026 15:30")
+      final matchBr = RegExp(
+        r'^(\d{1,2})/(\d{1,2})/(\d{4})(?:[\s,]+(?:às\s+)?(\d{1,2}):(\d{1,2}))?',
+      ).firstMatch(str);
+
+      if (matchBr != null) {
+        final d = int.tryParse(matchBr.group(1)!);
+        final m = int.tryParse(matchBr.group(2)!);
+        final y = int.tryParse(matchBr.group(3)!);
+        final h = matchBr.group(4) != null ? int.tryParse(matchBr.group(4)!) : null;
+        final min = matchBr.group(5) != null ? int.tryParse(matchBr.group(5)!) : null;
+
+        if (d != null && m != null && y != null) {
+          dt = DateTime(y, m, d, h ?? 12, min ?? 0);
+        }
+      }
+
+      if (dt == null) {
+        final parsedIso = DateTime.tryParse(str);
+        if (parsedIso != null) {
+          dt = parsedIso.toLocal();
+        }
+      }
+    }
+
+    if (dt == null) return formatarData(dataRaw);
+
+    final agora = DateTime.now();
+    final diff = agora.difference(dt);
+
+    if (diff.isNegative) {
+      return formatarData(dataRaw);
+    }
+
+    if (diff.inSeconds < 60) {
+      return "Agora mesmo";
+    }
+    if (diff.inMinutes < 60) {
+      return "há ${diff.inMinutes} min";
+    }
+
+    final hoje = DateTime(agora.year, agora.month, agora.day);
+    final dataComp = DateTime(dt.year, dt.month, dt.day);
+    final hora = dt.hour.toString().padLeft(2, '0');
+    final minuto = dt.minute.toString().padLeft(2, '0');
+
+    if (dataComp == hoje) {
+      return "Hoje às $hora:$minuto";
+    }
+
+    final ontem = hoje.subtract(const Duration(days: 1));
+    if (dataComp == ontem) {
+      return "Ontem às $hora:$minuto";
+    }
+
+    if (diff.inDays < 7) {
+      return "há ${diff.inDays} ${diff.inDays == 1 ? 'dia' : 'dias'}";
+    }
+
+    final dia = dt.day.toString().padLeft(2, '0');
+    final mes = dt.month.toString().padLeft(2, '0');
+    final ano = dt.year;
+    return "$dia/$mes/$ano";
+  }
 }
