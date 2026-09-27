@@ -108,8 +108,14 @@ class _AppDrawerState extends State<AppDrawer> {
                   accentColor: const Color(0xFF0066FF),
                 ),
                 _drawerItem(
+                  icon: Icons.calendar_today_rounded,
+                  title: "Agenda & Calendário",
+                  route: "/agenda",
+                  accentColor: const Color(0xFF0066FF),
+                ),
+                _drawerItem(
                   icon: Icons.calendar_month_rounded,
-                  title: "Eventos",
+                  title: "Eventos & Provas",
                   route: "/eventos",
                   accentColor: const Color(0xFF0066FF),
                 ),
@@ -168,9 +174,21 @@ class _AppDrawerState extends State<AppDrawer> {
                   icon: Icons.favorite_border_rounded,
                 ),
                 _drawerItem(
+                  icon: Icons.spa_rounded,
+                  title: "Wellness & Prontidão",
+                  route: "/wellness",
+                  accentColor: const Color(0xFF10B981),
+                ),
+                _drawerItem(
                   icon: Icons.assignment_rounded,
                   title: "Questionários de Asma",
                   route: "/questionarios",
+                  accentColor: const Color(0xFF10B981),
+                ),
+                _drawerItem(
+                  icon: Icons.medical_services_outlined,
+                  title: "Rede de Especialistas",
+                  route: "/parceiros",
                   accentColor: const Color(0xFF10B981),
                 ),
                 _drawerItem(
@@ -232,6 +250,12 @@ class _AppDrawerState extends State<AppDrawer> {
                     icon: Icons.people_alt_rounded,
                     title: "Gestão de Alunos",
                     route: "/admin/usuarios",
+                    accentColor: const Color(0xFFF59E0B),
+                  ),
+                  _drawerItem(
+                    icon: Icons.verified_user_rounded,
+                    title: "Gerenciar Parceiros",
+                    route: "/parceiros",
                     accentColor: const Color(0xFFF59E0B),
                   ),
                   Padding(

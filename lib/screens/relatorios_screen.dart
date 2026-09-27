@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
 import '../core/api.dart';
 import '../services/relatorio_pdf_service.dart';
 import '../services/recomendacao_parecer_service.dart';
@@ -120,12 +121,10 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erro ao compartilhar PDF: $e"),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.erro(
+        context,
+        "Não foi possível compartilhar o relatório em PDF.",
+        titulo: "Erro no PDF",
       );
     } finally {
       if (mounted) setState(() => gerandoPdf = false);
@@ -143,34 +142,17 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  "PDF salvo com sucesso!\n$path",
-                  style: const TextStyle(fontSize: 12.5),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFF10B981),
-          duration: const Duration(seconds: 4),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      AppSnackBar.sucesso(
+        context,
+        "PDF salvo no dispositivo com sucesso em: $path",
+        titulo: "PDF Salvo",
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erro ao salvar PDF: $e"),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.erro(
+        context,
+        "Não foi possível salvar o arquivo PDF no dispositivo.",
+        titulo: "Erro ao Salvar",
       );
     } finally {
       if (mounted) setState(() => gerandoPdf = false);
@@ -188,12 +170,10 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erro ao abrir visualizador de PDF: $e"),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.erro(
+        context,
+        "Erro ao abrir visualizador do PDF.",
+        titulo: "Erro no Visualizador",
       );
     } finally {
       if (mounted) setState(() => gerandoPdf = false);

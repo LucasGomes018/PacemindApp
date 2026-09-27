@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
 import '/core/api.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -125,29 +126,17 @@ class _ProfilePageState extends State<ProfilePage> {
         });
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text("Foto de perfil atualizada com sucesso!"),
-            ],
-          ),
-          backgroundColor: const Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      AppSnackBar.sucesso(
+        context,
+        "Foto de perfil atualizada com sucesso!",
+        titulo: "Foto Atualizada",
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erro ao enviar foto: $e"),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      AppSnackBar.erro(
+        context,
+        "Não foi possível enviar a foto. Tente novamente.",
+        titulo: "Erro no Envio",
       );
     }
   }
@@ -188,12 +177,10 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Não foi possível carregar a imagem: $e"),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.erro(
+        context,
+        "Não foi possível carregar a imagem.",
+        titulo: "Falha na Imagem",
       );
     }
   }
@@ -592,35 +579,18 @@ class _ProfilePageState extends State<ProfilePage> {
                                 }
 
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Row(
-                                        children: [
-                                          Icon(
-                                            Icons.check_circle_rounded,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          SizedBox(width: 10),
-                                          Text("Perfil atualizado com sucesso!"),
-                                        ],
-                                      ),
-                                      backgroundColor: const Color(0xFF10B981),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
+                                  AppSnackBar.sucesso(
+                                    context,
+                                    "Seus dados foram atualizados com sucesso.",
+                                    titulo: "Perfil Atualizado",
                                   );
                                 }
                               } catch (e) {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text("Erro ao atualizar: $e"),
-                                      backgroundColor: const Color(0xFFEF4444),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
+                                  AppSnackBar.erro(
+                                    context,
+                                    e.toString().replaceAll("Exception: ", ""),
+                                    titulo: "Erro ao Atualizar",
                                   );
                                 }
                               } finally {

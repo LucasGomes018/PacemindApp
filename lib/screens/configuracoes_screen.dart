@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/theme_provider.dart';
 import '../core/theme.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -450,12 +451,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                                     Navigator.pop(modalContext);
 
                                     if (!mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          "Senha alterada com sucesso!",
-                                        ),
-                                      ),
+                                    AppSnackBar.sucesso(
+                                      context,
+                                      "Sua senha foi alterada com sucesso.",
+                                      titulo: "Senha Atualizada",
                                     );
                                   } catch (e) {
                                     if (modalContext.mounted) {
@@ -463,10 +462,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                                         carregando = false;
                                       });
 
-                                      ScaffoldMessenger.of(modalContext).showSnackBar(
-                                        SnackBar(
-                                          content: Text(e.toString()),
-                                        ),
+                                      AppSnackBar.erro(
+                                        modalContext,
+                                        e.toString().replaceAll("Exception: ", ""),
+                                        titulo: "Erro ao Alterar Senha",
                                       );
                                     }
                                   }

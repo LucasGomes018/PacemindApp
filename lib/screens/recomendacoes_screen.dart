@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/api.dart';
+import '../components/app_snackbar.dart';
 import '../services/ia_treinador_service.dart';
 
 class RecomendacoesPage extends StatefulWidget {
@@ -229,11 +230,10 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
             tooltip: "Recarregar dados do atleta",
             icon: Icon(Icons.sync_rounded, color: colors.onSurfaceVariant),
             onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Sincronizando dados esportivos mais recentes..."),
-                  duration: Duration(seconds: 1),
-                ),
+              AppSnackBar.info(
+                context,
+                "Sincronizando dados esportivos mais recentes...",
+                titulo: "Sincronização IA",
               );
               await _iaService.obterContextoAtualizado(forcar: true);
             },

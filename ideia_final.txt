@@ -1,0 +1,15 @@
+Analise tudo que esta em C:\Users\lucas\Documents\aplicativos - Copia\pacemind\ideia.txt e em C:\Users\lucas\Documents\aplicativos - Copia\pacemind-api\database.sql,
+veja o que ja esta feito e o que ainda não esta feito corretamente, faça o que ainda esta faltando, arrume o que esta feito errado,
+verifique se todas as rotas estão funcionando corretamente, se os dados estão sendo salvos corretamente, se os dados estão sendo exibidos corretamente,
+verifique se todos os calculos que estão sendo feitos estão corretos, faça o que for preciso para que o app funcione corretamente,
+lembrando que ja estamos na fase final do desenvolvimento do app, então foque em corrigir bugs e problemas, caso ainda tenha funcionalidades que foram pedidas
+por favor crie para que fique completo e funcione corretamente, mas não inove muito, apenas complete o que falta. Lembrando que, caso for adicionar alguma nova tela, que ela esteja de acordo com os padrões das demais telas (com responsividade e tudo).
+
+OBS:Caso precise criar pastas para os novos arquivos, que elas estejam de acordo com os padrões do projeto.
+OBS2: Caso precise adicionar alguma nova rota, que ela esteja de acordo com os padrões do projeto.
+OBS3: Verifique se a IA esta funcionando corretamente, se os dados estão sendo salvos corretamente, se os dados estão sendo exibidos corretamente,
+verifique se todos os calculos que estão sendo feitos estão corretos, faça o que for preciso para que o app funcione corretamente.
+
+estou pensando em lançar o aplicativo para teste beta, na play store, veja se está bom o suficiente e o que precisa ser ajustado.
+
+analise as rotas e funcionalidades que ainda não foram utilizadas, e se caso precise criar uma tela para as que não foram utilizadas, crie.

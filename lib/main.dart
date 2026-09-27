@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/cadastro_screen.dart';
-import 'services/notificacao_service.dart';
+import 'services/auto_notificacao_service.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/evento_screen.dart';
 import 'screens/treinos_screen.dart';
@@ -21,6 +21,10 @@ import 'screens/relatorios_screen.dart';
 import 'screens/admin_usuarios_screen.dart';
 import 'screens/politica_privacidade_screen.dart';
 import 'screens/termos_uso_screen.dart';
+import 'screens/agenda_screen.dart';
+import 'screens/parceiros_screen.dart';
+import 'screens/wellness_screen.dart';
+import 'screens/perfil_screen.dart';
 import 'services/background_tracking_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -33,7 +37,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await NotificacaoService.inicializar();
+    await AutoNotificacaoService.inicializar();
   } catch (_) {}
 
   try {
@@ -114,6 +118,10 @@ class MyApp extends StatelessWidget {
               "/exames": (context) => const ExamesPage(),
               "/relatorios": (context) => const RelatoriosPage(),
               "/admin/usuarios": (context) => const AdminUsuariosPage(),
+              "/agenda": (context) => const AgendaPage(),
+              "/parceiros": (context) => const ParceirosPage(),
+              "/wellness": (context) => const WellnessPage(),
+              "/perfil": (context) => const ProfilePage(),
               "/politica-privacidade": (context) => const PoliticaPrivacidadePage(),
               "/termos-uso": (context) => const TermosUsoPage(),
             },

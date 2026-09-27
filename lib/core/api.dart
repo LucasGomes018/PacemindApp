@@ -633,9 +633,26 @@ class Api {
   static Future<void> finalizarTreino({
     required String idTreino,
     required double distanciaKm,
+    double? distanciaAtualKm,
     required int tempoSegundos,
+    int? sensacao,
+    int? fcMedia,
+    int? fcMax,
+    int? idCorrida,
+    String? status,
   }) async {
     final token = await _getToken();
+
+    final body = <String, dynamic>{
+      "distancia_km": distanciaKm,
+      "distancia_atual_km": distanciaAtualKm ?? distanciaKm,
+      "tempo_segundos": tempoSegundos,
+    };
+    if (sensacao != null) body["sensacao"] = sensacao;
+    if (fcMedia != null) body["fc_media"] = fcMedia;
+    if (fcMax != null) body["fc_max"] = fcMax;
+    if (idCorrida != null) body["id_corrida"] = idCorrida;
+    if (status != null) body["status"] = status;
 
     await http.put(
       Uri.parse("$baseUrl/treinos/$idTreino/finalizar"),
@@ -643,18 +660,41 @@ class Api {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
       },
-      body: jsonEncode({
-        "distancia_km": distanciaKm,
-        "tempo_segundos": tempoSegundos,
-      }),
+      body: jsonEncode(body),
     );
+  }
+
+  static Future<void> atualizarTreinoParcial({
+    required String idTreino,
+    double? distanciaAtualKm,
+    int? tempoSegundos,
+    String? status,
+    int? idCorrida,
+  }) async {
+    try {
+      final token = await _getToken();
+      final body = <String, dynamic>{};
+      if (distanciaAtualKm != null) body["distancia_atual_km"] = distanciaAtualKm;
+      if (tempoSegundos != null) body["tempo_segundos"] = tempoSegundos;
+      if (status != null) body["status"] = status;
+      if (idCorrida != null) body["id_corrida"] = idCorrida;
+
+      await http.patch(
+        Uri.parse("$baseUrl/treinos/$idTreino"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(body),
+      );
+    } catch (_) {}
   }
 
   static Future<List<dynamic>> buscarTreinosPlanejados() async {
     final token = await _getToken();
 
     final response = await http.get(
-      Uri.parse("$baseUrl/treinos?status=planejado"),
+      Uri.parse("$baseUrl/treinos?status=planejado,em_andamento"),
       headers: {"Authorization": "Bearer $token"},
     );
 
@@ -1006,31 +1046,39 @@ class Api {
   static Future<Map<String, dynamic>> criarTreinoCompleto({
     required String tipo,
     required double distanciaKm,
-    required int tempoSegundos,
+    int tempoSegundos = 0,
     required String data,
+    double? distanciaAtualKm,
     int? fcMedia,
     int? fcMax,
     int? sensacao,
     String? observacoes,
-    String status = "concluido",
+    String status = "planejado",
     Map<String, int>? tempoZonas,
+    int? idCorrida,
+    List<Map<String, dynamic>>? splits,
   }) async {
     final token = await _getToken();
-    final ritmoMedio = distanciaKm > 0 ? (tempoSegundos / distanciaKm).round() : 0;
+    final ritmoMedio = (distanciaKm > 0 && tempoSegundos > 0)
+        ? (tempoSegundos / distanciaKm).round()
+        : null;
 
-    final body = {
+    final body = <String, dynamic>{
       "tipo": tipo,
       "distancia_km": distanciaKm,
-      "tempo_segundos": tempoSegundos,
+      "distancia_atual_km": distanciaAtualKm ?? 0.0,
+      "tempo_segundos": tempoSegundos > 0 ? tempoSegundos : null,
       "data": data,
       "ritmo_medio_segundos": ritmoMedio,
       "fc_media": fcMedia,
       "fc_max": fcMax,
-      "sensacao": sensacao ?? 5,
+      "sensacao": sensacao,
       "observacoes": observacoes,
       "status": status,
-      ...?tempoZonas == null ? null : {"zonas": tempoZonas},
     };
+    if (idCorrida != null) body["id_corrida"] = idCorrida;
+    if (splits != null) body["splits"] = splits;
+    if (tempoZonas != null) body["zonas"] = tempoZonas;
 
     final response = await http.post(
       Uri.parse("$baseUrl/treinos"),
@@ -1153,6 +1201,27 @@ class Api {
     return data;
   }
 
+  static Future<Map<String, dynamic>> verificarNotificacoesAutomaticas() async {
+    final token = await _getToken();
+    if (token == null) return {};
+
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/notificacoes/verificar-automaticas"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body);
+        return data is Map<String, dynamic> ? data : {};
+      }
+    } catch (_) {}
+    return {};
+  }
+
   static Future<void> marcarNotificacaoLida(dynamic idNotificacao, {bool lida = true}) async {
     final token = await _getToken();
     final response = await http.patch(
@@ -1209,6 +1278,225 @@ class Api {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception("Erro ao limpar notificações");
     }
+  }
+
+  // ===============================
+  // 📅 AGENDA
+  // ===============================
+  static Future<List<dynamic>> listarAgenda() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/agenda"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode != 200) return [];
+    final data = jsonDecode(response.body);
+    return data is List ? data : [];
+  }
+
+  static Future<Map<String, dynamic>> criarAgenda({
+    required String titulo,
+    String? descricao,
+    required String dataInicio,
+    String? dataFim,
+    String? tipo,
+  }) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse("$baseUrl/agenda"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "titulo": titulo,
+        "descricao": descricao,
+        "data_inicio": dataInicio,
+        "data_fim": dataFim,
+        "tipo": tipo ?? "treino",
+      }),
+    );
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception("Erro ao criar compromisso na agenda");
+    }
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> atualizarAgenda({
+    required String id,
+    required String titulo,
+    String? descricao,
+    required String dataInicio,
+    String? dataFim,
+    String? tipo,
+  }) async {
+    final token = await _getToken();
+    final response = await http.put(
+      Uri.parse("$baseUrl/agenda/$id"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "titulo": titulo,
+        "descricao": descricao,
+        "data_inicio": dataInicio,
+        "data_fim": dataFim,
+        "tipo": tipo ?? "treino",
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao atualizar agenda");
+    }
+    return jsonDecode(response.body);
+  }
+
+  static Future<void> deletarAgenda(String id) async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/agenda/$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao excluir compromisso");
+    }
+  }
+
+  // ===============================
+  // 🤝 PARCEIROS
+  // ===============================
+  static Future<List<dynamic>> listarParceiros() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/parceiros"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode != 200) return [];
+    final data = jsonDecode(response.body);
+    return data is List ? data : [];
+  }
+
+  static Future<Map<String, dynamic>> criarParceiro(Map<String, dynamic> dados) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse("$baseUrl/parceiros"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dados),
+    );
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception("Erro ao cadastrar parceiro");
+    }
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> atualizarParceiro(String id, Map<String, dynamic> dados) async {
+    final token = await _getToken();
+    final response = await http.put(
+      Uri.parse("$baseUrl/parceiros/$id"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dados),
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao atualizar parceiro");
+    }
+    return jsonDecode(response.body);
+  }
+
+  static Future<void> deletarParceiro(String id) async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/parceiros/$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao deletar parceiro");
+    }
+  }
+
+  // ===============================
+  // ❤️ WELLNESS & RECUPERAÇÃO
+  // ===============================
+  static Future<List<dynamic>> listarWellness() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/wellness"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode != 200) return [];
+    final data = jsonDecode(response.body);
+    return data is List ? data : [];
+  }
+
+  static Future<Map<String, dynamic>> criarWellness(Map<String, dynamic> dados) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse("$baseUrl/wellness"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dados),
+    );
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception("Erro ao salvar check-in de wellness");
+    }
+    return jsonDecode(response.body);
+  }
+
+  static Future<void> deletarWellness(String id) async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/wellness/$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao deletar check-in");
+    }
+  }
+
+  static Future<List<dynamic>> listarRecuperacao() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/recuperacao"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode != 200) return [];
+    final data = jsonDecode(response.body);
+    return data is List ? data : [];
+  }
+
+  static Future<Map<String, dynamic>> criarRecuperacao({
+    required int qualidadeSono,
+    required int fadiga,
+    required int estresse,
+    required int dorMuscular,
+    required bool prontoParaTreinar,
+  }) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse("$baseUrl/recuperacao"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "qualidade_sono": qualidadeSono,
+        "fadiga": fadiga,
+        "estresse": estresse,
+        "dor_muscular": dorMuscular,
+        "pronto_para_treinar": prontoParaTreinar,
+      }),
+    );
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception("Erro ao salvar recuperação");
+    }
+    return jsonDecode(response.body);
   }
 }
 

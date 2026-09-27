@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
 
 class ZonasPage extends StatefulWidget {
   const ZonasPage({super.key});
@@ -169,12 +170,10 @@ class _ZonasPageState extends State<ZonasPage> {
                         paceReferencia = totalSeg;
                       });
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Zonas recalculadas para ${_formatarPace(totalSeg)}."),
-                          backgroundColor: const Color(0xFF10B981),
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                      AppSnackBar.sucesso(
+                        context,
+                        "Zonas recalculadas para ${_formatarPace(totalSeg)}/km.",
+                        titulo: "Zonas Atualizadas",
                       );
                     },
                     child: const Text("Aplicar Simulação", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),

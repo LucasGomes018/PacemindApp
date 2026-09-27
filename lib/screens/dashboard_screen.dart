@@ -13,7 +13,7 @@ import '/screens/map_screen.dart';
 import '/screens/treinos_screen.dart';
 import '/screens/metas_screen.dart';
 import '../services/notificacao_service.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../services/auto_notificacao_service.dart';
 import '/components/drawer_menu.dart';
 import '../utils/date_utils.dart';
 
@@ -42,15 +42,12 @@ class _DashboardPageState extends State<DashboardPage> {
     selectedIndex = widget.initialPage.clamp(0, 3);
     carregarDados();
     pedirPermissaoNotificacao();
+    AutoNotificacaoService.executarChecagemInteligente();
   }
 
   Future<void> pedirPermissaoNotificacao() async {
     try {
-      await NotificacaoService.flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.requestNotificationsPermission();
+      await NotificacaoService.solicitarPermissoes();
     } catch (_) {}
   }
 
@@ -937,6 +934,11 @@ class _DashboardPageState extends State<DashboardPage> {
         onBack: () {
           setState(() {
             selectedIndex = 0;
+          });
+        },
+        onNavigateTab: (idx) {
+          setState(() {
+            selectedIndex = idx;
           });
         },
       ),

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../utils/date_utils.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
+import '../services/auto_notificacao_service.dart';
+import '../services/notificacao_service.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -26,10 +29,26 @@ class _NotificationsPageState extends State<NotificationsPage> {
     "Sistema",
   ];
 
+  bool permissaoNotificacoesAtiva = true;
+
   @override
   void initState() {
     super.initState();
+    _verificarPermissoes();
     carregarNotificacoes();
+  }
+
+  Future<void> _verificarPermissoes() async {
+    bool ativa = await NotificacaoService.verificarPermissoesAtivas();
+    if (!ativa) {
+      await NotificacaoService.solicitarPermissoes();
+      ativa = await NotificacaoService.verificarPermissoesAtivas();
+    }
+    if (mounted) {
+      setState(() {
+        permissaoNotificacoesAtiva = ativa;
+      });
+    }
   }
 
   Future<void> carregarNotificacoes() async {
@@ -42,6 +61,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         loading = false;
         erroCarregamento = null;
       });
+
+      // Sincroniza qualquer notificação não lida diretamente para o push do celular
+      AutoNotificacaoService.sincronizarNotificacoesPush();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -168,19 +190,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
     try {
       await Api.marcarTodasNotificacoesLidas();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.done_all_rounded, color: Colors.white, size: 20),
-                SizedBox(width: 10),
-                Text("Todas as notificações foram lidas"),
-              ],
-            ),
-            backgroundColor: const Color(0xFF0066FF),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
+        AppSnackBar.sucesso(
+          context,
+          "Todas as notificações foram marcadas como lidas.",
+          titulo: "Notificações Lidas",
         );
       }
     } catch (e) {
@@ -188,12 +201,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
         setState(() {
           notificacoes = backup;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Erro ao atualizar: $e"),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
+        AppSnackBar.erro(
+          context,
+          "Erro ao atualizar: $e",
+          titulo: "Erro",
         );
       }
     }
@@ -209,23 +220,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
       notificacoes.removeAt(index);
     });
 
-    if (mostrarUndo && mounted) {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("Notificação excluída"),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          action: SnackBarAction(
-            label: "Desfazer",
-            textColor: const Color(0xFF00C6FF),
-            onPressed: () {
-              setState(() {
-                notificacoes.insert(index, itemRemovido);
-              });
-            },
-          ),
-        ),
+    if (mostrarUndo) {
+      AppSnackBar.info(
+        context,
+        "Notificação excluída.",
+        titulo: "Excluída",
+        actionLabel: "Desfazer",
+        onAction: () {
+          setState(() {
+            notificacoes.insert(index, itemRemovido);
+          });
+        },
       );
     }
 
@@ -266,12 +271,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
     try {
       await Api.limparTodasNotificacoes();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Todas as notificações foram apagadas"),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
+        AppSnackBar.info(
+          context,
+          "Todas as notificações foram apagadas.",
+          titulo: "Limpeza Concluída",
         );
       }
     } catch (e) {
@@ -279,12 +282,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
         setState(() {
           notificacoes = backup;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Erro ao limpar: $e"),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
+        AppSnackBar.erro(
+          context,
+          "Erro ao limpar notificações: $e",
+          titulo: "Erro",
         );
       }
     }
@@ -652,6 +653,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF10B981)),
+            tooltip: "Analisar e Atualizar Notificações",
+            onPressed: () async {
+              setState(() => loading = true);
+              await AutoNotificacaoService.executarChecagemInteligente();
+              await carregarNotificacoes();
+              if (!mounted || !context.mounted) return;
+              AppSnackBar.sucesso(
+                context,
+                "Notificações automáticas analisadas e atualizadas!",
+                titulo: "Atualizado ✨",
+              );
+            },
+          ),
           if (notificacoes.isNotEmpty) ...[
             if (qtdNaoLidas > 0)
               IconButton(
@@ -682,6 +698,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     ? _buildErrorState()
                     : Column(
                         children: [
+                          // Banner de Permissão do Sistema
+                          if (!permissaoNotificacoesAtiva) _buildBannerPermissaoDesativada(colors, isDark),
+
                           // Banner de Status / KPI
                           if (notificacoes.isNotEmpty) _buildStatusBanner(colors, isDark),
 
@@ -1314,6 +1333,63 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ),
     );
   }
+
+  Widget _buildBannerPermissaoDesativada(ColorScheme colors, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.notifications_off_rounded, color: Color(0xFFEF4444), size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "Notificações push desativadas",
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFFEF4444)),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  "Ative para receber alertas no topo do seu celular.",
+                  style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: () async {
+              await NotificacaoService.solicitarPermissoes();
+              await _verificarPermissoes();
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text("Ativar", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   Widget _buildErrorState() {
     return Center(

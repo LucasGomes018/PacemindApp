@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,16 +71,38 @@ void onStart(ServiceInstance service) {
     idCorrida = event?["idCorrida"];
 
     positionStream?.cancel();
+
+    late final LocationSettings locationSettings;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 1,
+        forceLocationManager: false,
+        intervalDuration: const Duration(milliseconds: 1000),
+      );
+    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        activityType: ActivityType.fitness,
+        distanceFilter: 1,
+        pauseLocationUpdatesAutomatically: false,
+        showBackgroundLocationIndicator: true,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 1,
+      );
+    }
+
     positionStream =
         Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.best,
-            distanceFilter: 5,
-          ),
+          locationSettings: locationSettings,
         ).listen((Position pos) async {
           if (idCorrida == null) return;
-          // Ignora leituras com precisão ruim para não quebrar a rota
-          if (pos.accuracy > 25.0) return;
+          // Ignora leituras com precisão excessivamente ruim para não distorcer a rota
+          if (pos.accuracy > 35.0) return;
 
           try {
             await Api.salvarPosicao(

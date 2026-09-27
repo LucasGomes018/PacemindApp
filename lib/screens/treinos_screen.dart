@@ -5,15 +5,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api.dart';
 import '../utils/date_utils.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
+import 'map_screen.dart';
 
 class TreinosPage extends StatefulWidget {
   final VoidCallback? onBack;
   final bool isEmbedded;
+  final Function(int)? onNavigateTab;
 
   const TreinosPage({
     super.key,
     this.onBack,
     this.isEmbedded = false,
+    this.onNavigateTab,
   });
 
   @override
@@ -157,12 +161,56 @@ class _TreinosPageState extends State<TreinosPage> {
     return "$min:${seg.toString().padLeft(2, '0')} min/km";
   }
 
+  Future<void> _iniciarCorridaParaTreino(dynamic treino) async {
+    final idTreino = (treino["id_treino"] ?? treino["id"])?.toString();
+    final tipo = (treino["tipo"] ?? "Treino").toString();
+    final distMeta = double.tryParse((treino["distancia_km"] ?? "0").toString()) ?? 0.0;
+    final distAtual = double.tryParse((treino["distancia_atual_km"] ?? "0").toString()) ?? 0.0;
+    final tempoAnterior = int.tryParse((treino["tempo_segundos"] ?? "0").toString()) ?? 0;
+
+    if (idTreino == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("id_treino_ativo", idTreino);
+    await prefs.setString("titulo_treino_ativo", "$tipo (${distMeta.toStringAsFixed(1)} km)");
+    await prefs.setDouble("distancia_meta_treino_km", distMeta);
+    await prefs.setDouble("distancia_atual_treino_km", distAtual);
+    await prefs.setInt("tempo_treino_segundos", tempoAnterior);
+
+    if (!mounted) return;
+
+    final mensagem = distAtual > 0
+        ? "Continuando \"$tipo\" (${distAtual.toStringAsFixed(2)} / ${distMeta.toStringAsFixed(1)} km)..."
+        : "Treino \"$tipo\" vinculado! Abrindo o mapa de corrida...";
+
+    AppSnackBar.treino(
+      context,
+      mensagem,
+      titulo: distAtual > 0 ? "Retomando Treino 🏃" : "Treino Vinculado 🏃",
+    );
+
+    if (widget.onNavigateTab != null) {
+      widget.onNavigateTab!(1);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MapPage(
+            treinoInicial: Map<String, dynamic>.from(treino is Map ? treino : {}),
+          ),
+        ),
+      );
+    }
+  }
+
   Color corStatus(String status) {
     switch (status.toLowerCase()) {
       case "concluido":
         return const Color(0xFF10B981);
       case "em_andamento":
         return const Color(0xFFF59E0B);
+      case "planejado":
+        return const Color(0xFF0066FF);
       case "faltou":
       case "nao_feito":
         return const Color(0xFFEF4444);
@@ -179,6 +227,8 @@ class _TreinosPageState extends State<TreinosPage> {
         return "Concluído";
       case "em_andamento":
         return "Em andamento";
+      case "planejado":
+        return "Planejado";
       case "faltou":
       case "nao_feito":
         return "Não feito";
@@ -195,11 +245,15 @@ class _TreinosPageState extends State<TreinosPage> {
         return Icons.check_circle_rounded;
       case "em_andamento":
         return Icons.timelapse_rounded;
+      case "planejado":
+        return Icons.event_available_rounded;
       case "faltou":
       case "nao_feito":
         return Icons.cancel_rounded;
+      case "cancelado":
+        return Icons.block_rounded;
       default:
-        return Icons.info_outline_rounded;
+        return Icons.directions_run_rounded;
     }
   }
 
@@ -571,15 +625,20 @@ class _TreinosPageState extends State<TreinosPage> {
 
   Widget _buildTreinoCard(dynamic treino, ColorScheme colors, bool isDark) {
     final tipo = (treino["tipo"] ?? "Treino").toString();
-    final status = (treino["status"] ?? "concluido").toString();
+    final status = (treino["status"] ?? "concluido").toString().toLowerCase();
     final cor = corTipo(tipo);
     final statusColor = corStatus(status);
-    final km = double.tryParse((treino["distancia_km"] ?? treino["km"] ?? "0").toString()) ?? 0.0;
+    final distMeta = double.tryParse((treino["distancia_km"] ?? treino["km"] ?? "0").toString()) ?? 0.0;
+    final distAtual = double.tryParse((treino["distancia_atual_km"] ?? "0").toString()) ?? 0.0;
     final tempoFormatado = formatarTempo(treino["tempo_segundos"]);
     final paceFormatado = formatarPace(treino["ritmo_medio_segundos"]);
     final fcMedia = treino["fc_media"];
     final sensacao = treino["sensacao"];
     final observacoes = treino["observacoes"];
+
+    final isPlanejadoOuAndamento = status == "planejado" || status == "em_andamento";
+    final progresso = distMeta > 0 ? (distAtual / distMeta).clamp(0.0, 1.0) : 0.0;
+    final pctProgresso = (progresso * 100).toInt();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -587,15 +646,24 @@ class _TreinosPageState extends State<TreinosPage> {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.07)
-              : Colors.black.withValues(alpha: 0.04),
+          color: isPlanejadoOuAndamento
+              ? (status == "em_andamento"
+                  ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
+                  : const Color(0xFF0066FF).withValues(alpha: 0.25))
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.black.withValues(alpha: 0.04)),
+          width: isPlanejadoOuAndamento ? 1.5 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : const Color(0xFF0066FF).withValues(alpha: 0.05),
+            color: isPlanejadoOuAndamento
+                ? (status == "em_andamento"
+                    ? const Color(0xFFF59E0B).withValues(alpha: 0.1)
+                    : const Color(0xFF0066FF).withValues(alpha: 0.1))
+                : (isDark
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : const Color(0xFF0066FF).withValues(alpha: 0.05)),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -705,52 +773,152 @@ class _TreinosPageState extends State<TreinosPage> {
 
                 const SizedBox(height: 14),
 
-                // Painel de Métricas (Distância, Tempo, Pace)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
+                if (isPlanejadoOuAndamento) ...[
+                  // 🏃 PAINEL DE PROGRESSO AUTOMÁTICO (TREINO PLANEJADO / EM ANDAMENTO)
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : const Color(0xFFF1F6FD),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: status == "em_andamento"
+                            ? const Color(0xFFF59E0B).withValues(alpha: 0.25)
+                            : const Color(0xFF0066FF).withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.flag_rounded,
+                                  size: 15,
+                                  color: status == "em_andamento" ? const Color(0xFFF59E0B) : const Color(0xFF0066FF),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  "Meta: ${distMeta > 0 ? "${distMeta.toStringAsFixed(1)} km" : "Distância livre"}",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                    color: colors.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: (status == "em_andamento" ? const Color(0xFFF59E0B) : const Color(0xFF0066FF))
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                "${distAtual.toStringAsFixed(2)} km  •  $pctProgresso%",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12,
+                                  color: status == "em_andamento" ? const Color(0xFFF59E0B) : const Color(0xFF0066FF),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        // Barra de Progresso do Treino
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: progresso,
+                            minHeight: 8,
+                            backgroundColor: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              status == "em_andamento" ? const Color(0xFFF59E0B) : const Color(0xFF0066FF),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Botão Iniciar Corrida
+                        SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _iniciarCorridaParaTreino(treino),
+                            icon: Icon(
+                              status == "em_andamento" ? Icons.play_arrow_rounded : Icons.directions_run_rounded,
+                              size: 20,
+                            ),
+                            label: Text(
+                              status == "em_andamento" ? "Continuar Corrida com GPS" : "Iniciar Corrida com GPS",
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: status == "em_andamento"
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(0xFF0066FF),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      _metricBox(
-                        context: context,
-                        label: "Distância",
-                        value: "${km.toStringAsFixed(1)} km",
-                        valueColor: const Color(0xFF0066FF),
-                        isDark: isDark,
+                ] else ...[
+                  // Painel de Métricas Concluídas (Distância, Tempo, Pace)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
                       ),
-                      Container(
-                        height: 28,
-                        width: 1,
-                        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
-                      ),
-                      _metricBox(
-                        context: context,
-                        label: "Tempo",
-                        value: tempoFormatado,
-                        valueColor: isDark ? Colors.white : const Color(0xFF0F172A),
-                        isDark: isDark,
-                      ),
-                      Container(
-                        height: 28,
-                        width: 1,
-                        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
-                      ),
-                      _metricBox(
-                        context: context,
-                        label: "Pace",
-                        value: paceFormatado,
-                        valueColor: isDark ? Colors.white : const Color(0xFF0F172A),
-                        isDark: isDark,
-                      ),
-                    ],
+                    ),
+                    child: Row(
+                      children: [
+                        _metricBox(
+                          context: context,
+                          label: "Distância",
+                          value: "${distAtual > 0 ? distAtual.toStringAsFixed(2) : distMeta.toStringAsFixed(1)} km",
+                          valueColor: const Color(0xFF0066FF),
+                          isDark: isDark,
+                        ),
+                        Container(
+                          height: 28,
+                          width: 1,
+                          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
+                        ),
+                        _metricBox(
+                          context: context,
+                          label: "Tempo",
+                          value: tempoFormatado,
+                          valueColor: isDark ? Colors.white : const Color(0xFF0F172A),
+                          isDark: isDark,
+                        ),
+                        Container(
+                          height: 28,
+                          width: 1,
+                          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
+                        ),
+                        _metricBox(
+                          context: context,
+                          label: "Pace",
+                          value: paceFormatado,
+                          valueColor: isDark ? Colors.white : const Color(0xFF0F172A),
+                          isDark: isDark,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
 
                 // Tags de FC e RPE (se disponíveis)
                 if (fcMedia != null || sensacao != null || (observacoes != null && observacoes.toString().trim().isNotEmpty)) ...[
@@ -957,14 +1125,19 @@ class _TreinosPageState extends State<TreinosPage> {
     final idTreino = treino["id_treino"] ?? treino["id"];
     final tipo = (treino["tipo"] ?? "Treino").toString();
     final dataFormatada = AppDateUtils.formatarData(treino["data"]);
-    final dist = double.tryParse((treino["distancia_km"] ?? "0").toString()) ?? 0.0;
+    final distMeta = double.tryParse((treino["distancia_km"] ?? "0").toString()) ?? 0.0;
+    final distAtual = double.tryParse((treino["distancia_atual_km"] ?? "0").toString()) ?? 0.0;
     final tempo = formatarTempo(treino["tempo_segundos"]);
     final pace = formatarPace(treino["ritmo_medio_segundos"]);
     final fcMed = treino["fc_media"];
     final fcMax = treino["fc_max"];
     final sensacao = treino["sensacao"];
     final obs = treino["observacoes"];
-    final status = (treino["status"] ?? "concluido").toString();
+    final status = (treino["status"] ?? "concluido").toString().toLowerCase();
+
+    final isPlanejadoOuAndamento = status == "planejado" || status == "em_andamento";
+    final progresso = distMeta > 0 ? (distAtual / distMeta).clamp(0.0, 1.0) : 0.0;
+    final pctProgresso = (progresso * 100).toInt();
 
     AppModal.showBottomSheet(
       context: context,
@@ -982,45 +1155,166 @@ class _TreinosPageState extends State<TreinosPage> {
           controller: scrollController,
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
           children: [
-            // Bloco de Métricas Principais
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+            if (isPlanejadoOuAndamento) ...[
+              // Card de Progresso Planejado
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F6FD),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: status == "em_andamento"
+                        ? const Color(0xFFF59E0B).withValues(alpha: 0.3)
+                        : const Color(0xFF0066FF).withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Meta do Treino",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: (status == "em_andamento" ? const Color(0xFFF59E0B) : const Color(0xFF0066FF))
+                                .withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            "$pctProgresso% concluído",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11.5,
+                              color: status == "em_andamento" ? const Color(0xFFF59E0B) : const Color(0xFF0066FF),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          "${distAtual.toStringAsFixed(2)} km",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: onSurface,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        Text(
+                          "de ${distMeta > 0 ? "${distMeta.toStringAsFixed(1)} km" : "livre"}",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: progresso,
+                        minHeight: 10,
+                        backgroundColor: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          status == "em_andamento" ? const Color(0xFFF59E0B) : const Color(0xFF0066FF),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _metricDetail("Distância", "${dist.toStringAsFixed(2)} km", const Color(0xFF0066FF)),
-                      _metricDetail("Duração", tempo, onSurface),
-                      _metricDetail("Pace Médio", pace, onSurface),
-                    ],
+              const SizedBox(height: 16),
+              // Botão Iniciar Corrida dentro do modal
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(modalContext);
+                    _iniciarCorridaParaTreino(treino);
+                  },
+                  icon: Icon(
+                    status == "em_andamento" ? Icons.play_arrow_rounded : Icons.directions_run_rounded,
+                    size: 22,
                   ),
-                  if (fcMed != null || fcMax != null || sensacao != null) ...[
-                    const SizedBox(height: 14),
-                    const Divider(height: 1),
-                    const SizedBox(height: 12),
+                  label: Text(
+                    status == "em_andamento" ? "Continuar Corrida com GPS" : "Iniciar Corrida com GPS",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: status == "em_andamento"
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFF0066FF),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ] else ...[
+              // Bloco de Métricas Principais (Concluído)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Column(
+                  children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        if (fcMed != null)
-                          _metricDetail("FC Média", "$fcMed bpm", const Color(0xFFEF4444)),
-                        if (fcMax != null)
-                          _metricDetail("FC Máx", "$fcMax bpm", const Color(0xFFDC2626)),
-                        if (sensacao != null)
-                          _metricDetail("Esforço (RPE)", "$sensacao/10", const Color(0xFFF59E0B)),
+                        _metricDetail(
+                          "Distância",
+                          "${distAtual > 0 ? distAtual.toStringAsFixed(2) : distMeta.toStringAsFixed(2)} km",
+                          const Color(0xFF0066FF),
+                        ),
+                        _metricDetail("Duração", tempo, onSurface),
+                        _metricDetail("Pace Médio", pace, onSurface),
                       ],
                     ),
+                    if (fcMed != null || fcMax != null || sensacao != null) ...[
+                      const SizedBox(height: 14),
+                      const Divider(height: 1),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          if (fcMed != null)
+                            _metricDetail("FC Média", "$fcMed bpm", const Color(0xFFEF4444)),
+                          if (fcMax != null)
+                            _metricDetail("FC Máx", "$fcMax bpm", const Color(0xFFDC2626)),
+                          if (sensacao != null)
+                            _metricDetail("Esforço (RPE)", "$sensacao/10", const Color(0xFFF59E0B)),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
+            ],
 
             if (obs != null && obs.toString().trim().isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -1072,8 +1366,10 @@ class _TreinosPageState extends State<TreinosPage> {
                       carregarTreinos();
                     } catch (e) {
                       if (!modalContext.mounted) return;
-                      ScaffoldMessenger.of(modalContext).showSnackBar(
-                        SnackBar(content: Text("Erro ao excluir: $e")),
+                      AppSnackBar.erro(
+                        modalContext,
+                        "Erro ao excluir treino: $e",
+                        titulo: "Falha na Exclusão",
                       );
                     }
                   }
@@ -1116,25 +1412,31 @@ class _TreinosPageState extends State<TreinosPage> {
   }
 
   void mostrarCriarTreino() {
-    final tipoController = TextEditingController(text: "Corrida");
-    final distanciaController = TextEditingController();
-    final minutosController = TextEditingController();
-    final segundosController = TextEditingController();
-    final fcMediaController = TextEditingController();
-    final fcMaxController = TextEditingController();
+    final tipoController = TextEditingController(text: "Corrida Leve");
+    final distanciaController = TextEditingController(text: "5.0");
     final observacoesController = TextEditingController();
     DateTime dataTreino = DateTime.now();
-    int sensacao = 5;
-    String status = "concluido";
+    bool salvando = false;
+
+    final tiposSugeridos = [
+      "Corrida Leve",
+      "Longão",
+      "Intervalado / Tiros",
+      "Regenerativo",
+      "Fartlek",
+      "Tempo Run",
+    ];
+
+    final distanciasSugeridas = [3.0, 5.0, 8.0, 10.0, 15.0, 21.1];
 
     AppModal.showBottomSheet(
       context: context,
-      title: "Novo Treino",
-      subtitle: "Registre as métricas completas de volume e intensidade",
-      icon: Icons.directions_run_rounded,
+      title: "Planejar Novo Treino",
+      subtitle: "Defina sua meta e corra com GPS quando quiser",
+      icon: Icons.flag_rounded,
       iconColor: const Color(0xFF0066FF),
-      maxChildSize: 0.95,
-      initialChildSize: 0.88,
+      maxChildSize: 0.92,
+      initialChildSize: 0.85,
       builder: (modalContext, scrollController) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -1146,13 +1448,13 @@ class _TreinosPageState extends State<TreinosPage> {
               controller: scrollController,
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               children: [
-                // Data do Treino
+                // 1. Data do Treino
                 InkWell(
                   onTap: () async {
                     final picked = await showDatePicker(
                       context: context,
                       initialDate: dataTreino,
-                      firstDate: DateTime(2020),
+                      firstDate: DateTime.now().subtract(const Duration(days: 30)),
                       lastDate: DateTime.now().add(const Duration(days: 365)),
                     );
                     if (picked != null) {
@@ -1184,7 +1486,7 @@ class _TreinosPageState extends State<TreinosPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Data do Treino", style: TextStyle(fontSize: 11, color: subColorModal)),
+                              Text("Data Planejada", style: TextStyle(fontSize: 11, color: subColorModal)),
                               Text(
                                 AppDateUtils.formatarData(dataTreino),
                                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: txtColorModal),
@@ -1197,174 +1499,188 @@ class _TreinosPageState extends State<TreinosPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // Tipo e Status
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: TextField(
-                        controller: tipoController,
-                        decoration: const InputDecoration(
-                          labelText: "Tipo de treino",
-                          hintText: "Ex: Corrida, Longão, Intervalado",
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: status,
-                        decoration: const InputDecoration(labelText: "Status"),
-                        items: const [
-                          DropdownMenuItem(value: "concluido", child: Text("Concluído")),
-                          DropdownMenuItem(value: "parcial", child: Text("Parcial")),
-                          DropdownMenuItem(value: "nao_feito", child: Text("Não feito")),
-                        ],
-                        onChanged: (v) {
-                          if (v != null) setModalState(() => status = v);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Distância e Tempo (Min e Seg)
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: distanciaController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(
-                          labelText: "Distância (km)",
-                          hintText: "Ex: 5.0",
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: minutosController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Minutos",
-                          hintText: "30",
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: segundosController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Segundos",
-                          hintText: "0",
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Frequência Cardíaca Média e Máxima
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: fcMediaController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "FC Média (bpm)",
-                          hintText: "Ex: 148",
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: fcMaxController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "FC Máxima (bpm)",
-                          hintText: "Ex: 175",
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Sensação de Esforço RPE (1 a 10)
+                // 2. Tipo de Treino
                 Text(
-                  "Sensação de Esforço (RPE): $sensacao / 10",
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
-                ),
-                Slider(
-                  value: sensacao.toDouble(),
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  activeColor: const Color(0xFF0066FF),
-                  onChanged: (val) {
-                    setModalState(() => sensacao = val.round());
-                  },
-                ),
-
-                // Observações
-                TextField(
-                  controller: observacoesController,
-                  decoration: const InputDecoration(
-                    labelText: "Observações (opcional)",
-                    hintText: "Condições climáticas, terreno, sensações...",
+                  "Tipo de Treino",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: txtColorModal,
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: tiposSugeridos.map((t) {
+                    final sel = tipoController.text == t;
+                    return ChoiceChip(
+                      label: Text(t),
+                      selected: sel,
+                      onSelected: (_) {
+                        setModalState(() {
+                          tipoController.text = t;
+                        });
+                      },
+                      selectedColor: const Color(0xFF0066FF).withValues(alpha: 0.18),
+                      side: BorderSide(
+                        color: sel ? const Color(0xFF0066FF) : (isDarkModal ? Colors.white12 : const Color(0xFFE2E8F0)),
+                      ),
+                      labelStyle: TextStyle(
+                        color: sel ? const Color(0xFF0066FF) : subColorModal,
+                        fontWeight: sel ? FontWeight.bold : FontWeight.w500,
+                        fontSize: 12,
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: tipoController,
+                  decoration: const InputDecoration(
+                    labelText: "Nome do treino",
+                    hintText: "Ex: Corrida Leve, Longão...",
+                    prefixIcon: Icon(Icons.directions_run_rounded, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 18),
 
-                // Botão Salvar
+                // 3. Meta de Distância
+                Text(
+                  "Meta de Distância",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: txtColorModal,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: distanciasSugeridas.map((d) {
+                    final sel = distanciaController.text == d.toString() ||
+                        distanciaController.text == d.toStringAsFixed(1);
+                    return ActionChip(
+                      label: Text("${d.toStringAsFixed(d % 1 == 0 ? 0 : 1)} km"),
+                      backgroundColor: sel ? const Color(0xFF0066FF).withValues(alpha: 0.15) : null,
+                      side: BorderSide(
+                        color: sel ? const Color(0xFF0066FF) : (isDarkModal ? Colors.white12 : const Color(0xFFE2E8F0)),
+                      ),
+                      labelStyle: TextStyle(
+                        color: sel ? const Color(0xFF0066FF) : subColorModal,
+                        fontWeight: sel ? FontWeight.bold : FontWeight.w500,
+                        fontSize: 12,
+                      ),
+                      onPressed: () {
+                        setModalState(() {
+                          distanciaController.text = d.toString();
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: distanciaController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: "Distância Alvo (km)",
+                    hintText: "Ex: 5.0",
+                    suffixText: "km",
+                    prefixIcon: Icon(Icons.route_rounded, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // 4. Observações / Instruções
+                TextField(
+                  controller: observacoesController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: "Instruções do treino (opcional)",
+                    hintText: "Ex: Pace confortável abaixo de 5:30/km, terreno plano...",
+                    prefixIcon: Icon(Icons.edit_note_rounded, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 5. Botão Salvar
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final dist = double.tryParse(distanciaController.text.replaceAll(',', '.')) ?? 0.0;
-                      final min = int.tryParse(minutosController.text) ?? 0;
-                      final sec = int.tryParse(segundosController.text) ?? 0;
-                      final totalSeg = min * 60 + sec;
-                      final fcMed = int.tryParse(fcMediaController.text);
-                      final fcMax = int.tryParse(fcMaxController.text);
+                    onPressed: salvando
+                        ? null
+                        : () async {
+                            final dist = double.tryParse(
+                                  distanciaController.text.replaceAll(',', '.'),
+                                ) ??
+                                0.0;
 
-                      await Api.criarTreinoCompleto(
-                        tipo: tipoController.text.trim().isEmpty ? "Corrida" : tipoController.text.trim(),
-                        distanciaKm: dist,
-                        tempoSegundos: totalSeg,
-                        data: AppDateUtils.paraDataPura(dataTreino),
-                        fcMedia: fcMed,
-                        fcMax: fcMax,
-                        sensacao: sensacao,
-                        observacoes: observacoesController.text,
-                        status: status,
-                      );
+                            if (dist <= 0) {
+                              AppSnackBar.aviso(
+                                context,
+                                "Informe uma distância válida maior que zero.",
+                                titulo: "Distância Inválida",
+                              );
+                              return;
+                            }
 
-                      if (!context.mounted) return;
-                      Navigator.pop(context);
-                      carregarTreinos();
-                    },
-                    icon: const Icon(Icons.check_rounded),
-                    label: const Text(
-                      "Salvar Treino Completo",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            setModalState(() => salvando = true);
+
+                            try {
+                              await Api.criarTreinoCompleto(
+                                tipo: tipoController.text.trim().isEmpty
+                                    ? "Corrida"
+                                    : tipoController.text.trim(),
+                                distanciaKm: dist,
+                                distanciaAtualKm: 0.0,
+                                tempoSegundos: 0,
+                                data: AppDateUtils.paraDataPura(dataTreino),
+                                observacoes: observacoesController.text.trim().isEmpty
+                                    ? null
+                                    : observacoesController.text.trim(),
+                                status: "planejado",
+                              );
+
+                              if (!context.mounted) return;
+                              Navigator.pop(context);
+                              carregarTreinos();
+                              AppSnackBar.sucesso(
+                                context,
+                                "Treino planejado com sucesso! Ele já pode ser vinculado à corrida.",
+                                titulo: "Treino Planejado 🎯",
+                              );
+                            } catch (e) {
+                              setModalState(() => salvando = false);
+                              if (!context.mounted) return;
+                              AppSnackBar.erro(
+                                context,
+                                "Erro ao criar treino: $e",
+                                titulo: "Falha ao Criar",
+                              );
+                            }
+                          },
+                    icon: salvando
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.add_task_rounded),
+                    label: Text(
+                      salvando ? "Salvando..." : "Criar Treino Planejado",
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
                       backgroundColor: const Color(0xFF0066FF),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),

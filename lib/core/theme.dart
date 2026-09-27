@@ -118,6 +118,17 @@ class AppTheme {
             borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
         ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          elevation: 8,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentTextStyle: const TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
       );
 
   static ThemeData get dark => ThemeData(
@@ -179,6 +190,17 @@ class AppTheme {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          ),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          elevation: 8,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentTextStyle: const TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       );

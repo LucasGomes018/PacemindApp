@@ -3,6 +3,8 @@ import '../core/api.dart';
 import '../services/notificacao_service.dart';
 import '../utils/date_utils.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
+import '../services/auto_notificacao_service.dart';
 
 
 class EventosPage extends StatefulWidget {
@@ -446,8 +448,10 @@ class _EventosPageState extends State<EventosPage> {
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Não foi possível carregar os inscritos")),
+      AppSnackBar.erro(
+        context,
+        "Não foi possível carregar a lista de inscritos.",
+        titulo: "Erro",
       );
     }
   }
@@ -660,14 +664,18 @@ class _EventosPageState extends State<EventosPage> {
                         onPressed: () async {
                           if (nomeController.text.trim().isEmpty ||
                               localController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Preencha o nome e o local do evento")),
+                            AppSnackBar.aviso(
+                              context,
+                              "Preencha o nome e o local do evento.",
+                              titulo: "Campos Obrigatórios",
                             );
                             return;
                           }
                           if (dataSelecionada == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Selecione a data e hora do evento")),
+                            AppSnackBar.aviso(
+                              context,
+                              "Selecione a data e o horário do evento.",
+                              titulo: "Data Obrigatória",
                             );
                             return;
                           }
@@ -716,6 +724,7 @@ class _EventosPageState extends State<EventosPage> {
 
                             // 2. Notificação local imediata no dispositivo
                             try {
+                              await AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloNotificacao, corpoNotificacao);
                               await NotificacaoService.mostrarNotificacao(
                                 titulo: tituloNotificacao,
                                 corpo: corpoNotificacao,

@@ -492,7 +492,7 @@ class IaTreinadorService {
         distanciaKm: distancia,
         tempoSegundos: tempoMin * 60,
         data: dataBanco,
-        status: "concluido",
+        status: "planejado",
         sensacao: 6,
         observacoes: "Prescrito e agendado pelo PaceMind IA Treinador.",
       );

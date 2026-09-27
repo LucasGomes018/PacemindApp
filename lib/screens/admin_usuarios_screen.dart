@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/api.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
 import '../utils/date_utils.dart';
 
 class AdminUsuariosPage extends StatefulWidget {
@@ -1818,8 +1819,10 @@ class _AlunoDetalhesSheetState extends State<_AlunoDetalhesSheet> with SingleTic
                   tooltip: "Copiar telefone",
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: telEmergencia));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Telefone copiado para a área de transferência")),
+                    AppSnackBar.sucesso(
+                      context,
+                      "Telefone copiado para a área de transferência.",
+                      titulo: "Copiado",
                     );
                   },
                 ),
@@ -2173,8 +2176,10 @@ class _AlunoDetalhesSheetState extends State<_AlunoDetalhesSheet> with SingleTic
                 canCopy: true,
                 onCopy: () {
                   Clipboard.setData(ClipboardData(text: widget.idUsuario));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("ID do aluno copiado!")),
+                  AppSnackBar.sucesso(
+                    context,
+                    "ID do aluno copiado para a área de transferência.",
+                    titulo: "ID Copiado",
                   );
                 },
               ),

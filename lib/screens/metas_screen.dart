@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
 
 class MetasPage extends StatefulWidget {
   final bool abrirCriarMetaAoIniciar;
@@ -131,8 +132,10 @@ class _MetasPageState extends State<MetasPage> {
       carregarMetas();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erro ao atualizar progresso da meta")),
+      AppSnackBar.erro(
+        context,
+        "Erro ao atualizar progresso da meta: $e",
+        titulo: "Erro",
       );
     }
   }
@@ -142,17 +145,18 @@ class _MetasPageState extends State<MetasPage> {
       final id = (meta["id_meta"] ?? meta["id"] ?? meta["_id"]).toString();
       await Api.concluirMeta(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("🎉 Parabéns! Meta concluída com sucesso!"),
-          backgroundColor: Color(0xFF10B981),
-        ),
+      AppSnackBar.sucesso(
+        context,
+        "Parabéns! Meta \"${meta["titulo"]}\" concluída com sucesso!",
+        titulo: "Meta Conquistada 🎉",
       );
       carregarMetas();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erro ao concluir meta")),
+      AppSnackBar.erro(
+        context,
+        "Erro ao concluir meta: $e",
+        titulo: "Erro",
       );
     }
   }
@@ -175,14 +179,18 @@ class _MetasPageState extends State<MetasPage> {
         final id = (meta["id_meta"] ?? meta["id"] ?? meta["_id"]).toString();
         await Api.deletarMeta(id);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Meta removida com sucesso")),
+        AppSnackBar.info(
+          context,
+          "Meta removida com sucesso.",
+          titulo: "Meta Removida",
         );
         carregarMetas();
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Erro ao remover meta")),
+        AppSnackBar.erro(
+          context,
+          "Erro ao remover meta: $e",
+          titulo: "Erro",
         );
       }
     }
@@ -391,18 +399,18 @@ class _MetasPageState extends State<MetasPage> {
                         objetivoController.text.replaceAll(',', '.'),
                       );
                       if (tituloController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Informe um título para sua meta."),
-                          ),
+                        AppSnackBar.aviso(
+                          context,
+                          "Informe um título para sua meta.",
+                          titulo: "Título Obrigatório",
                         );
                         return;
                       }
                       if (objetivo == null || objetivo <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Informe um objetivo maior que zero."),
-                          ),
+                        AppSnackBar.aviso(
+                          context,
+                          "Informe um objetivo numérico maior que zero.",
+                          titulo: "Objetivo Inválido",
                         );
                         return;
                       }
@@ -417,15 +425,17 @@ class _MetasPageState extends State<MetasPage> {
                         if (!context.mounted) return;
                         Navigator.pop(context);
                         carregarMetas();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("🎯 Meta criada com sucesso!"),
-                            backgroundColor: Color(0xFF10B981),
-                          ),
+                        AppSnackBar.sucesso(
+                          context,
+                          "Meta criada com sucesso!",
+                          titulo: "Meta Criada 🎯",
                         );
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Erro ao criar meta")),
+                        if (!context.mounted) return;
+                        AppSnackBar.erro(
+                          context,
+                          "Erro ao criar meta: $e",
+                          titulo: "Erro ao Salvar",
                         );
                       }
                     },

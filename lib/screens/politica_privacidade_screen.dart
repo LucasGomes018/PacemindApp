@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../components/app_snackbar.dart';
 
 class PoliticaPrivacidadePage extends StatefulWidget {
   const PoliticaPrivacidadePage({super.key});
@@ -67,12 +68,10 @@ class _PoliticaPrivacidadePageState extends State<PoliticaPrivacidadePage> {
             icon: Icon(Icons.share_outlined, color: subColor, size: 20),
             tooltip: "Compartilhar",
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text("Link da política copiado para a área de transferência"),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+              AppSnackBar.sucesso(
+                context,
+                "Link da política copiado para a área de transferência.",
+                titulo: "Link Copiado",
               );
             },
           ),
@@ -135,7 +134,7 @@ class _PoliticaPrivacidadePageState extends State<PoliticaPrivacidadePage> {
                   conteudo: [
                     _itemInfo("Aplicativo", "PaceMind Running Analytics", textColor, subColor),
                     _itemInfo("Responsável", "Equipe de Desenvolvimento PaceMind", textColor, subColor),
-                    _itemInfo("Contato de Privacidade", "privacidade@pacemind.com", textColor, subColor),
+                    _itemInfo("Contato de Privacidade", "administracaopacemind@gmail.com", textColor, subColor),
                   ],
                 ),
                 _buildSection(
@@ -303,7 +302,7 @@ class _PoliticaPrivacidadePageState extends State<PoliticaPrivacidadePage> {
                     const SizedBox(height: 12),
                     _itemInfo(
                       "Como exercer seus direitos",
-                      "Envie um e-mail para privacidade@pacemind.com com o assunto 'Solicitação LGPD'.",
+                      "Envie um e-mail para administracaopacemind@gmail.com com o assunto 'Solicitação LGPD'.",
                       textColor,
                       subColor,
                     ),

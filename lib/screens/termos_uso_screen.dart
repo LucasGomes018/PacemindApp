@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../components/app_snackbar.dart';
 
 class TermosUsoPage extends StatefulWidget {
   const TermosUsoPage({super.key});
@@ -66,12 +67,10 @@ class _TermosUsoPageState extends State<TermosUsoPage> {
             icon: Icon(Icons.share_outlined, color: subColor, size: 20),
             tooltip: "Compartilhar",
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text("Link dos termos copiado para a área de transferência"),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+              AppSnackBar.sucesso(
+                context,
+                "Link dos termos copiado para a área de transferência.",
+                titulo: "Link Copiado",
               );
             },
           ),
@@ -306,8 +305,8 @@ class _TermosUsoPageState extends State<TermosUsoPage> {
                       "Estes termos são regidos pelas leis da República Federativa do Brasil, em especial o Marco Civil da Internet e o Código de Defesa do Consumidor.",
                       subColor,
                     ),
-                    _itemInfo("Canal de Atendimento", "suporte@pacemind.com", textColor, subColor),
-                    _itemInfo("Privacidade", "privacidade@pacemind.com", textColor, subColor),
+                    _itemInfo("Canal de Atendimento", "administracaopacemind@gmail.com", textColor, subColor),
+                    _itemInfo("Privacidade", "administracaopacemind@gmail.com", textColor, subColor),
                   ],
                 ),
               ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../components/app_modal.dart';
 import '../core/api.dart';
+import '../components/app_snackbar.dart';
 
 class TestesPage extends StatefulWidget {
   const TestesPage({super.key});
@@ -161,11 +162,10 @@ class _TestesPageState extends State<TestesPage>
     final totalSec = min * 60 + sec;
 
     if (totalSec <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Informe o tempo em minutos e segundos do teste de 3km."),
-          backgroundColor: Colors.orange,
-        ),
+      AppSnackBar.aviso(
+        context,
+        "Informe o tempo em minutos e segundos do teste de 3km.",
+        titulo: "Tempo Necessário",
       );
       return;
     }
@@ -188,11 +188,10 @@ class _TestesPageState extends State<TestesPage>
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("🎉 Teste de 3km salvo com sucesso! Zonas calibradas."),
-            backgroundColor: Color(0xFF10B981),
-          ),
+        AppSnackBar.sucesso(
+          context,
+          "Teste de 3km salvo com sucesso! Zonas calibradas.",
+          titulo: "Teste Calibrado",
         );
       }
 
@@ -200,11 +199,10 @@ class _TestesPageState extends State<TestesPage>
     } catch (e) {
       if (mounted) {
         setState(() => salvando = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Erro ao salvar teste: $e"),
-            backgroundColor: Colors.red,
-          ),
+        AppSnackBar.erro(
+          context,
+          "Erro ao salvar teste: ${e.toString().replaceAll('Exception: ', '')}",
+          titulo: "Erro ao Salvar",
         );
       }
     }
@@ -218,11 +216,10 @@ class _TestesPageState extends State<TestesPage>
     final totalSec = min * 60.0 + sec;
 
     if (totalSec <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Informe o tempo em minutos ou segundos do Sprint 20m."),
-          backgroundColor: Colors.orange,
-        ),
+      AppSnackBar.aviso(
+        context,
+        "Informe o tempo em minutos ou segundos do Sprint 20m.",
+        titulo: "Tempo Necessário",
       );
       return;
     }
@@ -245,11 +242,10 @@ class _TestesPageState extends State<TestesPage>
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("⚡ Sprint 20m registrado com sucesso!"),
-            backgroundColor: Color(0xFF10B981),
-          ),
+        AppSnackBar.sucesso(
+          context,
+          "Sprint 20m registrado com sucesso!",
+          titulo: "Sprint Registrado",
         );
       }
 
@@ -257,11 +253,10 @@ class _TestesPageState extends State<TestesPage>
     } catch (e) {
       if (mounted) {
         setState(() => salvando = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Erro ao salvar teste: $e"),
-            backgroundColor: Colors.red,
-          ),
+        AppSnackBar.erro(
+          context,
+          "Erro ao salvar teste: ${e.toString().replaceAll('Exception: ', '')}",
+          titulo: "Erro ao Salvar",
         );
       }
     }
@@ -288,20 +283,19 @@ class _TestesPageState extends State<TestesPage>
       try {
         await Api.deletarTeste(item['id_teste']);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Teste excluído com sucesso."),
-            ),
+          AppSnackBar.info(
+            context,
+            "Teste excluído com sucesso.",
+            titulo: "Teste Excluído",
           );
         }
         _carregarHistorico();
       } catch (_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Erro ao excluir teste."),
-              backgroundColor: Colors.red,
-            ),
+          AppSnackBar.erro(
+            context,
+            "Erro ao excluir teste.",
+            titulo: "Erro na Exclusão",
           );
         }
       }

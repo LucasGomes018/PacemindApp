@@ -1,4 +1,4 @@
-package com.example.pacemind
+package com.pacemind.app
 
 import io.flutter.embedding.android.FlutterActivity
 

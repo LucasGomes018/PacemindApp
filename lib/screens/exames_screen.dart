@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../utils/date_utils.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
 
 class ExamesPage extends StatefulWidget {
   const ExamesPage({super.key});
@@ -82,23 +83,18 @@ class _ExamesPageState extends State<ExamesPage> {
         final id = (exame["id_exame"] ?? exame["id"]).toString();
         await Api.deletarExame(id);
         if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Laudo excluído com sucesso."),
-            backgroundColor: Color(0xFF10B981),
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppSnackBar.info(
+          context,
+          "Laudo excluído com sucesso.",
+          titulo: "Exame Removido",
         );
         _carregarExames();
       } catch (_) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Erro ao excluir laudo. Tente novamente."),
-            backgroundColor: Color(0xFFEF4444),
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppSnackBar.erro(
+          context,
+          "Erro ao excluir laudo. Tente novamente.",
+          titulo: "Erro na Exclusão",
         );
       }
     }
@@ -657,12 +653,10 @@ class _ExamesPageState extends State<ExamesPage> {
                         : () async {
                             final tipo = tipoController.text.trim();
                             if (tipo.isEmpty) {
-                              ScaffoldMessenger.of(modalCtx).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Informe o tipo de exame."),
-                                  backgroundColor: Color(0xFFEF4444),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                              AppSnackBar.aviso(
+                                modalCtx,
+                                "Informe o tipo de exame para continuar.",
+                                titulo: "Campo Obrigatório",
                               );
                               return;
                             }
@@ -685,23 +679,19 @@ class _ExamesPageState extends State<ExamesPage> {
                               Navigator.pop(sheetCtx);
 
                               if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Exame salvo com sucesso!"),
-                                  backgroundColor: Color(0xFF10B981),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                              AppSnackBar.sucesso(
+                                context,
+                                "Exame salvo com sucesso!",
+                                titulo: "Exame Cadastrado",
                               );
                               _carregarExames();
                             } catch (_) {
                               setModalState(() => salvando = false);
                               if (!modalCtx.mounted) return;
-                              ScaffoldMessenger.of(modalCtx).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Erro ao salvar exame. Verifique os dados."),
-                                  backgroundColor: Color(0xFFEF4444),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                              AppSnackBar.erro(
+                                modalCtx,
+                                "Erro ao salvar exame. Verifique os dados.",
+                                titulo: "Falha ao Salvar",
                               );
                             }
                           },

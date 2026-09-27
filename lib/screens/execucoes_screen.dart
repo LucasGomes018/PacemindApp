@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../utils/date_utils.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
 
 class ExecucoesPage extends StatefulWidget {
   const ExecucoesPage({super.key});
@@ -703,12 +704,10 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                             final totalSeg = min * 60 + sec;
 
                             if (dist <= 0) {
-                              ScaffoldMessenger.of(modalCtx).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Informe uma distância válida em km."),
-                                  backgroundColor: Color(0xFFEF4444),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                              AppSnackBar.aviso(
+                                modalCtx,
+                                "Informe uma distância válida em km.",
+                                titulo: "Distância Obrigatória",
                               );
                               return;
                             }
@@ -735,23 +734,19 @@ class _ExecucoesPageState extends State<ExecucoesPage> {
                               Navigator.pop(ctx);
 
                               if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Execução de treino registrada com sucesso!"),
-                                  backgroundColor: Color(0xFF10B981),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                              AppSnackBar.sucesso(
+                                context,
+                                "Execução de treino registrada com sucesso!",
+                                titulo: "Treino Registrado",
                               );
                               _carregarTreinos();
                             } catch (_) {
                               setModalState(() => salvando = false);
                               if (!modalCtx.mounted) return;
-                              ScaffoldMessenger.of(modalCtx).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Erro ao registrar execução."),
-                                  backgroundColor: Color(0xFFEF4444),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                              AppSnackBar.erro(
+                                modalCtx,
+                                "Erro ao registrar execução do treino.",
+                                titulo: "Erro ao Salvar",
                               );
                             }
                           },

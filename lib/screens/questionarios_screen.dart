@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../components/app_modal.dart';
+import '../components/app_snackbar.dart';
 
 class QuestionariosPage extends StatefulWidget {
   const QuestionariosPage({super.key});
@@ -189,29 +190,19 @@ class _QuestionariosPageState extends State<QuestionariosPage>
     try {
       await Api.salvarQuestionario(tipo: 'acq5', respostas: respostasACQ5);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Color(0xFF10B981),
-            behavior: SnackBarBehavior.floating,
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 10),
-                Text("Questionário ACQ-5 enviado com sucesso!"),
-              ],
-            ),
-          ),
+        AppSnackBar.sucesso(
+          context,
+          "Questionário ACQ-5 enviado com sucesso!",
+          titulo: "Questionário Concluído",
         );
       }
       await _carregarHistorico();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            content: Text("Erro ao enviar: $e"),
-          ),
+        AppSnackBar.erro(
+          context,
+          "Erro ao enviar: ${e.toString().replaceAll('Exception: ', '')}",
+          titulo: "Falha no Envio",
         );
       }
     } finally {
@@ -227,29 +218,19 @@ class _QuestionariosPageState extends State<QuestionariosPage>
         respostas: respostasMiniAQLQ,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Color(0xFF10B981),
-            behavior: SnackBarBehavior.floating,
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 10),
-                Text("Questionário MiniAQLQ enviado com sucesso!"),
-              ],
-            ),
-          ),
+        AppSnackBar.sucesso(
+          context,
+          "Questionário MiniAQLQ enviado com sucesso!",
+          titulo: "Questionário Concluído",
         );
       }
       await _carregarHistorico();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            content: Text("Erro ao enviar: $e"),
-          ),
+        AppSnackBar.erro(
+          context,
+          "Erro ao enviar: ${e.toString().replaceAll('Exception: ', '')}",
+          titulo: "Falha no Envio",
         );
       }
     } finally {
@@ -274,22 +255,18 @@ class _QuestionariosPageState extends State<QuestionariosPage>
       await Api.deletarQuestionario(id);
       await _carregarHistorico();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Color(0xFF10B981),
-            content: Text("Questionário excluído com sucesso."),
-          ),
+        AppSnackBar.info(
+          context,
+          "Questionário excluído com sucesso.",
+          titulo: "Registro Removido",
         );
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Color(0xFFEF4444),
-            content: Text("Erro ao deletar questionário."),
-          ),
+        AppSnackBar.erro(
+          context,
+          "Erro ao deletar questionário.",
+          titulo: "Erro na Exclusão",
         );
       }
     }

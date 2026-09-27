@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../utils/date_utils.dart';
+import '../components/app_snackbar.dart';
 
 class FichaPage extends StatefulWidget {
   const FichaPage({super.key});
@@ -131,23 +132,19 @@ class _FichaPageState extends State<FichaPage> {
     final altura = int.tryParse(alturaStr);
 
     if (peso == null || peso <= 20 || peso > 300) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Por favor, insira um peso válido (em kg)."),
-          backgroundColor: Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.aviso(
+        context,
+        "Por favor, insira um peso válido em kg (ex: 70).",
+        titulo: "Peso Inválido",
       );
       return;
     }
 
     if (altura == null || altura <= 50 || altura > 260) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Por favor, insira uma altura válida (em centímetros, ex: 175)."),
-          backgroundColor: Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.aviso(
+        context,
+        "Por favor, insira uma altura válida em cm (ex: 175).",
+        titulo: "Altura Inválida",
       );
       return;
     }
@@ -173,28 +170,18 @@ class _FichaPageState extends State<FichaPage> {
       await Api.salvarFichaAluno(dados);
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-          content: Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text("Ficha médica do aluno salva com sucesso!"),
-            ],
-          ),
-        ),
+      AppSnackBar.sucesso(
+        context,
+        "Ficha médica do aluno salva com sucesso!",
+        titulo: "Ficha Atualizada",
       );
       _carregarFicha();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-          content: Text("Erro ao salvar prontuário: $e"),
-        ),
+      AppSnackBar.erro(
+        context,
+        "Erro ao salvar prontuário: ${e.toString().replaceAll('Exception: ', '')}",
+        titulo: "Erro ao Salvar",
       );
     } finally {
       if (mounted) setState(() => salvando = false);

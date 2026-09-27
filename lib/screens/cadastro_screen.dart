@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../core/api.dart';
+import '../components/app_snackbar.dart';
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -50,6 +51,7 @@ class _CadastroPageState extends State<CadastroPage> {
       setState(() {
         erro = "Preencha todos os campos";
       });
+      AppSnackBar.aviso(context, "Preencha todos os campos obrigatórios");
       return;
     }
     if (!emailValidado) {
@@ -57,6 +59,7 @@ class _CadastroPageState extends State<CadastroPage> {
       setState(() {
         erro = "Valide seu email antes de continuar";
       });
+      AppSnackBar.aviso(context, "Valide seu e-mail com o código de 6 dígitos antes de prosseguir");
       return;
     }
 
@@ -83,9 +86,7 @@ class _CadastroPageState extends State<CadastroPage> {
         // 🔐 LOGIN AUTOMÁTICO
         final loginResponse = await http.post(
           Uri.parse("${Api.baseUrl}/usuarios/login"),
-
           headers: {"Content-Type": "application/json"},
-
           body: jsonEncode({
             "email": emailController.text,
             "senha": senhaController.text,
@@ -96,29 +97,31 @@ class _CadastroPageState extends State<CadastroPage> {
 
         if (loginResponse.statusCode == 200 && loginData["token"] != null) {
           final prefs = await SharedPreferences.getInstance();
-
           await prefs.setString("token", loginData["token"]);
 
           if (!mounted) return;
-
+          AppSnackBar.sucesso(context, "Cadastro realizado com sucesso! Bem-vindo ao PaceMind.");
           Navigator.pushReplacementNamed(context, "/home");
         } else {
           if (!mounted) return;
           setState(() {
             erro = "Conta criada, mas falhou no login automático";
           });
+          AppSnackBar.aviso(context, "Conta criada! Faça login com seu email e senha.");
         }
       } else {
         if (!mounted) return;
         setState(() {
           erro = data["message"] ?? "Erro ao cadastrar";
         });
+        AppSnackBar.erro(context, erro!);
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         erro = "Erro de conexão";
       });
+      AppSnackBar.erro(context, "Falha de conexão com o servidor");
     }
 
     if (!mounted) return;
@@ -128,21 +131,35 @@ class _CadastroPageState extends State<CadastroPage> {
   }
 
   Future<void> enviarCodigo() async {
+    final email = emailController.text.trim();
+    if (email.isEmpty || !email.contains("@")) {
+      setState(() {
+        erro = "Informe um e-mail válido";
+      });
+      AppSnackBar.aviso(context, "Informe um endereço de e-mail válido");
+      return;
+    }
+
     try {
       if (!mounted) return;
       setState(() {
         enviandoCodigo = true;
+        erro = null;
       });
       final response = await http.post(
         Uri.parse("${Api.baseUrl}/usuarios/otp/enviar"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"email": emailController.text}),
+        body: jsonEncode({"email": email}),
       );
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         if (!mounted) return;
+
+        // Sem preenchimento automático: campo limpo para o usuário digitar o código recebido no e-mail
+        codigoController.clear();
+
         setState(() {
           codigoEnviado = true;
           erro = null;
@@ -150,12 +167,25 @@ class _CadastroPageState extends State<CadastroPage> {
         });
 
         iniciarContagem();
+
+        AppSnackBar.sucesso(
+          context,
+          "Código enviado com sucesso! Verifique sua caixa de entrada e spam.",
+          titulo: "E-mail Enviado 📬",
+          icon: Icons.mark_email_read_rounded,
+          duracao: const Duration(seconds: 4),
+        );
       } else {
         if (!mounted) return;
         setState(() {
-          erro = data["message"];
+          erro = data["message"] ?? "Erro ao enviar código";
           enviandoCodigo = false;
         });
+        AppSnackBar.erro(
+          context,
+          erro!,
+          titulo: "Falha no Envio",
+        );
       }
     } catch (e) {
       if (!mounted) return;
@@ -163,21 +193,29 @@ class _CadastroPageState extends State<CadastroPage> {
         enviandoCodigo = false;
         erro = "Erro ao enviar código";
       });
+      AppSnackBar.erro(context, "Não foi possível conectar ao servidor de autenticação");
     }
   }
 
   Future<void> validarCodigo() async {
+    final codigo = codigoController.text.trim();
+    if (codigo.isEmpty) {
+      AppSnackBar.aviso(context, "Digite o código de 6 dígitos recebido");
+      return;
+    }
+
     try {
       setState(() {
         validandoCodigo = true;
+        erro = null;
       });
 
       final response = await http.post(
         Uri.parse("${Api.baseUrl}/usuarios/otp/verificar"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "email": emailController.text,
-          "codigo": codigoController.text,
+          "email": emailController.text.trim(),
+          "codigo": codigo,
         }),
       );
 
@@ -191,6 +229,9 @@ class _CadastroPageState extends State<CadastroPage> {
           validandoCodigo = false;
           codigoEnviado = false; // esconde a área do código
         });
+
+        AppSnackBar.sucesso(context, "E-mail verificado com sucesso! Prossiga com o cadastro.");
+
         Future.delayed(const Duration(seconds: 4), () {
           if (!mounted) return;
 
@@ -198,15 +239,13 @@ class _CadastroPageState extends State<CadastroPage> {
             mostrarMensagemSucesso = false;
           });
         });
-
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(content: Text("Email validado com sucesso")),
-        // );
       } else {
+        if (!mounted) return;
         setState(() {
-          erro = data["message"];
+          erro = data["message"] ?? "Código inválido ou expirado";
           validandoCodigo = false;
         });
+        AppSnackBar.erro(context, erro!);
       }
     } catch (e) {
       if (!mounted) return;
@@ -214,6 +253,7 @@ class _CadastroPageState extends State<CadastroPage> {
         erro = "Erro ao validar código";
         validandoCodigo = false;
       });
+      AppSnackBar.erro(context, "Falha de comunicação ao validar código");
     }
   }
 

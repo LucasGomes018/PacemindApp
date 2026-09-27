@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,9 +12,12 @@ import '../core/api.dart';
 import '../components/app_modal.dart';
 import '../services/background_tracking_service.dart';
 import '../services/notificacao_service.dart';
+import '../services/auto_notificacao_service.dart';
+import '../components/app_snackbar.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final Map<String, dynamic>? treinoInicial;
+  const MapPage({super.key, this.treinoInicial});
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -30,6 +34,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   bool corridaPausada = false;
 
   double distanciaTotal = 0.0; // metros
+  double ultimaDistanciaSincronizada = 0.0;
   int tempoSegundos = 0;
   Timer? timer;
 
@@ -43,6 +48,10 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
   String? idTreinoVinculado;
   String? tituloTreinoVinculado;
+  double? distanciaMetaTreinoKm;
+  double distanciaBaseMetros = 0.0;
+  int tempoBaseSegundos = 0;
+  bool metaAtingidaNotificada = false;
 
   // Filtragem e estabilização de GPS
   double acuraciaAtual = 0.0;
@@ -55,7 +64,92 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     pegarLocalizacaoInicial();
+    _inicializarTreinoVinculado();
     restaurarCorridaAtiva();
+  }
+
+  Future<void> _inicializarTreinoVinculado() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (widget.treinoInicial != null) {
+      final id = (widget.treinoInicial!["id_treino"] ?? widget.treinoInicial!["id"])?.toString();
+      final tipo = (widget.treinoInicial!["tipo"] ?? "Treino").toString();
+      final distMeta = double.tryParse((widget.treinoInicial!["distancia_km"] ?? "0").toString()) ?? 0.0;
+      final distAtual = double.tryParse((widget.treinoInicial!["distancia_atual_km"] ?? "0").toString()) ?? 0.0;
+      final tempoAnt = int.tryParse((widget.treinoInicial!["tempo_segundos"] ?? "0").toString()) ?? 0;
+
+      if (id != null) {
+        final titulo = distMeta > 0 ? "$tipo (${distMeta.toStringAsFixed(1)} km)" : tipo;
+        if (mounted) {
+          setState(() {
+            idTreinoVinculado = id;
+            tituloTreinoVinculado = titulo;
+            distanciaMetaTreinoKm = distMeta > 0 ? distMeta : null;
+            distanciaBaseMetros = distAtual * 1000.0;
+            tempoBaseSegundos = tempoAnt;
+            if (!corridaIniciada) {
+              distanciaTotal = distanciaBaseMetros;
+              tempoSegundos = tempoBaseSegundos;
+              caloriasEstimadas = ((distanciaTotal / 1000.0) * 62).round();
+            }
+          });
+        }
+        await prefs.setString("id_treino_ativo", id);
+        await prefs.setString("titulo_treino_ativo", titulo);
+        await prefs.setDouble("distancia_meta_treino_km", distMeta);
+        await prefs.setDouble("distancia_atual_treino_km", distAtual);
+        await prefs.setInt("tempo_treino_segundos", tempoAnt);
+        return;
+      }
+    }
+
+    final idSalvo = prefs.getString("id_treino_ativo");
+    final tituloSalvo = prefs.getString("titulo_treino_ativo");
+    final distMetaSalva = prefs.getDouble("distancia_meta_treino_km");
+    final distAtualSalva = prefs.getDouble("distancia_atual_treino_km") ?? 0.0;
+    final tempoSalvo = prefs.getInt("tempo_treino_segundos") ?? 0;
+
+    if (idSalvo != null && mounted) {
+      setState(() {
+        idTreinoVinculado = idSalvo;
+        tituloTreinoVinculado = tituloSalvo;
+        distanciaMetaTreinoKm = (distMetaSalva != null && distMetaSalva > 0) ? distMetaSalva : null;
+        distanciaBaseMetros = distAtualSalva * 1000.0;
+        tempoBaseSegundos = tempoSalvo;
+        if (!corridaIniciada) {
+          distanciaTotal = distanciaBaseMetros;
+          tempoSegundos = tempoBaseSegundos;
+          caloriasEstimadas = ((distanciaTotal / 1000.0) * 62).round();
+        }
+      });
+    }
+  }
+
+  Future<void> desvincularTreino() async {
+    setState(() {
+      idTreinoVinculado = null;
+      tituloTreinoVinculado = null;
+      distanciaMetaTreinoKm = null;
+      distanciaBaseMetros = 0.0;
+      tempoBaseSegundos = 0;
+      if (!corridaIniciada) {
+        distanciaTotal = 0.0;
+        tempoSegundos = 0;
+        caloriasEstimadas = 0;
+      }
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("id_treino_ativo");
+    await prefs.remove("titulo_treino_ativo");
+    await prefs.remove("distancia_meta_treino_km");
+    await prefs.remove("distancia_atual_treino_km");
+    await prefs.remove("tempo_treino_segundos");
+    if (mounted) {
+      AppSnackBar.info(
+        context,
+        "Treino desvinculado. Você pode correr livremente.",
+        titulo: "Treino Livre",
+      );
+    }
   }
 
   Future<void> restaurarCorridaAtiva() async {
@@ -64,6 +158,22 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     final inicio = DateTime.tryParse(prefs.getString("corrida_iniciada_em") ?? "");
     final idSalvo = prefs.getInt("id_corrida_ativa");
 
+    final idSalvoTreino = prefs.getString("id_treino_ativo");
+    final titSalvoTreino = prefs.getString("titulo_treino_ativo");
+    final distMetaSalva = prefs.getDouble("distancia_meta_treino_km");
+    final distAtualSalva = prefs.getDouble("distancia_atual_treino_km") ?? 0.0;
+    final tempoSalvo = prefs.getInt("tempo_treino_segundos") ?? 0;
+
+    if (idSalvoTreino != null && idTreinoVinculado == null && mounted) {
+      setState(() {
+        idTreinoVinculado = idSalvoTreino;
+        tituloTreinoVinculado = titSalvoTreino;
+        distanciaMetaTreinoKm = (distMetaSalva != null && distMetaSalva > 0) ? distMetaSalva : null;
+        distanciaBaseMetros = distAtualSalva * 1000.0;
+        tempoBaseSegundos = tempoSalvo;
+      });
+    }
+
     if (!corridaAtiva || inicio == null || idSalvo == null || !mounted) return;
 
     setState(() {
@@ -71,7 +181,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       idCorrida = idSalvo;
       idTreinoVinculado = prefs.getString("id_treino_ativo");
       tituloTreinoVinculado = prefs.getString("titulo_treino_ativo");
-      tempoSegundos = DateTime.now().difference(inicio).inSeconds;
+      tempoSegundos = tempoBaseSegundos + DateTime.now().difference(inicio).inSeconds;
     });
 
     _iniciarTimer();
@@ -122,29 +232,51 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   void _iniciarStreamGps() {
     positionStream?.cancel();
 
+    late final LocationSettings locationSettings;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0, // Notifica a cada leitura do sensor sem corte por distância
+        forceLocationManager: false,
+        intervalDuration: const Duration(milliseconds: 500), // Alta frequência: streaming a cada 500ms
+      );
+    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        activityType: ActivityType.fitness,
+        distanceFilter: 0,
+        pauseLocationUpdatesAutomatically: false,
+        showBackgroundLocationIndicator: true,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+      );
+    }
+
     positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best,
-        distanceFilter: 3,
-      ),
+      locationSettings: locationSettings,
     ).listen(_processarNovaPosicao);
   }
 
-  /// Filtro inteligente de sinal GPS:
-  /// 1. Rejeita precisão ruim (> 20 metros).
-  /// 2. Filtro anti-salto / velocidade impossível (> 12 m/s / ~43.2 km/h).
-  /// 3. Filtro de ruído parado (< 3 metros de deslocamento quando parado).
+  /// Filtro inteligente de sinal GPS em tempo real:
+  /// 1. Rejeita leituras com precisão excessivamente degradada (> 35 metros).
+  /// 2. Filtro anti-teletransporte / salto espúrio (> 15 m/s ou ~54 km/h e > 15m).
+  /// 3. Filtro de ruído em repouso: evita nós de coordenadas quando parado no semáforo,
+  ///    mas registra continuamente cada passo real em movimento (>= 0.7m ou velocidade de deslocamento).
   bool _posicaoValida(Position pos) {
-    if (pos.accuracy > 20.0) {
+    if (pos.accuracy > 35.0) {
       return false;
     }
-
-    final agora = DateTime.now();
-    final novoPonto = LatLng(pos.latitude, pos.longitude);
 
     if (ultimoPontoValido == null || ultimoPontoTempo == null) {
       return true;
     }
+
+    final agora = DateTime.now();
+    final novoPonto = LatLng(pos.latitude, pos.longitude);
 
     final distMetros = Geolocator.distanceBetween(
       ultimoPontoValido!.latitude,
@@ -155,20 +287,26 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
     final dtSegundos = agora.difference(ultimoPontoTempo!).inMilliseconds / 1000.0;
 
-    // Filtro de velocidade impossível para corrida a pé (> 12 m/s ou ~43 km/h)
-    if (dtSegundos > 0 && (distMetros / dtSegundos) > 12.0 && distMetros > 10.0) {
+    // Filtro de velocidade impossível para corrida a pé (> 15 m/s ou ~54 km/h com salto > 15m)
+    if (dtSegundos > 0.1 && (distMetros / dtSegundos) > 15.0 && distMetros > 15.0) {
       return false;
     }
 
-    // Filtro de ruído em repouso (evita emaranhado de coordenadas quando parado)
-    if (distMetros < 3.0) {
+    // Identifica se a pessoa está em movimento real
+    final bool velocidadeValida = !pos.speed.isNaN && !pos.speed.isNegative;
+    final bool emMovimento = (velocidadeValida && pos.speed >= 0.35) || distMetros >= 0.8;
+
+    // Se estiver praticamente parado em repouso estático, descarta oscilações milimétricas (< 0.7m)
+    if (!emMovimento && distMetros < 0.7) {
       return false;
     }
 
     return true;
   }
 
-  void _processarNovaPosicao(Position pos) async {
+  void _processarNovaPosicao(Position pos) {
+    if (pos.accuracy > 40.0) return;
+
     final agora = DateTime.now();
     final novoPonto = LatLng(pos.latitude, pos.longitude);
 
@@ -203,9 +341,16 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         novoPonto.longitude,
       );
 
-      final dt = agora.difference(ultimoPontoTempo!).inMilliseconds / 1000.0;
-      if (dt > 0 && deltaDist > 0) {
-        paceAtualSegundos = (dt / (deltaDist / 1000.0)).round();
+      // Pace instantâneo: aproveita o Doppler de velocidade direto do GPS para máxima estabilidade
+      if (!pos.speed.isNaN && !pos.speed.isNegative && pos.speed > 0.4) {
+        paceAtualSegundos = (1000.0 / pos.speed).round();
+      } else {
+        final dt = agora.difference(ultimoPontoTempo!).inMilliseconds / 1000.0;
+        if (dt > 0 && deltaDist > 0) {
+          paceAtualSegundos = (dt / (deltaDist / 1000.0)).round();
+        } else {
+          paceAtualSegundos = 0;
+        }
       }
     }
 
@@ -224,15 +369,45 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       }
     });
 
+    // Salva posição no backend de forma assíncrona para não travar a fluidez da UI
     if (idCorrida != null) {
-      try {
-        await Api.salvarPosicao(
-          idCorrida: idCorrida!,
-          latitude: pos.latitude,
-          longitude: pos.longitude,
-          precisao: pos.accuracy,
+      Api.salvarPosicao(
+        idCorrida: idCorrida!,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+        precisao: pos.accuracy,
+      ).catchError((_) {});
+    }
+
+    // Notifica uma vez quando atinge 100% da meta planejada enquanto corre
+    if (distanciaMetaTreinoKm != null && distanciaMetaTreinoKm! > 0) {
+      final distKm = distanciaTotal / 1000.0;
+      if (distKm >= (distanciaMetaTreinoKm! * 0.999) && !metaAtingidaNotificada) {
+        metaAtingidaNotificada = true;
+        const tituloMeta = "Meta Atingida! 🎉";
+        final corpoMeta = "Você completou os ${distanciaMetaTreinoKm!.toStringAsFixed(1)} km do treino planejado. Parabéns!";
+        AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloMeta, corpoMeta);
+        NotificacaoService.mostrarNotificacao(
+          id: 205,
+          titulo: tituloMeta,
+          corpo: corpoMeta,
+          canal: 'metas',
         );
-      } catch (_) {}
+      }
+    }
+
+    // 🔄 Sincroniza progresso automaticamente com o treino vinculado a cada ~200m
+    if (corridaIniciada && !corridaPausada && idTreinoVinculado != null) {
+      if ((distanciaTotal - ultimaDistanciaSincronizada) >= 200) {
+        ultimaDistanciaSincronizada = distanciaTotal;
+        Api.atualizarTreinoParcial(
+          idTreino: idTreinoVinculado!,
+          distanciaAtualKm: distanciaTotal / 1000.0,
+          tempoSegundos: tempoSegundos,
+          status: "em_andamento",
+          idCorrida: idCorrida,
+        );
+      }
     }
   }
 
@@ -267,7 +442,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Text(
-                "Nenhum treino planejado encontrado.",
+                "Nenhum treino planejado ou em andamento encontrado.",
                 style: TextStyle(color: colors.onSurfaceVariant),
               ),
             ),
@@ -280,16 +455,25 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (_, index) {
             final treino = treinos[index];
-            final id = treino["id_treino"]?.toString() ?? "";
-            final tipo = treino["tipo"] ?? "Treino";
-            final dist = treino["distancia_km"] ?? "-";
+            final id = (treino["id_treino"] ?? treino["id"])?.toString() ?? "";
+            final tipo = (treino["tipo"] ?? "Treino").toString();
+            final distMeta = double.tryParse((treino["distancia_km"] ?? "0").toString()) ?? 0.0;
+            final distAtual = double.tryParse((treino["distancia_atual_km"] ?? "0").toString()) ?? 0.0;
+            final tempoAnt = int.tryParse((treino["tempo_segundos"] ?? "0").toString()) ?? 0;
+            final status = (treino["status"] ?? "planejado").toString();
+
+            final progresso = distMeta > 0 ? (distAtual / distMeta).clamp(0.0, 1.0) : 0.0;
+            final pct = (progresso * 100).toInt();
 
             return InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () {
                 Navigator.pop(sheetCtx, {
                   "id": id,
-                  "titulo": "$tipo ($dist km)",
+                  "titulo": "$tipo (${distMeta.toStringAsFixed(1)} km)",
+                  "distancia_meta_km": distMeta,
+                  "distancia_atual_km": distAtual,
+                  "tempo_segundos": tempoAnt,
                 });
               },
               child: Container(
@@ -298,7 +482,9 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                   color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                    color: status == "em_andamento"
+                        ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
+                        : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
                   ),
                 ),
                 child: Row(
@@ -306,12 +492,13 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0066FF).withValues(alpha: .12),
+                        color: (status == "em_andamento" ? const Color(0xFFF59E0B) : const Color(0xFF0066FF))
+                            .withValues(alpha: .12),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(
-                        Icons.directions_run_rounded,
-                        color: Color(0xFF0066FF),
+                      child: Icon(
+                        status == "em_andamento" ? Icons.play_arrow_rounded : Icons.directions_run_rounded,
+                        color: status == "em_andamento" ? const Color(0xFFF59E0B) : const Color(0xFF0066FF),
                         size: 22,
                       ),
                     ),
@@ -320,20 +507,45 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            tipo,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: colors.onSurface,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                tipo,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurface,
+                                ),
+                              ),
+                              if (status == "em_andamento") ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    "Em Andamento",
+                                    style: TextStyle(
+                                      color: Color(0xFFF59E0B),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "$dist km planejados",
+                            distAtual > 0
+                                ? "${distAtual.toStringAsFixed(2)} / ${distMeta.toStringAsFixed(1)} km ($pct%)"
+                                : "${distMeta.toStringAsFixed(1)} km planejados",
                             style: TextStyle(
                               color: colors.onSurfaceVariant,
                               fontSize: 13,
+                              fontWeight: distAtual > 0 ? FontWeight.w600 : FontWeight.normal,
                             ),
                           ),
                         ],
@@ -370,10 +582,41 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     );
 
     if (resultado != null) {
+      final meta = resultado["distancia_meta_km"] as double?;
+      final distAtual = (resultado["distancia_atual_km"] as double?) ?? 0.0;
+      final tempoAnt = (resultado["tempo_segundos"] as int?) ?? 0;
+
       setState(() {
         idTreinoVinculado = resultado["id"];
         tituloTreinoVinculado = resultado["titulo"];
+        distanciaMetaTreinoKm = (meta != null && meta > 0) ? meta : null;
+        distanciaBaseMetros = distAtual * 1000.0;
+        tempoBaseSegundos = tempoAnt;
+        if (!corridaIniciada) {
+          distanciaTotal = distanciaBaseMetros;
+          tempoSegundos = tempoBaseSegundos;
+          caloriasEstimadas = ((distanciaTotal / 1000.0) * 62).round();
+        }
       });
+      final prefs = await SharedPreferences.getInstance();
+      if (idTreinoVinculado != null) {
+        await prefs.setString("id_treino_ativo", idTreinoVinculado!);
+        await prefs.setString("titulo_treino_ativo", tituloTreinoVinculado!);
+        if (meta != null) await prefs.setDouble("distancia_meta_treino_km", meta);
+        await prefs.setDouble("distancia_atual_treino_km", distAtual);
+        await prefs.setInt("tempo_treino_segundos", tempoAnt);
+
+        if (mounted) {
+          final msg = distAtual > 0
+              ? "Treino \"$tituloTreinoVinculado\" retomado! (${distAtual.toStringAsFixed(2)} km já feitos)"
+              : "Treino \"$tituloTreinoVinculado\" vinculado à corrida!";
+          AppSnackBar.treino(
+            context,
+            msg,
+            titulo: distAtual > 0 ? "Retomando Treino 🏃" : "Treino Vinculado 🏃",
+          );
+        }
+      }
     }
   }
 
@@ -438,15 +681,28 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     if (!await garantirLocalizacaoSegundoPlano()) return;
     if (!mounted) return;
 
+    if (posicaoAtual == null) {
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.bestForNavigation,
+          timeLimit: const Duration(seconds: 2),
+        );
+        posicaoAtual = LatLng(pos.latitude, pos.longitude);
+        acuraciaAtual = pos.accuracy;
+      } catch (_) {}
+    }
+
     percurso.clear();
-    distanciaTotal = 0;
-    tempoSegundos = 0;
+    // Continua de onde parou caso seja a retomada de um treino vinculado
+    distanciaTotal = distanciaBaseMetros;
+    tempoSegundos = tempoBaseSegundos;
     paceMedioSegundos = 0;
     paceAtualSegundos = 0;
     velocidadeMedia = 0;
-    caloriasEstimadas = 0;
+    caloriasEstimadas = ((distanciaTotal / 1000.0) * 62).round();
     ultimoPontoValido = posicaoAtual;
     ultimoPontoTempo = DateTime.now();
+    metaAtingidaNotificada = false;
 
     if (posicaoAtual != null) {
       percurso.add(posicaoAtual!);
@@ -457,8 +713,10 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       corrida = await Api.iniciarCorrida();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Não foi possível iniciar a corrida.")),
+      AppSnackBar.erro(
+        context,
+        "Não foi possível iniciar a corrida. Verifique sua conexão.",
+        titulo: "Falha ao Iniciar",
       );
       return;
     }
@@ -466,8 +724,10 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     idCorrida = corrida["id"];
     if (idCorrida == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("A corrida não recebeu um identificador.")),
+        AppSnackBar.erro(
+          context,
+          "A corrida não recebeu um identificador válido.",
+          titulo: "Erro na Corrida",
         );
       }
       return;
@@ -507,14 +767,25 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     _iniciarTimer();
     _iniciarStreamGps();
 
+    const tituloPush = "Corrida em andamento 🏃";
+    const corpoPush = "PaceMind monitorando seu trajeto em tempo real.";
+    const tituloApi = "Corrida iniciada 🏃";
+    const msgApi = "Seu treino começou com GPS ativo. Boa corrida!";
+
+    await AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloPush, corpoPush);
+    await AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloApi, msgApi);
+
     Api.criarNotificacao(
-      titulo: "Corrida iniciada 🏃",
-      mensagem: "Seu treino começou com GPS ativo. Boa corrida!",
-    );
+      titulo: tituloApi,
+      mensagem: msgApi,
+      tipo: "treino",
+    ).catchError((_) => {});
 
     await NotificacaoService.mostrarNotificacao(
-      titulo: "Corrida em andamento 🏃",
-      corpo: "PaceMind monitorando seu trajeto em tempo real.",
+      id: 200,
+      titulo: tituloPush,
+      corpo: corpoPush,
+      canal: 'treinos',
     );
   }
 
@@ -523,25 +794,51 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     setState(() {
       corridaPausada = !corridaPausada;
       if (!corridaPausada) {
-        // Ao retomar, atualiza a referência temporal para evitar saltos falsos
+        // Ao retomar, atualiza a referência temporal e espacial para evitar saltos falsos
         ultimoPontoTempo = DateTime.now();
+        if (posicaoAtual != null) {
+          ultimoPontoValido = posicaoAtual;
+        }
       }
     });
+
+    if (idTreinoVinculado != null) {
+      Api.atualizarTreinoParcial(
+        idTreino: idTreinoVinculado!,
+        distanciaAtualKm: distanciaTotal / 1000.0,
+        tempoSegundos: tempoSegundos,
+        status: "em_andamento",
+        idCorrida: idCorrida,
+      );
+    }
   }
 
   Future<void> confirmarFinalizarCorrida() async {
     final distKm = (distanciaTotal / 1000).toStringAsFixed(2);
     final tempo = formatarTempo();
+
+    final bool atingiuMeta = distanciaMetaTreinoKm != null &&
+        distanciaMetaTreinoKm! > 0 &&
+        (distanciaTotal / 1000.0) >= (distanciaMetaTreinoKm! * 0.99);
+
+    final String tituloDialog = (idTreinoVinculado != null && !atingiuMeta)
+        ? "Pausar e Salvar Treino?"
+        : "Encerrar Corrida?";
+
+    final String mensagem = (idTreinoVinculado != null && !atingiuMeta && distanciaMetaTreinoKm != null)
+        ? "Você percorreu $distKm de ${distanciaMetaTreinoKm!.toStringAsFixed(1)} km em $tempo.\n\nComo a meta ainda não foi atingida (100%), seu progresso será salvo e o treino ficará pausado para você continuar quando quiser."
+        : "Você percorreu $distKm km em $tempo.\nDeseja salvar e concluir este treino?";
+
     final confirmar = await AppModal.showConfirmDialog(
       context: context,
-      title: "Encerrar Corrida?",
-      message: "Você percorreu $distKm km em $tempo.\nDeseja salvar e concluir este treino?",
-      confirmText: "Sim, Concluir",
+      title: tituloDialog,
+      message: mensagem,
+      confirmText: (idTreinoVinculado != null && !atingiuMeta) ? "Sim, Salvar Progresso" : "Sim, Concluir",
       cancelText: "Continuar Correndo",
-      icon: Icons.stop_rounded,
-      iconColor: const Color(0xFFEF4444),
-      confirmButtonColor: const Color(0xFFEF4444),
-      isDestructive: true,
+      icon: (idTreinoVinculado != null && !atingiuMeta) ? Icons.pause_circle_rounded : Icons.stop_rounded,
+      iconColor: (idTreinoVinculado != null && !atingiuMeta) ? const Color(0xFFF59E0B) : const Color(0xFFEF4444),
+      confirmButtonColor: (idTreinoVinculado != null && !atingiuMeta) ? const Color(0xFFF59E0B) : const Color(0xFFEF4444),
+      isDestructive: atingiuMeta || idTreinoVinculado == null,
     );
 
     if (confirmar == true) {
@@ -558,6 +855,11 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       velocidadeMedia = (distanciaTotal / 1000) / (tempoSegundos / 3600);
     }
 
+    final distCorridaKm = distanciaTotal / 1000.0;
+    final bool atingiuMeta = distanciaMetaTreinoKm != null &&
+        distanciaMetaTreinoKm! > 0 &&
+        distCorridaKm >= (distanciaMetaTreinoKm! * 0.99);
+
     if (idCorrida != null) {
       try {
         await Api.finalizarCorrida(
@@ -570,13 +872,61 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       } catch (_) {}
 
       if (idTreinoVinculado != null) {
-        try {
-          await Api.finalizarTreino(
-            idTreino: idTreinoVinculado!,
+        if (atingiuMeta) {
+          // 🎉 Treino 100% CONCLUÍDO!
+          try {
+            await Api.finalizarTreino(
+              idTreino: idTreinoVinculado!,
+              tempoSegundos: tempoSegundos,
+              distanciaKm: distanciaMetaTreinoKm!,
+              distanciaAtualKm: distCorridaKm,
+              idCorrida: idCorrida,
+              status: "concluido",
+            );
+          } catch (_) {}
+
+          await AutoNotificacaoService.notificarTreinoConcluido(
+            distanciaKm: distCorridaKm,
             tempoSegundos: tempoSegundos,
+            paceMedioSegundos: paceMedioSegundos,
+          );
+        } else {
+          // ⏸️ Treino INCOMPLETO (PAUSADO para continuar em outro dia)
+          // NÃO marca como concluído! Salva como 'em_andamento'
+          try {
+            await Api.atualizarTreinoParcial(
+              idTreino: idTreinoVinculado!,
+              distanciaAtualKm: distCorridaKm,
+              tempoSegundos: tempoSegundos,
+              status: "em_andamento",
+              idCorrida: idCorrida,
+            );
+          } catch (_) {}
+
+          distanciaBaseMetros = distanciaTotal;
+          tempoBaseSegundos = tempoSegundos;
+        }
+      } else {
+        try {
+          // Corrida avulsa sem treino vinculado
+          final hojeIso = DateTime.now().toIso8601String().substring(0, 10);
+          await Api.criarTreinoCompleto(
+            tipo: "Corrida GPS",
             distanciaKm: distanciaTotal / 1000,
+            tempoSegundos: tempoSegundos,
+            data: hojeIso,
+            sensacao: 6,
+            status: "concluido",
+            observacoes: "Corrida gravada via GPS no PaceMind.",
+            idCorrida: idCorrida,
           );
         } catch (_) {}
+
+        await AutoNotificacaoService.notificarTreinoConcluido(
+          distanciaKm: distCorridaKm,
+          tempoSegundos: tempoSegundos,
+          paceMedioSegundos: paceMedioSegundos,
+        );
       }
     }
 
@@ -584,28 +934,48 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     await prefs.remove("corrida_ativa");
     await prefs.remove("id_corrida_ativa");
     await prefs.remove("corrida_iniciada_em");
-    await prefs.remove("id_treino_ativo");
-    await prefs.remove("titulo_treino_ativo");
+
+    if (atingiuMeta || idTreinoVinculado == null) {
+      await prefs.remove("id_treino_ativo");
+      await prefs.remove("titulo_treino_ativo");
+      await prefs.remove("distancia_meta_treino_km");
+      await prefs.remove("distancia_atual_treino_km");
+      await prefs.remove("tempo_treino_segundos");
+    } else {
+      // Salva progresso parcial para manter o treino vinculado para a próxima sessão
+      await prefs.setDouble("distancia_atual_treino_km", distCorridaKm);
+      await prefs.setInt("tempo_treino_segundos", tempoSegundos);
+    }
     await BackgroundTrackingService.stop();
 
     if (!mounted) return;
 
+    final idTreinoSalvoAinda = idTreinoVinculado;
     setState(() {
       corridaIniciada = false;
       corridaPausada = false;
+      if (atingiuMeta) {
+        idTreinoVinculado = null;
+        tituloTreinoVinculado = null;
+        distanciaMetaTreinoKm = null;
+        distanciaBaseMetros = 0.0;
+        tempoBaseSegundos = 0;
+      }
     });
 
-    Api.criarNotificacao(
-      titulo: "Corrida finalizada 🏁",
-      mensagem:
-          "Parabéns! Você correu ${(distanciaTotal / 1000).toStringAsFixed(2)} km em ${formatarTempo()}.",
-    );
-
-    await NotificacaoService.mostrarNotificacao(
-      titulo: "Treino Concluído 🏁",
-      corpo:
-          "Distância: ${(distanciaTotal / 1000).toStringAsFixed(2)} km • Pace: ${formatarPace(paceMedioSegundos)}",
-    );
+    if (idTreinoSalvoAinda != null && !atingiuMeta) {
+      AppSnackBar.aviso(
+        context,
+        "Progresso salvo: ${distCorridaKm.toStringAsFixed(2)} de ${distanciaMetaTreinoKm?.toStringAsFixed(1) ?? ''} km. O treino continuará de onde parou quando você quiser!",
+        titulo: "Treino Pausado ⏸️",
+      );
+    } else if (atingiuMeta) {
+      AppSnackBar.sucesso(
+        context,
+        "Parabéns! 100% da meta de ${distCorridaKm.toStringAsFixed(2)} km atingida com sucesso!",
+        titulo: "Treino Concluído 🎉",
+      );
+    }
 
     // Reinicia o stream do GPS para visualização casual
     _iniciarStreamGps();
@@ -1020,22 +1390,102 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                       ),
 
                       if (tituloTreinoVinculado != null) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0066FF).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            "Treino: $tituloTreinoVinculado",
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF0066FF),
+                            color: const Color(0xFF0066FF).withValues(alpha: isDark ? 0.2 : 0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: const Color(0xFF0066FF).withValues(alpha: 0.25),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.flag_rounded, size: 14, color: Color(0xFF0066FF)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      "Treino: $tituloTreinoVinculado",
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF0066FF),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (!corridaIniciada) ...[
+                                    const SizedBox(width: 8),
+                                    InkWell(
+                                      onTap: desvincularTreino,
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.05),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF0066FF)),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              if (distanciaMetaTreinoKm != null && distanciaMetaTreinoKm! > 0) ...[
+                                const SizedBox(height: 6),
+                                Builder(
+                                  builder: (_) {
+                                    final distKm = distanciaTotal / 1000.0;
+                                    final progresso = (distKm / distanciaMetaTreinoKm!).clamp(0.0, 1.0);
+                                    final pct = (progresso * 100).toInt();
+                                    final bool batida = pct >= 100;
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              "${distKm.toStringAsFixed(2)} / ${distanciaMetaTreinoKm!.toStringAsFixed(1)} km",
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark ? Colors.white70 : Colors.black87,
+                                              ),
+                                            ),
+                                            Text(
+                                              batida ? "100% (Meta Concluída!)" : "$pct%",
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                                color: batida ? const Color(0xFF10B981) : const Color(0xFF0066FF),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: LinearProgressIndicator(
+                                            value: progresso,
+                                            minHeight: 5,
+                                            backgroundColor: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              batida ? const Color(0xFF10B981) : const Color(0xFF0066FF),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ],
