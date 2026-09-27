@@ -122,23 +122,23 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  style: TextStyle(color: colors.onSurface, fontSize: 22),
+                  style: TextStyle(color: colors.onSurface, fontSize: 16),
                   decoration: InputDecoration(
                     labelText: "Email",
                     labelStyle: TextStyle(
-                      color: colors.onSurface,
-                      fontSize: 20,
+                      color: isDark ? colors.onSurfaceVariant : const Color(0xFF64748B),
+                      fontSize: 14,
                     ),
                     prefixIcon: Icon(Icons.email_rounded, color: accent),
                     filled: true,
                     fillColor: fieldFill,
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -153,12 +153,12 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: !mostrarSenha,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => loading ? null : login(),
-                  style: TextStyle(color: colors.onSurface, fontSize: 22),
+                  style: TextStyle(color: colors.onSurface, fontSize: 16),
                   decoration: InputDecoration(
                     labelText: "Senha",
                     labelStyle: TextStyle(
-                      color: colors.onSurface,
-                      fontSize: 20,
+                      color: isDark ? colors.onSurfaceVariant : const Color(0xFF64748B),
+                      fontSize: 14,
                     ),
                     prefixIcon: Icon(Icons.lock_rounded, color: accent),
                     suffixIcon: IconButton(
@@ -175,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                     filled: true,
                     fillColor: fieldFill,
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -184,31 +184,47 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
                   child: erro == null
-                      ? const SizedBox(height: 20)
-                      : Text(
-                          erro!,
-                          key: ValueKey(erro),
-                          style: TextStyle(color: colors.error),
+                      ? const SizedBox(height: 12)
+                      : Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            color: colors.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colors.error.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.error_outline_rounded, color: colors.error, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  erro!,
+                                  key: ValueKey(erro),
+                                  style: TextStyle(color: colors.error, fontSize: 13, fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
+                  height: 52,
                   child: ElevatedButton(
                     onPressed: loading ? null : login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark
-                          ? colors.primary
-                          : Colors.lightBlueAccent,
+                      backgroundColor: const Color(0xFF0066FF),
                       foregroundColor: Colors.white,
-                      textStyle: const TextStyle(fontSize: 18),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      textStyle: const TextStyle(fontSize: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     child: AnimatedSwitcher(
@@ -219,7 +235,8 @@ class _LoginPageState extends State<LoginPage> {
                               height: 22,
                               width: 22,
                               child: CircularProgressIndicator(
-                                color: Colors.blue,
+                                strokeWidth: 2.5,
+                                color: Colors.white,
                               ),
                             )
                           : const Text(
@@ -227,21 +244,21 @@ class _LoginPageState extends State<LoginPage> {
                               key: ValueKey('enter'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
+                                letterSpacing: 0.5,
                               ),
                             ),
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, "/cadastro"),
                   child: Text(
-                    "Criar conta",
+                    "Não tem uma conta? Cadastre-se",
                     style: TextStyle(
-                      fontSize: 16,
-                      letterSpacing: 1,
+                      fontSize: 14,
                       color: accent,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

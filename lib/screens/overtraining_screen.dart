@@ -10,6 +10,7 @@ class OvertrainingPage extends StatefulWidget {
 
 class _OvertrainingPageState extends State<OvertrainingPage> {
   bool loading = true;
+  String? erroCarregamento;
   Map<String, dynamic>? overtrainingData;
 
   @override
@@ -19,17 +20,26 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
   }
 
   Future<void> _carregarDados() async {
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      erroCarregamento = null;
+    });
+
     try {
       final data = await Api.getOvertraining();
-      if (mounted) {
-        setState(() {
-          overtrainingData = data;
-          loading = false;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        overtrainingData = data;
+        loading = false;
+        erroCarregamento = null;
+      });
     } catch (_) {
-      if (mounted) setState(() => loading = false);
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        erroCarregamento = "Não foi possível carregar a análise de sobrecarga.";
+      });
     }
   }
 
@@ -39,6 +49,7 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
     final cardBg = Theme.of(context).cardColor;
     final txtColor = Theme.of(context).colorScheme.onSurface;
     final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
     final cargaAguda = double.tryParse(overtrainingData?["carga_aguda"]?.toString() ?? "0") ?? 0.0;
     final cargaCronica = double.tryParse(overtrainingData?["carga_cronica"]?.toString() ?? "0") ?? 0.0;
@@ -46,27 +57,31 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
     final mensagens = (overtrainingData?["mensagem"] as List? ?? []);
     final recomendacoes = (overtrainingData?["recomendacoes"] as List? ?? []);
 
-    // Determinação do Estado Clínico / Fisiológico
-    String estadoGeral = "Evoluindo Bem (Zona Ideal)";
-    String estadoSub = "Sua carga de treino está equilibrada, promovendo ganho de condicionamento com baixo risco de lesão.";
+    // Determinação do Estado Clínico / Fisiológico do Atleta
+    String estadoGeral = "Zona Ideal (Sweet Spot)";
+    String estadoDescricao =
+        "Sua carga aguda está em equilíbrio ideal com o preparo acumulado no último mês. Baixo risco de lesão e alto ganho de condicionamento.";
     Color corEstado = const Color(0xFF10B981); // Verde
-    IconData iconeEstado = Icons.check_circle_rounded;
+    IconData iconeEstado = Icons.verified_rounded;
 
     if (acwr > 1.5) {
-      estadoGeral = "Treinando Demais (Alto Risco de Overtraining)";
-      estadoSub = "Você aumentou o volume ou intensidade rápido demais nos últimos 7 dias. Alto risco de lesão e fadiga crônica.";
+      estadoGeral = "Alto Risco de Sobrecarga (Danger Zone)";
+      estadoDescricao =
+          "Você aumentou o volume ou a intensidade rápido demais nos últimos 7 dias. O risco de estiramentos, lesões articulares e fadiga crônica está elevado.";
       corEstado = const Color(0xFFEF4444); // Vermelho
       iconeEstado = Icons.warning_rounded;
-    } else if (acwr < 0.8 && cargaCronica > 0) {
-      estadoGeral = "Treinando Pouco (Sub-treinamento)";
-      estadoSub = "A carga dos últimos 7 dias está abaixo da sua capacidade crônica. É seguro progredir o volume gradualmente.";
-      corEstado = const Color(0xFF3B82F6); // Azul
-      iconeEstado = Icons.info_outline_rounded;
     } else if (acwr >= 1.3 && acwr <= 1.5) {
-      estadoGeral = "Zona de Alerta (Atenção ao Aumento de Carga)";
-      estadoSub = "Carga em fase de crescimento acelerado. Mantenha os dias de descanso programados para recuperar a musculatura.";
-      corEstado = const Color(0xFFF59E0B); // Amarelo/Laranja
+      estadoGeral = "Zona de Alerta (Carga Acelerada)";
+      estadoDescricao =
+          "Carga em ritmo de crescimento acelerado. Priorize boas noites de sono, hidratação e cumpra os dias de descanso programados para recuperar o organismo.";
+      corEstado = const Color(0xFFF59E0B); // Laranja
       iconeEstado = Icons.warning_amber_rounded;
+    } else if (acwr < 0.8 && cargaCronica > 0) {
+      estadoGeral = "Sub-Treinamento (Fase Regenerativa)";
+      estadoDescricao =
+          "A carga dos últimos 7 dias está abaixo da sua capacidade crônica habitual. Você está descansado e pode aumentar os treinos gradualmente.";
+      corEstado = const Color(0xFF0066FF); // Azul
+      iconeEstado = Icons.battery_charging_full_rounded;
     }
 
     return Scaffold(
@@ -81,17 +96,18 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
         ),
       ),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0066FF)))
           : RefreshIndicator(
+              color: const Color(0xFF0066FF),
               onRefresh: _carregarDados,
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 children: [
-                  // Card Principal de Diagnóstico
+                  // Card Hero com Diagnóstico Fisiológico
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      color: corEstado.withValues(alpha: isDark ? 0.18 : 0.1),
+                      color: corEstado.withValues(alpha: isDark ? 0.16 : 0.1),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: corEstado.withValues(alpha: 0.4), width: 1.5),
                     ),
@@ -100,10 +116,13 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
                       children: [
                         Row(
                           children: [
-                            CircleAvatar(
-                              radius: 26,
-                              backgroundColor: corEstado.withValues(alpha: 0.2),
-                              child: Icon(iconeEstado, color: corEstado, size: 30),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: corEstado.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(iconeEstado, color: corEstado, size: 28),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -111,16 +130,22 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Diagnóstico de Carga",
-                                    style: TextStyle(fontSize: 13, color: corEstado, fontWeight: FontWeight.bold),
+                                    "DIAGNÓSTICO FISIOLÓGICO",
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: corEstado,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     estadoGeral,
                                     style: TextStyle(
-                                      fontSize: 17,
+                                      fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                       color: txtColor,
+                                      letterSpacing: -0.3,
                                     ),
                                   ),
                                 ],
@@ -130,138 +155,108 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          estadoSub,
+                          estadoDescricao,
                           style: TextStyle(
                             fontSize: 13.5,
                             color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                            height: 1.45,
                           ),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 20),
 
-                        // Gauge / Barra do Índice ACWR
+                        // Barra Espectral do Índice ACWR
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "Índice ACWR (Agudo : Crônico)",
-                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: txtColor),
+                              "Índice ACWR (Agudo / Crônico)",
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: txtColor),
                             ),
-                            Text(
-                              "${acwr.toStringAsFixed(2)}x",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: corEstado),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: corEstado.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                "${acwr.toStringAsFixed(2)}x",
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: corEstado),
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
+
+                        // Barra com gradiente indicativo
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
                           child: LinearProgressIndicator(
                             value: (acwr / 2.0).clamp(0.0, 1.0),
-                            backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                            backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08),
                             valueColor: AlwaysStoppedAnimation<Color>(corEstado),
-                            minHeight: 10,
+                            minHeight: 12,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
+
+                        // Escala explicativa da régua
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text("< 0.8: Pouco", style: TextStyle(fontSize: 11, color: subColor)),
-                              ),
-                            ),
-                            const Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text("0.8 - 1.3: Ideal", style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
-                              ),
-                            ),
-                            const Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text("> 1.5: Perigo", style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
-                              ),
-                            ),
+                            _legendaFaixa("< 0.8", "Regenerativo", const Color(0xFF0066FF)),
+                            _legendaFaixa("0.8 - 1.3", "Ideal", const Color(0xFF10B981)),
+                            _legendaFaixa("1.3 - 1.5", "Atenção", const Color(0xFFF59E0B)),
+                            _legendaFaixa("> 1.5", "Perigo", const Color(0xFFEF4444)),
                           ],
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 20),
 
                   // Cards Carga Aguda vs Carga Crônica
-                  LayoutBuilder(
-                    builder: (context, box) {
-                      final isNarrow = box.maxWidth < 340;
-                      if (isNarrow) {
-                        return Column(
-                          children: [
-                            _cardCarga(
-                              "Carga Aguda",
-                              "Últimos 7 dias",
-                              cargaAguda.toStringAsFixed(0),
-                              Icons.bolt_rounded,
-                              const Color(0xFF0066FF),
-                              cardBg,
-                              txtColor,
-                              isDark,
-                            ),
-                            const SizedBox(height: 12),
-                            _cardCarga(
-                              "Carga Crônica",
-                              "Média 28 dias",
-                              cargaCronica.toStringAsFixed(0),
-                              Icons.timeline_rounded,
-                              const Color(0xFF8B5CF6),
-                              cardBg,
-                              txtColor,
-                              isDark,
-                            ),
-                          ],
-                        );
-                      }
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: _cardCarga(
-                              "Carga Aguda",
-                              "Últimos 7 dias",
-                              cargaAguda.toStringAsFixed(0),
-                              Icons.bolt_rounded,
-                              const Color(0xFF0066FF),
-                              cardBg,
-                              txtColor,
-                              isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _cardCarga(
-                              "Carga Crônica",
-                              "Média 28 dias",
-                              cargaCronica.toStringAsFixed(0),
-                              Icons.timeline_rounded,
-                              const Color(0xFF8B5CF6),
-                              cardBg,
-                              txtColor,
-                              isDark,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _cardCargaComparativa(
+                          titulo: "Carga Aguda",
+                          subtitulo: "Últimos 7 dias (Fadiga)",
+                          valor: cargaAguda.toStringAsFixed(0),
+                          icone: Icons.bolt_rounded,
+                          cor: const Color(0xFF0066FF),
+                          cardBg: cardBg,
+                          borderColor: borderColor,
+                          txtColor: txtColor,
+                          subColor: subColor,
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _cardCargaComparativa(
+                          titulo: "Carga Crônica",
+                          subtitulo: "Média 28 dias (Preparo)",
+                          valor: cargaCronica.toStringAsFixed(0),
+                          icone: Icons.shield_rounded,
+                          cor: const Color(0xFF8B5CF6),
+                          cardBg: cardBg,
+                          borderColor: borderColor,
+                          txtColor: txtColor,
+                          subColor: subColor,
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 22),
 
-                  // Recomendações Práticas
+                  // Recomendações Práticas do Treinador
                   Text(
-                    "Recomendações do Treinador",
+                    "Recomendações Clínicas & Treinamento",
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: txtColor,
                     ),
@@ -269,146 +264,214 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
                   const SizedBox(height: 12),
 
                   Container(
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: cardBg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                      ),
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                      border: Border.all(color: borderColor),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (mensagens.isNotEmpty) ...[
-                          const Text(
-                            "Pontos de Atenção:",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          Row(
+                            children: [
+                              const Icon(Icons.priority_high_rounded, color: Color(0xFFF59E0B), size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Pontos de Atenção Imediata:",
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: txtColor),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           ...mensagens.map((m) => Padding(
-                                padding: const EdgeInsets.only(bottom: 6),
+                                padding: const EdgeInsets.only(bottom: 8),
                                 child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(Icons.circle, size: 8, color: Color(0xFF0066FF)),
-                                    const SizedBox(width: 8),
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 6),
+                                      child: Icon(Icons.circle, size: 7, color: Color(0xFFF59E0B)),
+                                    ),
+                                    const SizedBox(width: 10),
                                     Expanded(
-                                      child: Text(m.toString(), style: TextStyle(color: txtColor, fontSize: 13.5)),
+                                      child: Text(
+                                        m.toString(),
+                                        style: TextStyle(color: txtColor, fontSize: 13.5, height: 1.35),
+                                      ),
                                     ),
                                   ],
                                 ),
                               )),
+                          const SizedBox(height: 14),
+                          Divider(color: borderColor),
                           const SizedBox(height: 12),
                         ],
-                        const Text(
-                          "O que fazer agora:",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+
+                        Row(
+                          children: [
+                            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Orientações do PaceMind:",
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: txtColor),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 10),
+
                         if (recomendacoes.isNotEmpty)
-                          ...recomendacoes.map((r) => Padding(
-                                padding: const EdgeInsets.only(bottom: 6),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle_outline_rounded, size: 18, color: Colors.green),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(r.toString(), style: TextStyle(color: txtColor, fontSize: 13.5)),
-                                    ),
-                                  ],
-                                ),
-                              ))
+                          ...recomendacoes.map((r) => _itemRecomendacao(r.toString(), txtColor))
                         else ...[
-                          _itemRecomendacao("Mantenha 1 a 2 dias de descanso total na semana para regeneração muscular.", txtColor),
-                          _itemRecomendacao("80% do volume deve ser em Zona 1 e Zona 2 (rodagens leves).", txtColor),
-                          _itemRecomendacao("Durma pelo menos 7 a 8 horas por noite para absorver a carga de treino.", txtColor),
+                          _itemRecomendacao(
+                            "80% do seu volume semanal de corrida deve ser mantido em Zona 1 e Zona 2 (rodagens leves regenerativas).",
+                            txtColor,
+                          ),
+                          _itemRecomendacao(
+                            "Mantenha 1 a 2 dias de descanso total na semana para evitar a saturação de lactato e lesões por sobreuso.",
+                            txtColor,
+                          ),
+                          _itemRecomendacao(
+                            "Monitore o sono: dormir pelo menos 7 a 8 horas por noite é crucial para a supercompensação fisiológica.",
+                            txtColor,
+                          ),
+                          _itemRecomendacao(
+                            "Em caso de asma induzida pelo exercício (AIE), realize aquecimentos graduais de 15 minutos em Z1 antes de correr.",
+                            txtColor,
+                          ),
                         ],
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 20),
 
-                  // Explicação didática do ACWR
+                  // Explicação Científica do Modelo ACWR
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                      ),
+                      border: Border.all(color: borderColor),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.school_rounded, color: Color(0xFF0066FF), size: 22),
-                            SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0066FF).withValues(alpha: isDark ? 0.2 : 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.school_rounded, color: Color(0xFF0066FF), size: 18),
+                            ),
+                            const SizedBox(width: 10),
                             Text(
-                              "Como funciona o cálculo?",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              "Ciência por trás do ACWR",
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: txtColor),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         Text(
-                          "O método ACWR (Acute:Chronic Workload Ratio) compara o que você treinou na última semana (fadiga) com o que treinou no último mês (preparo físico). Se a fadiga superar demais o preparo (> 1.5x), o risco de lesão aumenta exponencialmente.",
+                          "O método ACWR (Acute:Chronic Workload Ratio), desenvolvido pelo pesquisador Tim Gabbett, compara a fadiga acumulada na última semana com o preparo físico dos últimos 28 dias. Quando o índice ultrapassa 1.5, o risco relativo de lesão sobe de 2x para 4x. Manter-se na faixa entre 0.8 e 1.3 garante melhora constante de performance com máxima segurança.",
                           style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                            height: 1.4,
+                            fontSize: 12.5,
+                            color: subColor,
+                            height: 1.45,
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
     );
   }
 
-  Widget _cardCarga(
-    String titulo,
-    String subtitulo,
-    String valor,
-    IconData icon,
-    Color cor,
-    Color cardBg,
-    Color txtColor,
-    bool isDark,
-  ) {
-    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  Widget _legendaFaixa(String valor, String label, Color cor) {
+    return Column(
+      children: [
+        Text(
+          valor,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cor),
+        ),
+        Text(
+          label,
+          style: TextStyle(fontSize: 10, color: cor.withValues(alpha: 0.8)),
+        ),
+      ],
+    );
+  }
+
+  Widget _cardCargaComparativa({
+    required String titulo,
+    required String subtitulo,
+    required String valor,
+    required IconData icone,
+    required Color cor,
+    required Color cardBg,
+    required Color borderColor,
+    required Color txtColor,
+    required Color subColor,
+    required bool isDark,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: cor.withValues(alpha: 0.15),
-            child: Icon(icon, color: cor, size: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: cor.withValues(alpha: isDark ? 0.2 : 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icone, color: cor, size: 20),
+              ),
+              Text(
+                "U.A.",
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: subColor),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           FittedBox(
             fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
             child: Text(
               valor,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: txtColor),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: txtColor),
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             titulo,
             maxLines: 1,
@@ -419,7 +482,7 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
             subtitulo,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11.5, color: subColor),
+            style: TextStyle(fontSize: 11, color: subColor),
           ),
         ],
       ),
@@ -428,13 +491,18 @@ class _OvertrainingPageState extends State<OvertrainingPage> {
 
   Widget _itemRecomendacao(String texto, Color txtColor) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle_outline_rounded, size: 18, color: Colors.green),
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.check_circle_outline_rounded, size: 17, color: Color(0xFF10B981)),
+          ),
           const SizedBox(width: 8),
-          Expanded(child: Text(texto, style: TextStyle(color: txtColor, fontSize: 13.5))),
+          Expanded(
+            child: Text(texto, style: TextStyle(color: txtColor, fontSize: 13, height: 1.35)),
+          ),
         ],
       ),
     );

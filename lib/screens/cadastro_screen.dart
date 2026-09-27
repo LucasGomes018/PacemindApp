@@ -307,47 +307,50 @@ class _CadastroPageState extends State<CadastroPage> {
                       ),
                     ),
                   ),
-                const Text(
+                Text(
                   "Criar conta",
                   style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 28,
+                    color: colors.primary,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Preencha seus dados para iniciar sua jornada",
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontSize: 14,
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
 
                 // 👤 NOME
                 TextField(
                   controller: nomeController,
-
-                  style: TextStyle(color: colors.onSurface, fontSize: 20),
-
+                  textInputAction: TextInputAction.next,
+                  style: TextStyle(color: colors.onSurface, fontSize: 16),
                   decoration: InputDecoration(
                     labelText: "Nome",
-
                     labelStyle: TextStyle(
-                      color: colors.onSurface,
-                      fontSize: 18,
+                      color: isDark ? colors.onSurfaceVariant : const Color(0xFF64748B),
+                      fontSize: 14,
                     ),
-
                     prefixIcon: const Icon(
                       Icons.person_rounded,
-                      color: Colors.lightBlue,
+                      color: Color(0xFF0066FF),
                     ),
-
                     filled: true,
                     fillColor: fieldFill,
-
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
                       borderRadius: BorderRadius.circular(16),
                     ),
-
                     focusedBorder: OutlineInputBorder(
                       borderSide: const BorderSide(
-                        color: Colors.lightBlue,
+                        color: Color(0xFF0066FF),
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(16),
@@ -360,33 +363,28 @@ class _CadastroPageState extends State<CadastroPage> {
                 // 📧 EMAIL
                 TextField(
                   controller: emailController,
-
-                  style: TextStyle(color: colors.onSurface, fontSize: 20),
-
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  style: TextStyle(color: colors.onSurface, fontSize: 16),
                   decoration: InputDecoration(
                     labelText: "Email",
-
                     labelStyle: TextStyle(
-                      color: colors.onSurface,
-                      fontSize: 18,
+                      color: isDark ? colors.onSurfaceVariant : const Color(0xFF64748B),
+                      fontSize: 14,
                     ),
-
                     prefixIcon: const Icon(
                       Icons.email_rounded,
-                      color: Colors.lightBlue,
+                      color: Color(0xFF0066FF),
                     ),
-
                     filled: true,
                     fillColor: fieldFill,
-
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
                       borderRadius: BorderRadius.circular(16),
                     ),
-
                     focusedBorder: OutlineInputBorder(
                       borderSide: const BorderSide(
-                        color: Colors.lightBlue,
+                        color: Color(0xFF0066FF),
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(16),
@@ -394,33 +392,38 @@ class _CadastroPageState extends State<CadastroPage> {
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
                 if (!codigoEnviado)
                   SizedBox(
                     width: double.infinity,
+                    height: 50,
                     child: ElevatedButton.icon(
                       onPressed: enviandoCodigo ? null : enviarCodigo,
                       icon: const Icon(
-                        Icons.mark_email_read,
+                        Icons.mark_email_read_rounded,
                         color: Colors.white,
+                        size: 20,
                       ),
                       label: enviandoCodigo
                           ? const SizedBox(
                               height: 22,
                               width: 22,
                               child: CircularProgressIndicator(
-                                strokeWidth: 3,
-                                color: Colors.lightBlueAccent,
+                                strokeWidth: 2.5,
+                                color: Colors.white,
                               ),
                             )
-                          : const Text("Enviar código"),
+                          : const Text(
+                              "Enviar código de validação",
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: const Color(0xFF0066FF),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                     ),
@@ -428,91 +431,96 @@ class _CadastroPageState extends State<CadastroPage> {
 
                 if (codigoEnviado) ...[
                   Container(
-                    padding: const EdgeInsets.all(16),
-
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.blue.shade100),
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFF0066FF).withValues(alpha: isDark ? 0.4 : 0.3),
+                      ),
                     ),
-
                     child: Column(
                       children: [
-                        const SizedBox(height: 16),
-
                         TextField(
                           controller: codigoController,
                           keyboardType: TextInputType.number,
-
                           style: TextStyle(
                             color: colors.onSurface,
-                            fontSize: 20,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
                           ),
-
                           decoration: InputDecoration(
-                            labelText: "Código recebido",
-
+                            labelText: "Código de Verificação",
                             labelStyle: TextStyle(
-                              color: colors.onSurface,
-                              fontSize: 18,
+                              color: isDark ? colors.onSurfaceVariant : const Color(0xFF64748B),
+                              fontSize: 14,
                             ),
                             prefixIcon: const Icon(
-                              Icons.verified_user,
-                              color: Colors.lightBlue,
+                              Icons.verified_user_rounded,
+                              color: Color(0xFF0066FF),
                             ),
+                            filled: true,
+                            fillColor: isDark ? const Color(0xFF0F172A) : Colors.white,
                             enabledBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(
-                                color: Colors.lightBlue,
-                                width: 1,
+                              borderSide: BorderSide(
+                                color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
                               ),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-
                             focusedBorder: OutlineInputBorder(
                               borderSide: const BorderSide(
-                                color: Colors.lightBlue,
+                                color: Color(0xFF0066FF),
                                 width: 2,
                               ),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
                         ),
                         const SizedBox(height: 12),
 
-                        Text(
-                          "Código expira em "
-                          "${(segundosRestantes ~/ 60).toString().padLeft(2, '0')}:"
-                          "${(segundosRestantes % 60).toString().padLeft(2, '0')}",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.timer_outlined, size: 16, color: Color(0xFF0066FF)),
+                            const SizedBox(width: 6),
+                            Text(
+                              "Código expira em ${(segundosRestantes ~/ 60).toString().padLeft(2, '0')}:${(segundosRestantes % 60).toString().padLeft(2, '0')}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0066FF),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
                         SizedBox(
                           width: double.infinity,
+                          height: 48,
                           child: ElevatedButton.icon(
                             onPressed: validandoCodigo ? null : validarCodigo,
                             icon: const Icon(
-                              Icons.verified,
-                              color: Colors.greenAccent,
+                              Icons.check_circle_rounded,
+                              color: Colors.white,
+                              size: 18,
                             ),
                             label: validandoCodigo
                                 ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
+                                    height: 20,
+                                    width: 20,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 3,
-                                      color: Colors.lightBlueAccent,
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
                                     ),
                                   )
-                                : const Text("Validar código"),
+                                : const Text("Validar código", style: TextStyle(fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
+                              backgroundColor: const Color(0xFF10B981),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
@@ -525,24 +533,25 @@ class _CadastroPageState extends State<CadastroPage> {
                 ],
 
                 if (mostrarMensagemSucesso) ...[
-                  const SizedBox(height: 16),
-
+                  const SizedBox(height: 14),
                   Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade50,
+                      color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
                       borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.check_circle, color: Colors.green),
+                        Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            "Email verificado com sucesso",
+                            "Email verificado com sucesso!",
                             style: TextStyle(
-                              color: Colors.green,
+                              color: Color(0xFF10B981),
                               fontWeight: FontWeight.bold,
+                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -556,51 +565,41 @@ class _CadastroPageState extends State<CadastroPage> {
                 // 🔒 SENHA
                 TextField(
                   controller: senhaController,
-
                   obscureText: !mostrarSenha,
-
-                  style: TextStyle(color: colors.onSurface, fontSize: 20),
-
+                  textInputAction: TextInputAction.done,
+                  style: TextStyle(color: colors.onSurface, fontSize: 16),
                   decoration: InputDecoration(
                     labelText: "Senha",
-
                     labelStyle: TextStyle(
-                      color: colors.onSurface,
-                      fontSize: 18,
+                      color: isDark ? colors.onSurfaceVariant : const Color(0xFF64748B),
+                      fontSize: 14,
                     ),
-
                     prefixIcon: const Icon(
                       Icons.lock_rounded,
-                      color: Colors.lightBlue,
+                      color: Color(0xFF0066FF),
                     ),
-
                     suffixIcon: IconButton(
                       onPressed: () {
                         setState(() {
                           mostrarSenha = !mostrarSenha;
                         });
                       },
-
                       icon: Icon(
                         mostrarSenha
                             ? Icons.visibility_off_rounded
                             : Icons.visibility_rounded,
-
                         color: isDark ? Colors.white60 : Colors.grey,
                       ),
                     ),
-
                     filled: true,
                     fillColor: fieldFill,
-
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
                       borderRadius: BorderRadius.circular(16),
                     ),
-
                     focusedBorder: OutlineInputBorder(
                       borderSide: const BorderSide(
-                        color: Colors.lightBlue,
+                        color: Color(0xFF0066FF),
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(16),
@@ -608,38 +607,64 @@ class _CadastroPageState extends State<CadastroPage> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
 
                 if (erro != null)
-                  Text(erro!, style: const TextStyle(color: Colors.red)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: colors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: colors.error.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline_rounded, color: colors.error, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            erro!,
+                            style: TextStyle(color: colors.error, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                const SizedBox(height: 16),
-
-                // 🚀 BOTÃO
+                // 🚀 BOTÃO CADASTRAR
                 SizedBox(
                   width: double.infinity,
+                  height: 52,
                   child: ElevatedButton(
                     onPressed: (loading || !emailValidado) ? null : cadastrar,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
+                      backgroundColor: const Color(0xFF0066FF),
                       foregroundColor: Colors.white,
-                      textStyle: const TextStyle(fontSize: 18),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      disabledBackgroundColor: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : const Color(0xFFE2E8F0),
+                      textStyle: const TextStyle(fontSize: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     child: loading
-                        ? const CircularProgressIndicator(
-                            color: Colors.lightBlueAccent,
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
                           )
                         : Text(
                             emailValidado
-                                ? "Cadastrar"
-                                : "Verifique seu email primeiro",
+                                ? "Concluir Cadastro"
+                                : "Verifique seu email para continuar",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
                               color: emailValidado
                                   ? Colors.white
                                   : (isDark ? Colors.white38 : Colors.black38),

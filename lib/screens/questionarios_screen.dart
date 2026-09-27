@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/api.dart';
+import '../components/app_modal.dart';
 
 class QuestionariosPage extends StatefulWidget {
   const QuestionariosPage({super.key});
@@ -257,6 +258,18 @@ class _QuestionariosPageState extends State<QuestionariosPage>
   }
 
   Future<void> _deletarQuestionario(String id) async {
+    final confirmar = await AppModal.showConfirmDialog(
+      context: context,
+      title: "Excluir Questionário?",
+      message: "Tem certeza que deseja apagar este registro do seu histórico? Esta ação é definitiva.",
+      confirmText: "Excluir",
+      cancelText: "Cancelar",
+      isDestructive: true,
+      icon: Icons.delete_outline_rounded,
+    );
+
+    if (confirmar != true) return;
+
     try {
       await Api.deletarQuestionario(id);
       await _carregarHistorico();
@@ -264,7 +277,8 @@ class _QuestionariosPageState extends State<QuestionariosPage>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             behavior: SnackBarBehavior.floating,
-            content: Text("Questionário excluído."),
+            backgroundColor: Color(0xFF10B981),
+            content: Text("Questionário excluído com sucesso."),
           ),
         );
       }
@@ -273,6 +287,7 @@ class _QuestionariosPageState extends State<QuestionariosPage>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             behavior: SnackBarBehavior.floating,
+            backgroundColor: Color(0xFFEF4444),
             content: Text("Erro ao deletar questionário."),
           ),
         );

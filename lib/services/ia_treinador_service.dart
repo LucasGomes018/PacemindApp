@@ -1,5 +1,6 @@
 import 'dart:math';
 import '../core/api.dart';
+import '../utils/date_utils.dart';
 
 /// Contexto de dados reais agregados do atleta para alimentar a PaceMind IA.
 class ContextoAtleta {
@@ -62,9 +63,9 @@ class RespostaIa {
   RespostaIa({required this.mensagens, this.acao});
 }
 
-/// Motor Inteligente e Agente Autônomo da PaceMind IA.
-/// Conhecimento esportivo e geral expandido para responder a qualquer dúvida,
-/// além de interpretar e executar comandos do usuário diretamente no app.
+/// Motor Inteligente e Treinador IA da PaceMind.
+/// Equipado com enciclopédia completa de ciência esportiva, fisiologia, biomecânica,
+/// nutrição, prevenção de lesões, planos de treino e capacidade de execução autônoma de comandos.
 class IaTreinadorService {
   ContextoAtleta? _contextoCache;
   DateTime? _ultimoCarregamento;
@@ -195,121 +196,137 @@ class IaTreinadorService {
     final p = _normalizar(perguntaOriginal);
 
     // =========================================================================
-    // ⚡ COMANDOS DE AGENTE (AÇÕES NO APLICATIVO)
+    // ⚡ 1. COMANDOS DE AGENTE (AÇÕES NO APLICATIVO)
     // =========================================================================
 
-    // 1. COMANDO: CRIAR / AGENDAR TREINO
-    if (_tem(p, [
-      "criar treino", "crie um treino", "agendar treino", "agende um treino",
-      "planejar treino", "planeje um treino", "novo treino", "adicionar treino",
-      "prescrever treino", "cadastrar treino", "coloque um treino"
-    ])) {
+    // A) COMANDO: CRIAR / AGENDAR TREINO
+    final isComandoTreino = _tem(p, [
+      "criar treino", "crie um treino", "cria um treino", "agendar treino", "agende um treino",
+      "agenda um treino", "planejar treino", "planeje um treino", "planeja um treino",
+      "novo treino", "adicionar treino", "adiciona um treino", "prescrever treino",
+      "prescreva um treino", "cadastrar treino", "cadastre um treino", "coloque um treino",
+      "coloca um treino", "montar treino", "monte um treino", "monta um treino",
+      "gerar treino", "gere um treino", "gera um treino", "quero um treino", "quero treinar",
+      "passa um treino", "me passa um treino", "programe um treino", "programar treino",
+      "fazer um treino", "faca um treino", "faz um treino", "sugira um treino", "sugestao de treino"
+    ]) || (p.contains("treino") && (p.contains("amanha") || p.contains("hoje") || p.contains("km")));
+
+    if (isComandoTreino && !_tem(p, ["salvar corrida", "salve uma corrida", "salve meu treino", "corri hoje", "registre meu treino"])) {
       return await _executarComandoCriarTreino(p, perguntaOriginal, ctx);
     }
 
-    // 2. COMANDO: CRIAR META
-    if (_tem(p, [
-      "criar meta", "crie uma meta", "nova meta", "adicionar meta",
-      "estabelecer meta", "cadastrar meta", "minha meta vai ser",
-      "definir meta", "crie meta"
-    ])) {
+    // B) COMANDO: CRIAR / ESTABELECER META
+    final isComandoMeta = _tem(p, [
+      "criar meta", "crie uma meta", "cria uma meta", "nova meta", "adicionar meta",
+      "adiciona uma meta", "estabelecer meta", "estabeleca uma meta", "estabelece uma meta",
+      "cadastrar meta", "cadastre uma meta", "cadastra uma meta", "minha meta vai ser",
+      "definir meta", "defina uma meta", "definir uma meta", "crie meta", "cria meta",
+      "bota uma meta", "coloque uma meta", "coloca uma meta", "quero uma meta",
+      "planejar meta", "planeje uma meta", "nova meta de", "meta de"
+    ]);
+
+    if (isComandoMeta) {
       return await _executarComandoCriarMeta(p, perguntaOriginal, ctx);
     }
 
-    // 3. COMANDO: SALVAR EXECUÇÃO / REGISTRAR CORRIDA
+    // C) COMANDO: SALVAR EXECUÇÃO / REGISTRAR CORRIDA
     if (_tem(p, [
       "salvar execucao", "salvar corrida", "salve uma corrida", "salve meu treino",
       "registre meu treino", "registre uma corrida", "corri hoje", "terminei uma corrida",
-      "salvar treino concluido", "registrar execucao", "fiz um treino de"
+      "salvar treino concluido", "registrar execucao", "fiz um treino de", "registre a corrida",
+      "salva minha corrida", "salve minha corrida", "guardar corrida"
     ])) {
       return await _executarComandoSalvarCorrida(p, perguntaOriginal, ctx);
     }
 
-    // 4. COMANDO: SALVAR TESTE FÍSICO
+    // D) COMANDO: SALVAR TESTE FÍSICO
     if (_tem(p, [
       "salvar teste", "salve o teste", "registre meu teste", "fiz o teste de 3km",
-      "fiz o teste de sprint", "salvar teste de corrida"
+      "fiz o teste de sprint", "salvar teste de corrida", "guardar teste"
     ])) {
       return await _executarComandoSalvarTeste(p, perguntaOriginal, ctx);
     }
 
     // =========================================================================
-    // 🧠 PERGUNTAS & CONHECIMENTO EXPANDIDO
+    // 🧠 2. CONVERSAÇÃO E CONHECIMENTO CIENTÍFICO EXPANDIDO (100%)
     // =========================================================================
 
     // Cumprimentos
-    if (_tem(p, ["ola", "oi", "e ai", "opa", "bom dia", "boa tarde", "boa noite", "hello", "como vai"])) {
+    if (_tem(p, ["ola", "oi", "e ai", "opa", "bom dia", "boa tarde", "boa noite", "hello", "como vai", "tudo bem"])) {
       return RespostaIa(mensagens: _responderSaudacao(ctx));
     }
 
     // Apresentação e Capacidades de Agente
-    if (_tem(p, ["quem e voce", "o que voce faz", "como voce funciona", "o que voce pode fazer", "me ajude", "seus comandos"])) {
+    if (_tem(p, ["quem e voce", "o que voce faz", "como voce funciona", "o que voce pode fazer", "me ajude", "seus comandos", "o que sabe"])) {
       return RespostaIa(mensagens: [
-        "Olá, ${ctx.nome}! Eu sou a PaceMind IA, seu assistente e agente inteligente de corrida e saúde esportiva.",
-        "Além de responder a qualquer dúvida de treinos, fisiologia, nutrição e bem-estar, eu posso agir diretamente no app por você! Experimente me pedir:",
-        "• \"Crie um treino de 8km para amanhã\"\n• \"Crie uma meta de 60km esse mês\"\n• \"Salvar corrida de 6km em 30 minutos hoje\"\n• \"Analise meus treinos e fadiga\"",
-        "Como posso transformar seu treino hoje?"
+        "Olá, ${ctx.nome}! Eu sou a PaceMind IA, seu treinador inteligente e agente autônomo de corrida e saúde esportiva.",
+        "Possuo uma base completa em fisiologia humana, biomecânica, nutrição esportiva e treinamento de endurance. Além disso, estou integrado ao app e posso executar ações reais por você!",
+        "Você pode me pedir:\n• \"Crie um treino de 8km para amanhã\"\n• \"Crie uma meta de 60km este mês\"\n• \"Salvar corrida de 6km em 30 minutos hoje\"\n• \"Analise meus treinos e fadiga\"\n• Dúvidas sobre qualquer assunto de corrida!",
+        "Qual é o seu objetivo de treino agora?"
       ]);
     }
 
-    // Análise de Dados
+    // Análise de Dados e Métricas Atuais
     if (_tem(p, [
       "analise meus dados", "analise meus treinos", "meus dados", "meu resumo",
-      "como estao meus treinos", "minha semana", "minha evolucao", "minha performance"
+      "como estao meus treinos", "minha semana", "minha evolucao", "minha performance",
+      "quanto corri", "como estou"
     ])) {
       return RespostaIa(mensagens: _responderAnaliseDados(ctx));
     }
 
-    // Ritmo, Pace e Velocidade
+    // Ritmo, Pace, VDOT e Velocidade
     if (_tem(p, [
       "pace", "ritmo", "baixar tempo", "correr mais rapido", "melhorar velocidade",
-      "pace medio", "pace ideal", "o que e pace", "ritmo de prova", "acelerar"
+      "pace medio", "pace ideal", "o que e pace", "ritmo de prova", "acelerar", "vdot", "jack daniels"
     ])) {
       return RespostaIa(mensagens: _responderPace(ctx, p));
     }
 
-    // Intervalados, Tiros e VO2 Máx
-    if (_tem(p, ["tiro", "intervalado", "fartlek", "vo2", "velocidade", "pista"])) {
+    // Treinos Intervalados, Tiros, Fartlek e VO2 Máximo
+    if (_tem(p, ["tiro", "intervalado", "fartlek", "vo2", "velocidade", "pista", "hiit"])) {
       return RespostaIa(mensagens: _responderTiros());
     }
 
     // Longão e Resistência Aeróbica
-    if (_tem(p, ["longao", "treino longo", "corrida longa", "resistencia", "quantos km no longo"])) {
+    if (_tem(p, ["longao", "treino longo", "corrida longa", "resistencia", "quantos km no longo", "volume semanal"])) {
       return RespostaIa(mensagens: _responderLongao(ctx));
     }
 
-    // Descanso, Recuperação e Sono
-    if (_tem(p, ["descanso", "recuperacao", "recuperar", "sono", "dormir", "cansado", "regenerativo"])) {
+    // Descanso, Sono, Regeneração e Supercompensação
+    if (_tem(p, ["descanso", "recuperacao", "recuperar", "sono", "dormir", "cansado", "regenerativo", "supercompensacao"])) {
       return RespostaIa(mensagens: _responderDescanso(ctx));
     }
 
-    // Dores, Lesões e Cuidados Fisiológicos
+    // Dores, Lesões, Inflamações e Cuidados
     if (_tem(p, [
       "dor", "doendo", "canelite", "joelho", "canela", "panturrilha", "pe",
-      "fascite", "lesao", "fisgada", "inflamacao", "alongar", "alongamento"
+      "fascite", "lesao", "fisgada", "inflamacao", "alongar", "alongamento",
+      "aquiles", "tendao", "tendinite", "banda iliotibial", "trato iliotibial"
     ])) {
       return RespostaIa(mensagens: _responderDores(ctx, p));
     }
 
-    // Overtraining e Carga ACWR
-    if (_tem(p, ["overtraining", "acwr", "sobrecarga", "estafa", "excesso de treino", "carga"])) {
+    // Overtraining, Fadiga e Carga ACWR
+    if (_tem(p, ["overtraining", "acwr", "sobrecarga", "estafa", "excesso de treino", "carga aguda", "carga cronica"])) {
       return RespostaIa(mensagens: _responderOvertraining(ctx));
     }
 
-    // Metas
+    // Metas e Planejamento
     if (_tem(p, ["meta", "metas", "objetivo", "atingir meta"])) {
       return RespostaIa(mensagens: _responderMetas(ctx));
     }
 
-    // Eventos e Provas
-    if (_tem(p, ["evento", "eventos", "prova", "corrida de rua", "maratona", "meia maratona", "5k", "10k", "21k", "42k"])) {
+    // Eventos, Provas, Maratonas e Estratégia de Prova
+    if (_tem(p, ["evento", "eventos", "prova", "corrida de rua", "maratona", "meia maratona", "5k", "10k", "21k", "42k", "muro dos 30", "split negativo"])) {
       return RespostaIa(mensagens: _responderEventos(ctx, p));
     }
 
-    // Nutrição, Hidratação e Suplementação
+    // Nutrição, Hidratação, Carbo-loading e Eletrólitos
     if (_tem(p, [
       "comer", "comida", "alimentacao", "nutricao", "jejum", "gel", "carbo",
-      "carboidrato", "agua", "hidratacao", "creatina", "whey", "pre treino", "pos treino"
+      "carboidrato", "agua", "hidratacao", "creatina", "whey", "pre treino", "pos treino",
+      "eletrolitos", "sodio", "suplemento", "cafeina", "beterraba", "nitrato", "hiponatremia"
     ])) {
       return RespostaIa(mensagens: _responderNutricao());
     }
@@ -317,74 +334,115 @@ class IaTreinadorService {
     // Respiração, Asma e Saúde Pulmonar
     if (_tem(p, [
       "respirar", "respiracao", "falta de ar", "asma", "pulmao", "ar",
-      "nariz ou boca", "ofegante", "bombinha", "acq"
+      "nariz ou boca", "ofegante", "bombinha", "acq", "espirometria", "vef1", "cvf", "broncoespasmo"
     ])) {
       return RespostaIa(mensagens: _responderRespiracao(ctx));
     }
 
-    // Frequência Cardíaca e Zonas
-    if (_tem(p, ["frequencia cardiaca", "batimento", "bpm", "zonas", "zona 2", "zona 4", "limiar", "cardio"])) {
+    // Frequência Cardíaca, Zonas e Limiar de Lactato
+    if (_tem(p, [
+      "frequencia cardiaca", "batimento", "bpm", "zonas", "zona 2", "zona 4",
+      "limiar", "cardio", "lactato", "maffetone", "maf"
+    ])) {
       return RespostaIa(mensagens: _responderZonasCardiacas());
     }
 
-    // Cadência e Mecânica da Passada
-    if (_tem(p, ["cadencia", "passada", "passos por minuto", "spm", "mecanica", "postura", "aterrissagem"])) {
+    // Cadência, Passada e Biomecânica
+    if (_tem(p, [
+      "cadencia", "passada", "passos por minuto", "spm", "mecanica", "postura",
+      "aterrissagem", "overstriding", "pisada", "pronada", "supinada", "neutra"
+    ])) {
       return RespostaIa(mensagens: _responderCadencia());
     }
 
-    // Tênis e Equipamentos
-    if (_tem(p, ["tenis", "calcado", "drop", "placa de carbono", "amortecimento", "relogio", "gps", "garmin"])) {
+    // Tênis, Placa de Carbono e Equipamentos
+    if (_tem(p, [
+      "tenis", "calcado", "drop", "placa de carbono", "amortecimento", "relogio",
+      "gps", "garmin", "meia", "pebax", "espuma"
+    ])) {
       return RespostaIa(mensagens: _responderEquipamentos());
     }
 
-    // Subidas, Altimetria e Trail
-    if (_tem(p, ["subida", "ladeira", "inclinacao", "altimetria", "trail", "morro"])) {
+    // Subidas, Ladeiras e Trail Running
+    if (_tem(p, ["subida", "ladeira", "inclinacao", "altimetria", "trail", "morro", "descida"])) {
       return RespostaIa(mensagens: _responderAltimetria());
     }
 
-    // Motivação e Mentalidade
-    if (_tem(p, ["preguica", "desanimado", "sem vontade", "motivacao", "desistir", "dificil", "chovendo", "frio", "consistencia"])) {
+    // Musculação e Treino de Força para Corredores
+    if (_tem(p, ["musculacao", "academia", "forca", "fortalecimento", "peso", "agachamento", "pliometria", "core"])) {
+      return RespostaIa(mensagens: _responderMusculacao());
+    }
+
+    // Mulher Atleta & Ciclo Menstrual
+    if (_tem(p, ["ciclo menstrual", "menstruacao", "menstrual", "hormonio", "mulher", "gravidez"])) {
+      return RespostaIa(mensagens: _responderMulherAtleta());
+    }
+
+    // Clima: Calor, Frio e Chuva
+    if (_tem(p, ["calor", "quente", "frio", "chuva", "chovendo", "sol", "umidade", "clima", "temperatura"])) {
+      return RespostaIa(mensagens: _responderClima());
+    }
+
+    // Iniciantes: Do 0 aos 5k
+    if (_tem(p, ["iniciante", "comecar", "comecando", "do zero", "sedentario", "primeiros 5k"])) {
+      return RespostaIa(mensagens: _responderIniciantes());
+    }
+
+    // Motivação e Consistência
+    if (_tem(p, ["preguica", "desanimado", "sem vontade", "motivacao", "desistir", "dificil", "consistencia", "foco"])) {
       return RespostaIa(mensagens: _responderMotivacao(ctx));
     }
 
     // Agradecimento
-    if (_tem(p, ["obrigado", "obrigada", "valeu", "show", "top", "muito bom", "otimo", "maravilha", "perfeito"])) {
+    if (_tem(p, ["obrigado", "obrigada", "valeu", "show", "top", "muito bom", "otimo", "maravilha", "perfeito", "excelente"])) {
       return RespostaIa(mensagens: [
-        "Fico muito feliz em ajudar, ${ctx.nome}! Estou aqui para impulsionar a sua evolução a cada quilômetro.",
-        "Se quiser planejar novos treinos, definir metas ou tirar dúvidas, é só me chamar!"
+        "Fico muito feliz em ajudar, ${ctx.nome}! Estou sempre aqui para apoiar a sua evolução a cada quilômetro.",
+        "Se quiser planejar novos treinos, definir metas ou esclarecer qualquer dúvida, é só me chamar!"
       ]);
     }
 
     // Despedida
     if (_tem(p, ["tchau", "ate mais", "ate logo", "vou correr", "vou treinar", "fui"])) {
       return RespostaIa(mensagens: [
-        "Boa corrida e excelente treino, ${ctx.nome}!",
-        "Mantenha uma postura ereta, respiração ritmada e lembre-se de se hidratar. Depois venha me contar como foi!"
+        "Excelente treino e ótima corrida, ${ctx.nome}!",
+        "Mantenha uma postura elegante, respiração ritmada e hidrate-se bem. Depois venha me contar como foi a sessão!"
       ]);
     }
 
-    // Fallback Enciclopédico Esportivo & Geral
+    // Resposta Técnica Geral & Contextualizada
     return RespostaIa(mensagens: _responderConhecimentoGeral(ctx, perguntaOriginal));
   }
 
   // =========================================================================
-  // EXECUTORES DE AÇÕES DE AGENTE
+  // ⚡ 3. EXECUTORES DE AÇÕES DE AGENTE
   // =========================================================================
 
   Future<RespostaIa> _executarComandoCriarTreino(String pNorm, String original, ContextoAtleta ctx) async {
     double distancia = 5.0;
     int tempoMin = 30;
     String tipo = "Rodagem";
-    String dataStr = "";
 
-    // Extrair distância (ex: 5km, 8.5 km, 10 k)
-    final regKm = RegExp(r'(\d+(?:[.,]\d+)?)\s*(?:km|k|quilometros|quilômetros)');
-    final matchKm = regKm.firstMatch(pNorm);
-    if (matchKm != null) {
-      distancia = double.tryParse(matchKm.group(1)!.replaceAll(',', '.')) ?? 5.0;
+    // 1. Extrair distância (ex: 5km, 8.5 km, 10k, 21k, meia maratona, maratona)
+    if (pNorm.contains("meia maratona") || pNorm.contains("21k") || pNorm.contains("21 km")) {
+      distancia = 21.1;
+    } else if (pNorm.contains("maratona") || pNorm.contains("42k") || pNorm.contains("42 km")) {
+      distancia = 42.2;
+    } else {
+      final regKm = RegExp(r'(\d+(?:[.,]\d+)?)\s*(?:km|k|quilometros|quilômetros)?');
+      final matches = regKm.allMatches(pNorm);
+      for (var m in matches) {
+        final val = double.tryParse(m.group(1)!.replaceAll(',', '.'));
+        if (val != null && val > 0 && val <= 100) {
+          // Evita capturar anos como 2026
+          if (val != 2024 && val != 2025 && val != 2026) {
+            distancia = val;
+            break;
+          }
+        }
+      }
     }
 
-    // Extrair tempo (ex: 40 min, 50 minutos)
+    // 2. Extrair tempo ou estimar realisticamente
     final regTempo = RegExp(r'(\d+)\s*(?:min|minutos)');
     final matchTempo = regTempo.firstMatch(pNorm);
     if (matchTempo != null) {
@@ -396,65 +454,72 @@ class IaTreinadorService {
         tempoMin = (distancia * 5.5).round();
       }
     }
+    if (tempoMin < 5) tempoMin = 30;
 
-    // Extrair tipo de treino
+    // 3. Extrair modalidade/tipo de treino
     if (pNorm.contains("tiro") || pNorm.contains("intervalado") || pNorm.contains("velocidade")) {
       tipo = "Intervalado / Tiros";
     } else if (pNorm.contains("longao") || pNorm.contains("longo")) {
       tipo = "Longão Aeróbico";
-    } else if (pNorm.contains("regenerativo") || pNorm.contains("recuperacao")) {
+    } else if (pNorm.contains("regenerativo") || pNorm.contains("recuperacao") || pNorm.contains("leve")) {
       tipo = "Regenerativo";
-    } else if (pNorm.contains("ritmo") || pNorm.contains("tempo run")) {
+    } else if (pNorm.contains("ritmo") || pNorm.contains("tempo run") || pNorm.contains("limiar")) {
       tipo = "Treino de Ritmo";
+    } else if (pNorm.contains("fartlek")) {
+      tipo = "Fartlek";
+    } else if (pNorm.contains("subida") || pNorm.contains("ladeira") || pNorm.contains("morro")) {
+      tipo = "Subidas / Força";
     }
 
-    // Extrair data
+    // 4. Extrair data
     final hoje = DateTime.now();
     DateTime dataAlvo = hoje.add(const Duration(days: 1)); // Padrão: amanhã
     if (pNorm.contains("hoje")) {
       dataAlvo = hoje;
-    } else if (pNorm.contains("amanha")) {
-      dataAlvo = hoje.add(const Duration(days: 1));
     } else if (pNorm.contains("depois de amanha")) {
       dataAlvo = hoje.add(const Duration(days: 2));
+    } else if (pNorm.contains("amanha")) {
+      dataAlvo = hoje.add(const Duration(days: 1));
     }
 
-    final dia = dataAlvo.day.toString().padLeft(2, '0');
-    final mes = dataAlvo.month.toString().padLeft(2, '0');
-    final ano = dataAlvo.year;
-    dataStr = "$dia/$mes/$ano";
+    // Formato ISO YYYY-MM-DD para o banco PostgreSQL
+    final dataBanco = AppDateUtils.paraDataPura(dataAlvo);
+    final dataExibicao = AppDateUtils.formatarData(dataAlvo);
 
     try {
       await Api.criarTreinoCompleto(
         tipo: tipo,
         distanciaKm: distancia,
         tempoSegundos: tempoMin * 60,
-        data: dataStr,
-        status: "planejado",
-        observacoes: "Prescrito e agendado pelo PaceMind IA Agente.",
+        data: dataBanco,
+        status: "concluido",
+        sensacao: 6,
+        observacoes: "Prescrito e agendado pelo PaceMind IA Treinador.",
       );
 
       final acao = AcaoAgente(
         tipo: "treino_criado",
         titulo: "Treino Criado com Sucesso!",
-        descricao: "$tipo de ${distancia.toStringAsFixed(1)} km agendado para $dataStr.",
+        descricao: "$tipo de ${distancia % 1 == 0 ? distancia.toInt() : distancia.toStringAsFixed(1)} km registrado para $dataExibicao.",
         rotaNavegacao: "/treinos",
-        textoBotao: "Ver Treinos Planejados",
+        textoBotao: "Ver Minha Planilha",
       );
+
+      final distFormatada = "${distancia % 1 == 0 ? distancia.toInt() : distancia.toStringAsFixed(1)} km";
 
       return RespostaIa(
         mensagens: [
-          "⚡ Entendido perfeitamente, ${ctx.nome}! Como seu treinador agente, já criei o treino diretamente na sua planilha:",
-          "🏃 Modalidade: $tipo\n📏 Distância: ${distancia.toStringAsFixed(1)} km\n⏱️ Duração Estimada: $tempoMin minutos\n📅 Data Prevista: $dataStr",
-          "O treino já está salvo e pronto na sua aba de Treinos. Quando realizar a corrida, basta dar o play ou marcá-lo como concluído!"
+          "⚡ Entendido perfeitamente, ${ctx.nome}! Como seu treinador agente, já prescrevi e registrei o treino diretamente na sua planilha:",
+          "🏃 Modalidade: $tipo\n📏 Distância: $distFormatada\n⏱️ Duração Estimada: $tempoMin minutos\n📅 Data Prevista: $dataExibicao",
+          "O treino já está gravado na aba de Treinos. Quando calçar o tênis, basta dar o play no mapa ou acompanhar a sua execução!"
         ],
         acao: acao,
       );
     } catch (e) {
       return RespostaIa(
         mensagens: [
-          "Tentei agendar o seu treino de ${distancia.toStringAsFixed(1)} km, mas ocorreu uma oscilação na conexão com o servidor.",
-          "Você pode também criar o treino manualmente tocando no botão (+) na aba de Treinos!",
+          "Tentei agendar o seu treino de ${distancia.toStringAsFixed(1)} km, mas ocorreu uma oscilação na resposta do servidor.",
+          "Você também pode cadastrá-lo com um toque no botão (+) na aba de Treinos!",
         ],
       );
     }
@@ -462,25 +527,56 @@ class IaTreinadorService {
 
   Future<RespostaIa> _executarComandoCriarMeta(String pNorm, String original, ContextoAtleta ctx) async {
     double valor = 50.0;
-    String tipo = "distancia";
+    String tipo = "km"; // 'km', 'tempo', 'treinos'
     String titulo = "Meta de Corrida";
 
-    // Extrair valor numérico
-    final regNum = RegExp(r'(\d+(?:[.,]\d+)?)');
-    final match = regNum.firstMatch(pNorm);
-    if (match != null) {
-      valor = double.tryParse(match.group(1)!.replaceAll(',', '.')) ?? 50.0;
-    }
+    // 1. Verificar se é meta de treinos/sessões
+    final regTreinos = RegExp(r'(\d+)\s*(?:treinos|treino|corridas|corrida|sessoes|sessões|dias)');
+    final matchTreinos = regTreinos.firstMatch(pNorm);
 
-    if (pNorm.contains("treino") || pNorm.contains("sessoes") || pNorm.contains("dias")) {
+    // 2. Verificar se é meta de tempo
+    final regTempo = RegExp(r'(\d+)\s*(?:minutos|minuto|min|horas|hora|h)\b');
+    final matchTempo = regTempo.firstMatch(pNorm);
+
+    // 3. Verificar se é meta de quilometragem (km)
+    final regKm = RegExp(r'(\d+(?:[.,]\d+)?)\s*(?:km|k|quilometros|quilômetros)?');
+
+    if (matchTreinos != null && (pNorm.contains("treino") || pNorm.contains("sessao") || pNorm.contains("dia"))) {
       tipo = "treinos";
+      valor = double.tryParse(matchTreinos.group(1)!) ?? 12.0;
       titulo = "Concluir ${valor.toInt()} Treinos";
-    } else if (pNorm.contains("minuto") || pNorm.contains("hora") || pNorm.contains("tempo")) {
+    } else if (matchTempo != null && (pNorm.contains("minuto") || pNorm.contains("hora") || pNorm.contains("tempo"))) {
       tipo = "tempo";
+      valor = double.tryParse(matchTempo.group(1)!) ?? 120.0;
+      if (pNorm.contains("hora") && valor < 100) {
+        valor = valor * 60; // Converte horas para minutos
+      }
       titulo = "Treinar ${valor.toInt()} Minutos";
     } else {
-      tipo = "distancia";
-      titulo = "Correr ${valor.toStringAsFixed(0)} km";
+      // Padrão: Quilometragem (km)
+      tipo = "km";
+      final matches = regKm.allMatches(pNorm);
+      bool encontrou = false;
+      for (var m in matches) {
+        final val = double.tryParse(m.group(1)!.replaceAll(',', '.'));
+        if (val != null && val > 0 && val != 2024 && val != 2025 && val != 2026) {
+          valor = val;
+          encontrou = true;
+          break;
+        }
+      }
+      if (!encontrou) {
+        valor = 60.0; // Padrão inteligente
+      }
+
+      final kmStr = valor % 1 == 0 ? valor.toInt().toString() : valor.toStringAsFixed(1);
+      if (pNorm.contains("mes") || pNorm.contains("mensal")) {
+        titulo = "Correr $kmStr km no Mês";
+      } else if (pNorm.contains("semana") || pNorm.contains("semanal")) {
+        titulo = "Correr $kmStr km na Semana";
+      } else {
+        titulo = "Correr $kmStr km";
+      }
     }
 
     try {
@@ -490,10 +586,16 @@ class IaTreinadorService {
         tipo: tipo,
       );
 
+      final valorFormatado = tipo == "km"
+          ? "${valor % 1 == 0 ? valor.toInt() : valor.toStringAsFixed(1)} km"
+          : tipo == "tempo"
+              ? "${valor.toInt()} min"
+              : "${valor.toInt()} treinos";
+
       final acao = AcaoAgente(
         tipo: "meta_criada",
         titulo: "Nova Meta Cadastrada!",
-        descricao: "$titulo com objetivo de $valor ($tipo).",
+        descricao: "$titulo com objetivo de $valorFormatado.",
         rotaNavegacao: "/metas",
         textoBotao: "Ver Minhas Metas",
       );
@@ -501,15 +603,15 @@ class IaTreinadorService {
       return RespostaIa(
         mensagens: [
           "🎯 Ação executada com sucesso, ${ctx.nome}! Criei a sua nova meta esportiva no PaceMind:",
-          "🏆 Título: $titulo\n🎯 Alvo: $valor ($tipo)",
-          "Cada treino que você concluir a partir de agora atualizará automaticamente o seu percentual de conquista rumo a esse troféu!"
+          "🏆 Título: $titulo\n🎯 Alvo: $valorFormatado\n📊 Tipo: ${tipo == 'km' ? 'Quilometragem (km)' : tipo.toUpperCase()}",
+          "A partir de agora, cada corrida registrada atualiza automaticamente a sua barra de progresso rumo a essa conquista!"
         ],
         acao: acao,
       );
     } catch (e) {
       return RespostaIa(
         mensagens: [
-          "Tentei salvar sua meta de $titulo, mas houve uma falha momentânea de comunicação.",
+          "Tentei salvar sua meta de $titulo, mas houve uma falha de conexão com o banco de dados.",
           "Você pode cadastrá-la diretamente na aba de Metas clicando em 'Nova Meta'!",
         ],
       );
@@ -540,10 +642,8 @@ class IaTreinadorService {
     }
 
     final hoje = DateTime.now();
-    final dia = hoje.day.toString().padLeft(2, '0');
-    final mes = hoje.month.toString().padLeft(2, '0');
-    final ano = hoje.year;
-    final dataStr = "$dia/$mes/$ano";
+    final dataBanco = AppDateUtils.paraDataPura(hoje);
+    final dataExibicao = AppDateUtils.formatarData(hoje);
 
     final tempoSeg = tempoMin * 60;
     final paceSeg = distancia > 0 ? (tempoSeg / distancia).round() : 0;
@@ -554,10 +654,10 @@ class IaTreinadorService {
         tipo: "Corrida de Rua",
         distanciaKm: distancia,
         tempoSegundos: tempoSeg,
-        data: dataStr,
+        data: dataBanco,
         sensacao: sensacao,
         status: "concluido",
-        observacoes: "Registrado e salvo pelo PaceMind IA Agente.",
+        observacoes: "Registrado e salvo pelo PaceMind IA Treinador.",
       );
 
       final acao = AcaoAgente(
@@ -571,7 +671,7 @@ class IaTreinadorService {
       return RespostaIa(
         mensagens: [
           "✅ Corrida registrada e salva com sucesso no seu histórico, ${ctx.nome}!",
-          "📊 Detalhes da Sessão:\n• Distância: ${distancia.toStringAsFixed(1)} km\n• Tempo Total: $tempoMin minutos\n• Pace Médio: $paceTexto\n• Nível de Esforço: $sensacao/10\n• Data: $dataStr",
+          "📊 Detalhes da Sessão:\n• Distância: ${distancia.toStringAsFixed(1)} km\n• Tempo Total: $tempoMin minutos\n• Pace Médio: $paceTexto\n• Nível de Esforço: $sensacao/10\n• Data: $dataExibicao",
           "Essa sessão já entrou no cálculo da sua quilometragem semanal e no seu monitoramento de fadiga (ACWR)!"
         ],
         acao: acao,
@@ -614,7 +714,7 @@ class IaTreinadorService {
       await Api.salvarTeste(
         tipoTeste: tipo,
         tempoSegundos: segundos,
-        observacoes: "Registrado pelo PaceMind IA Agente.",
+        observacoes: "Registrado pelo PaceMind IA Treinador.",
       );
 
       final acao = AcaoAgente(
@@ -642,7 +742,7 @@ class IaTreinadorService {
   }
 
   // =========================================================================
-  // MÓDULOS DE RESPOSTAS ESPECIALIZADAS
+  // 📚 4. MÓDULOS DE RESPOSTAS ESPECIALIZADAS E ENCICLOPÉDIA COMPLETA (100%)
   // =========================================================================
 
   List<String> _responderSaudacao(ContextoAtleta ctx) {
@@ -664,7 +764,7 @@ class IaTreinadorService {
     }
 
     msgs.add(
-      "Como posso te ajudar hoje? Você pode tirar dúvidas sobre ritmo, recuperação e nutrição, ou me dar comandos como: \"Crie um treino de 6km\" ou \"Crie uma meta de 50km\"!",
+      "Como posso te ajudar hoje? Você pode tirar dúvidas sobre fisiologia, nutrição e recuperação, ou me pedir: \"Crie um treino de 6km\" ou \"Crie uma meta de 50km\"!",
     );
 
     return msgs;
@@ -703,16 +803,17 @@ class IaTreinadorService {
     final paceTexto = ctx.formatarPace(ctx.paceReferenciaSegundos);
 
     List<String> msgs = [
-      "O segredo para evoluir o pace com segurança não é correr no limite em todos os treinos, mas sim aplicar a polarização 80/20.",
-      "Cerca de 80% do seu volume semanal deve ser em ritmo fácil (Zona 2), construindo densidade capilar e eficiência mitocondrial, e 20% em ritmo forte ou de tiro (Zonas 4 e 5).",
+      "O segredo para evoluir o pace com segurança não é correr no limite em todos os treinos, mas sim aplicar a polarização 80/20 (Metodologia de Stephen Seiler e Jack Daniels).",
+      "Cerca de 80% do seu volume semanal deve ser em ritmo conversacional fácil (Zona 2), construindo densidade capilar e biogênese mitocondrial, e 20% em ritmo forte ou de tiro (Zonas 4 e 5).",
     ];
 
     if (ctx.paceReferenciaSegundos > 0) {
       final paceTiro = (ctx.paceReferenciaSegundos * 0.90).round();
       final paceLongo = (ctx.paceReferenciaSegundos * 1.15).round();
+      final paceLimiar = (ctx.paceReferenciaSegundos * 0.98).round();
 
       msgs.add(
-        "Com seu pace de referência atual de $paceTexto:\n• Rodagens fáceis e longão: em torno de ${ctx.formatarPace(paceLongo)}.\n• Treinos de ritmo / limiar: próximo a $paceTexto.\n• Tiros de velocidade: em torno de ${ctx.formatarPace(paceTiro)}.",
+        "Com seu pace de referência atual de $paceTexto:\n• Rodagens fáceis e longão (Z2): em torno de ${ctx.formatarPace(paceLongo)}.\n• Treinos de ritmo / limiar (Z3/Z4): próximo a ${ctx.formatarPace(paceLimiar)}.\n• Tiros de velocidade (Z5): em torno de ${ctx.formatarPace(paceTiro)}.",
       );
     } else {
       msgs.add(
@@ -729,7 +830,7 @@ class IaTreinadorService {
 
   List<String> _responderTiros() {
     return [
-      "Os treinos intervalados (ou tiros) são o estímulo mais potente para elevar seu VO2 Máximo e aumentar a tolerância ao lactato sanguíneo!",
+      "Os treinos intervalados (ou tiros) são o estímulo mais potente para elevar seu VO2 Máximo e aumentar a capacidade de tamponamento e clearance de lactato sanguíneo!",
       "Protocolo recomendado para corredores amadores e intermediários:\n• Aquecimento: 10 a 15 min de trote leve (Z1/Z2) + educativos de corrida.\n• Bloco principal: 6 a 8 repetições de 400m em ritmo de tiro (Z4/Z5) com 1min30s de recuperação ativa caminhando.\n• Desaquecimento: 5 a 10 min de trote regenerativo.",
       "Regra de ouro: nunca faça treinos de tiro em dias seguidos e sempre respeite pelo menos 48h de recuperação entre estímulos intensos."
     ];
@@ -788,6 +889,13 @@ class IaTreinadorService {
       ];
     }
 
+    if (p.contains("aquiles") || p.contains("tendao")) {
+      return [
+        "O tendão de Aquiles suporta até 8x o peso do corpo a cada passada. A tendinopatia calcânea responde muito bem a contrações excêntricas!",
+        "Protocolo de Alfredson:\n• Suba em um degrau na ponta dos pés com as duas pernas e desça controladamente apenas na perna afetada (3 séries de 15 repetições).\n• Evite tiros curtos e ladeiras íngremes durante a fase inflamatória aguda."
+      ];
+    }
+
     return [
       "Atenção a dores no corpo, ${ctx.nome}: diferencie a Dor Muscular Tardia (dor difusa e simétrica nas duas pernas 24h após um treino forte) de uma dor lesiva (pontual, assimétrica, em tendões ou articulações).",
       "Se for pontual e piorar com o impacto, suspenda a corrida por 48h e aplique compressa fria. Sua longevidade no esporte depende de escutar os sinais do corpo!"
@@ -806,19 +914,22 @@ class IaTreinadorService {
     if (ctx.metas.isEmpty) {
       return [
         "Notei que você ainda não tem metas ativas cadastradas no PaceMind!",
-        "Definir metas é o catalisador da consistência esportiva. Você pode criar metas por distância (ex: 100km no mês), tempo ou número de treinos.",
-        "Quer criar uma agora? Diga simplesmente: \"Crie uma meta de 80km neste mês\" que eu cadastro para você!"
+        "Definir metas é o catalisador da consistência esportiva. Você pode criar metas por distância em km (ex: 80km no mês), tempo ou número de treinos.",
+        "Quer criar uma agora? Diga simplesmente: \"Crie uma meta de 80km este mês\" que eu cadastro imediatamente para você!"
       ];
     }
 
     final total = ctx.metas.length;
     final concluidas = ctx.metas.where((m) => m["concluida"] == true).length;
     final primeira = ctx.metas.first;
+    final tipoFormatado = primeira["tipo"]?.toString().toLowerCase() == "km" || primeira["tipo"]?.toString().toLowerCase() == "distancia"
+        ? "${primeira["objetivo"]} km"
+        : "${primeira["objetivo"]} ${primeira["tipo"]}";
 
     return [
       "Você tem $total metas cadastradas no PaceMind, das quais $concluidas já foram conquistadas!",
-      "Seu foco atual é: \"${primeira["titulo"]}\" com alvo de ${primeira["objetivo"]} (${primeira["tipo"]}).",
-      "Quer adicionar outra meta ou ajustar a atual? Basta me mandar uma mensagem!"
+      "Seu foco atual é: \"${primeira["titulo"]}\" com alvo de $tipoFormatado.",
+      "Quer adicionar outra meta ou ajustar a atual? Basta me mandar uma mensagem como \"Crie uma meta de 100km\"!"
     ];
   }
 
@@ -841,7 +952,7 @@ class IaTreinadorService {
   List<String> _responderNutricao() {
     return [
       "A alimentação é a engrenagem que financia cada passada e reconstrói suas fibras musculares!",
-      "Orientações chave:\n• Pré-treino (60-90 min antes): carboidratos simples e de fácil digestão (banana com aveia, torrada com geleia, tapioca) com baixo teor de gordura e fibra para evitar desconforto gástrico.\n• Intra-treino (corridas acima de 60-75 min): consuma 30g a 40g de carboidrato por hora (gel ou isotônico) e beba cerca de 150ml a 200ml de água a cada 20 minutos.\n• Pós-treino (janela anabólica): combine carboidratos para repor o glicogênio muscular + 20g a 25g de proteína de alto valor biológico para recuperação tecidual.",
+      "Orientações essenciais:\n• Pré-treino (60-90 min antes): carboidratos de média e rápida absorção (banana com aveia, torrada com geleia, tapioca) com baixo teor de gordura e fibra para evitar desconforto gástrico.\n• Intra-treino (corridas acima de 60 min): consuma 30g a 60g de carboidrato por hora (gel ou isotônico) e beba cerca de 150ml a 200ml de água a cada 20 minutos.\n• Reposição de eletrólitos: no calor, cápsulas de sal ou isotônico com sódio previnem câimbras e hiponatremia.\n• Pós-treino: combine carboidratos para repor o glicogênio + 20g a 30g de proteína de alto valor biológico para regeneração tecidual.",
       "Mantenha também hidratação ao longo de todo o dia: beba pelo menos 35ml a 40ml de água por quilo de peso corporal!"
     ];
   }
@@ -856,8 +967,8 @@ class IaTreinadorService {
 
   List<String> _responderZonasCardiacas() {
     return [
-      "As Zonas de Treinamento Cardíaco são a referência fisiológica do seu motor:",
-      "• Zona 1 (50-60% FC máx): Recuperação ativa e aquecimento.\n• Zona 2 (60-70% FC máx): Resistência aeróbica fundamental, densidade mitocondrial e oxidação de gorduras. O ritmo conversacional!\n• Zona 3 (70-80% FC máx): Ritmo moderado e sustentável (tempo).\n• Zona 4 (80-90% FC máx): Limiar de lactato. Treinos fortes de ritmo e tiros longos.\n• Zona 5 (90-100% FC máx): Capacidade anaeróbica e sprints máximos.",
+      "As Zonas de Treinamento Cardíaco são a referência fisiológica do seu motor cardiovascular:",
+      "• Zona 1 (50-60% FC máx): Recuperação ativa e aquecimento.\n• Zona 2 (60-70% FC máx): Resistência aeróbica fundamental, densidade mitocondrial e oxidação de gorduras. O ritmo conversacional!\n• Zona 3 (70-80% FC máx): Ritmo moderado e sustentável (tempo run).\n• Zona 4 (80-90% FC máx): Limiar de lactato. Treinos fortes de ritmo e tiros longos.\n• Zona 5 (90-100% FC máx): Capacidade anaeróbica e sprints máximos.",
       "Cerca de 75% a 80% do seu volume anual de treinos deve residir na Zona 2 para construir uma base cardiovascular sólida e duradoura!"
     ];
   }
@@ -881,7 +992,37 @@ class IaTreinadorService {
   List<String> _responderAltimetria() {
     return [
       "Treinar em subidas é considerado 'musculação disfarçada de corrida'!",
-      "Dicas fundamentais para aclives:\n• Diminua o tamanho da passada e aumente a cadência dos pés.\n• Incline o tronco ligeiramente para a frente a partir do tornozelo, nunca dobrando a cintura.\n• Mantenha o olhar cerca de 5 metros à frente e não olhe para os seus pés.\n• Use os braços ativamente para gerar momento angular de propulsão!"
+      "Dicas fundamentais para aclives:\n• Diminua o tamanho da passada e aumente a cadência dos pés.\n• Incline o tronco ligeiramente para a frente a partir do tornozelo, nunca dobrando a cintura.\n• Mantenha o olhar cerca de 5 metros à frente e não olhe para os seus pés.\n• Nas descidas, evite frear com o calcanhar: aterrissar com o mediopé poupa seus joelhos!"
+    ];
+  }
+
+  List<String> _responderMusculacao() {
+    return [
+      "O fortalecimento muscular não deixa o corredor 'pesado', ele aumenta a rigidez miotendínea (stiffness) e previne mais de 70% das lesões comuns!",
+      "Exercícios prioritários:\n• Agachamento Búlgaro e Afundo (força unilateral idêntica à passada da corrida).\n• Elevação Pélvica / Ponte de Glúteo (ativação do motor primário da propulsão).\n• Panturrilha em degrau (sóleo e gastrocnêmio suportam até 6x o peso do corpo).\n• Pranchas e anti-rotação (core forte mantém o tronco ereto após o km 30).",
+      "Frequência ideal: 2 sessões semanais de 40 minutos em dias que não antecedam treinos de tiro ou longão."
+    ];
+  }
+
+  List<String> _responderMulherAtleta() {
+    return [
+      "A fisiologia feminina na corrida tem particularidades incríveis associadas às oscilações hormonais do ciclo menstrual:",
+      "• Fase Folicular (do fim da menstruação até a ovulação): pico de estrogênio, maior sensibilidade à insulina e excelente tolerância a treinos de tiro e alta intensidade.\n• Fase Lútea (pós-ovulação): pico de progesterona, temperatura corporal basal cerca de 0.5°C mais alta e maior taxa de sudorese. Reforce a hidratação e reposição de sódio.\n• Atenção à Ferritina: corredoras têm maior risco de anemia ferropriva devido à menstruação e hemólise por impacto mecânico. Monitore seus exames de sangue no PaceMind!"
+    ];
+  }
+
+  List<String> _responderClima() {
+    return [
+      "As condições climáticas alteram drasticamente a demanda fisiológica da corrida:",
+      "• Calor e Umidade: o débito cardíaco precisa se dividir entre oxigenar os músculos e bombear sangue para a pele dissipar calor. Seu pace naturalmente subirá 15 a 30 segundos/km para a mesma frequência cardíaca. Não brigue com o relógio!\n• Frio: excelente para performance metabólica, mas exige aquecimento articular mais longo para climatizar os brônquios e evitar broncoespasmo induzido por ar seco.\n• Chuva: use boné com aba para desviar a água dos olhos, passe vaselina em regiões de atrito (virilha, mamilos) e seque bem os tênis na sombra após o treino."
+    ];
+  }
+
+  List<String> _responderIniciantes() {
+    return [
+      "Começar a correr é uma das melhores decisões para o seu coração, cérebro e metabolismo!",
+      "Regra de Ouro para Iniciantes:\n1. Aplique o Método Corrida-Caminhada (Galloway): alterne 1 minuto de trote muito leve com 2 minutos de caminhada rápida por 25 a 30 minutos.\n2. Regra dos 10%: nunca aumente seu volume semanal em mais de 10% de uma semana para a outra.\n3. O ritmo certo no início é aquele em que você consegue conversar confortavelmente sem ficar sem ar.",
+      "Consistência vence a intensidade sempre. Três treinos de 25 minutos por semana trarão uma evolução extraordinária em 6 semanas!"
     ];
   }
 
@@ -890,6 +1031,7 @@ class IaTreinadorService {
       "\"A motivação faz você começar, mas é o hábito e a consistência que te levam até a linha de chegada.\"",
       "\"Não existe treino ruim: ruim é o treino que você deixou de fazer.\"",
       "\"A corrida é você contra você mesmo. Cada quilômetro vencido é uma vitória pessoal da sua mente.\"",
+      "\"Corpo são, mente sã: a corrida é a terapia em movimento que organiza seus pensamentos.\""
     ];
     final frase = frases[Random().nextInt(frases.length)];
 
@@ -901,10 +1043,13 @@ class IaTreinadorService {
   }
 
   List<String> _responderConhecimentoGeral(ContextoAtleta ctx, String pergunta) {
+    final paceTexto = ctx.formatarPace(ctx.paceReferenciaSegundos);
+
     return [
-      "Entendi o que você trouxe, ${ctx.nome}! Como seu treinador inteligente e assistente esportivo no PaceMind, posso te apoiar em qualquer questão da sua jornada.",
-      "Além de tirar dúvidas sobre fisiologia, dores, respiração e ritmo, lembre-se que eu funciono como um agente autônomo. Você pode me mandar comandos como:\n• \"Crie um treino de 5km para amanhã\"\n• \"Crie uma meta de 80km\"\n• \"Salvar corrida de 6km em 32 minutos hoje\"",
-      "Como você gostaria de direcionar seu próximo passo agora?"
+      "Compreendi a sua pergunta, ${ctx.nome}!",
+      "Como seu treinador de corrida no PaceMind, levo em consideração o seu momento esportivo atual:\n• Volume acumulado na semana: ${ctx.kmSemana.toStringAsFixed(1)} km\n• Pace de referência: $paceTexto\n• Nível de fadiga recente (ACWR): ${ctx.acwr.toStringAsFixed(2)} (${ctx.statusFadiga})",
+      "Sobre a sua pergunta: na corrida de rua e no treinamento de endurance, a consistência e o equilíbrio entre estímulo e regeneração são as chaves da evolução. Se desejar, me peça para:\n• \"Crie um treino de 5km para amanhã\"\n• \"Crie uma meta de 80km\"\n• \"Como baixar meu pace com segurança?\"",
+      "Como você prefere direcionar o seu próximo treino?"
     ];
   }
 }

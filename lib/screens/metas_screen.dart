@@ -38,7 +38,8 @@ class _MetasPageState extends State<MetasPage> {
         final kmSemana = double.tryParse(dash["resumo"]?["total_km"]?.toString() ?? "0") ?? 0.0;
         if (kmSemana > 0) {
           for (var m in data) {
-            if (m["tipo"]?.toString().toLowerCase() == "km") {
+            final t = m["tipo"]?.toString().toLowerCase() ?? "";
+            if (t == "km" || t == "distancia") {
               final progressoAtual = double.tryParse(m["progresso"]?.toString() ?? "0") ?? 0.0;
               if (kmSemana > progressoAtual) {
                 m["progresso"] = kmSemana;
@@ -78,8 +79,10 @@ class _MetasPageState extends State<MetasPage> {
   String _formatarValor(dynamic valor, String tipo) {
     final v = double.tryParse(valor?.toString() ?? "0") ?? 0;
     final formatado = v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(1);
-    switch (tipo.toLowerCase()) {
+    final t = tipo.toLowerCase();
+    switch (t) {
       case "km":
+      case "distancia":
         return "$formatado km";
       case "tempo":
         return "$formatado min";
@@ -91,8 +94,10 @@ class _MetasPageState extends State<MetasPage> {
   }
 
   Color _corTipo(String tipo) {
-    switch (tipo.toLowerCase()) {
+    final t = tipo.toLowerCase();
+    switch (t) {
       case "km":
+      case "distancia":
         return const Color(0xFF0066FF);
       case "tempo":
         return const Color(0xFFF59E0B);
@@ -104,8 +109,10 @@ class _MetasPageState extends State<MetasPage> {
   }
 
   IconData _iconeTipo(String tipo) {
-    switch (tipo.toLowerCase()) {
+    final t = tipo.toLowerCase();
+    switch (t) {
       case "km":
+      case "distancia":
         return Icons.directions_run_rounded;
       case "tempo":
         return Icons.timer_outlined;
@@ -796,7 +803,7 @@ class _MetasPageState extends State<MetasPage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        tipo.toUpperCase(),
+                        (tipo.toLowerCase() == "distancia" ? "km" : tipo).toUpperCase(),
                         style: TextStyle(
                           color: cor,
                           fontSize: 11,

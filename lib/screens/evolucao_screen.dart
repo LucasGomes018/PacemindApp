@@ -507,8 +507,30 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
       spots.add(FlSpot(i.toDouble(), km));
     }
 
+    final maxX = (spots.length <= 1) ? 1.0 : (spots.length - 1).toDouble();
+
     return LineChart(
       LineChartData(
+        minX: 0,
+        maxX: maxX,
+        minY: 0,
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => isDark ? const Color(0xFF1E293B) : Colors.white,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                return LineTooltipItem(
+                  "${spot.y.toStringAsFixed(1)} km",
+                  TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF0066FF),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                );
+              }).toList();
+            },
+          ),
+        ),
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
@@ -517,9 +539,47 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
             strokeWidth: 1,
           ),
         ),
-        titlesData: const FlTitlesData(
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 22,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                final idx = value.toInt();
+                if (idx < 0 || idx >= lista.length) return const SizedBox.shrink();
+                final label = lista[idx]["semana"]?.toString() ?? "S${idx + 1}";
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    label.length > 5 ? label.substring(label.length - 5) : label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 32,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
+                );
+              },
+            ),
+          ),
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
@@ -547,8 +607,30 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
       spots.add(FlSpot(i.toDouble(), c));
     }
 
+    final maxX = (spots.length <= 1) ? 1.0 : (spots.length - 1).toDouble();
+
     return LineChart(
       LineChartData(
+        minX: 0,
+        maxX: maxX,
+        minY: 0,
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => isDark ? const Color(0xFF1E293B) : Colors.white,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                return LineTooltipItem(
+                  "Carga: ${spot.y.toInt()}",
+                  TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFFF59E0B),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                );
+              }).toList();
+            },
+          ),
+        ),
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
@@ -557,9 +639,47 @@ class _EvolucaoPageState extends State<EvolucaoPage> {
             strokeWidth: 1,
           ),
         ),
-        titlesData: const FlTitlesData(
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 22,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                final idx = value.toInt();
+                if (idx < 0 || idx >= lista.length) return const SizedBox.shrink();
+                final label = lista[idx]["semana"]?.toString() ?? "S${idx + 1}";
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    label.length > 5 ? label.substring(label.length - 5) : label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 36,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
+                );
+              },
+            ),
+          ),
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [

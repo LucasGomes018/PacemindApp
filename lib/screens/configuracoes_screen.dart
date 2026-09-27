@@ -114,473 +114,395 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
       return Colors.green;
     }
 
-    await showDialog(
+    await AppModal.showBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (_) {
+      title: "Alterar senha",
+      subtitle: "Sua nova senha deve ser segura e diferente da anterior.",
+      icon: Icons.lock_reset_rounded,
+      iconColor: const Color(0xFF0066FF),
+      initialChildSize: 0.82,
+      maxChildSize: 0.95,
+      builder: (sheetContext, scrollController) {
         return StatefulBuilder(
-          builder: (dialogContext, setState) {
-            final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
-            final textColor = Theme.of(dialogContext).colorScheme.onSurface;
+          builder: (modalContext, setModalState) {
+            final isDark = Theme.of(modalContext).brightness == Brightness.dark;
+            final textColor = Theme.of(modalContext).colorScheme.onSurface;
             final subTextColor = isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600;
-            final inputBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
+            final inputBg = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
             final borderColor = isDark ? const Color(0xFF334155) : Colors.grey.shade300;
             final hintColor = isDark ? const Color(0xFF64748B) : Colors.grey.shade400;
 
-            return Dialog(
-              backgroundColor: Theme.of(dialogContext).colorScheme.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            color: primaryBlue.withValues(alpha: .12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.lock_reset_rounded,
-                            color: primaryBlue,
-                            size: 36,
-                          ),
+            return Form(
+              key: formKey,
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                children: [
+                  TextFormField(
+                    controller: atualController,
+                    obscureText: !verAtual,
+                    decoration: InputDecoration(
+                      labelText: "Senha atual",
+                      labelStyle: TextStyle(
+                        color: subTextColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      hintText: "Digite sua senha",
+                      hintStyle: TextStyle(color: hintColor),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline_rounded,
+                        color: Color(0xFF0066FF),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          verAtual
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                          color: subTextColor,
                         ),
-
-                        const SizedBox(height: 18),
-
-                        Text(
-                          "Alterar senha",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
+                        onPressed: () {
+                          setModalState(() {
+                            verAtual = !verAtual;
+                          });
+                        },
+                      ),
+                      filled: true,
+                      fillColor: inputBg,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 18,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: borderColor,
+                          width: 1.2,
                         ),
-
-                        const SizedBox(height: 8),
-
-                        Text(
-                          "Sua nova senha deve ser segura e diferente da anterior.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: subTextColor,
-                            height: 1.4,
-                          ),
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(16),
                         ),
+                        borderSide: BorderSide(
+                          color: Color(0xFF0066FF),
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1.8,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                    cursorColor: const Color(0xFF0066FF),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return "Informe sua senha atual";
+                      }
+                      return null;
+                    },
+                  ),
 
-                        const SizedBox(height: 28),
+                  const SizedBox(height: 18),
 
-                        TextFormField(
-                          controller: atualController,
-                          obscureText: !verAtual,
-                          decoration: InputDecoration(
-                            labelText: "Senha atual",
-                            labelStyle: TextStyle(
-                              color: subTextColor,
-                              fontWeight: FontWeight.w500,
+                  TextFormField(
+                    controller: novaController,
+                    obscureText: !verNova,
+                    onChanged: (_) => setModalState(() {}),
+                    decoration: InputDecoration(
+                      labelText: "Nova senha",
+                      labelStyle: TextStyle(
+                        color: subTextColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      hintText: "Digite sua nova senha",
+                      hintStyle: TextStyle(color: hintColor),
+                      prefixIcon: const Icon(
+                        Icons.password_rounded,
+                        color: Color(0xFF0066FF),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          verNova
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                          color: subTextColor,
+                        ),
+                        onPressed: () {
+                          setModalState(() {
+                            verNova = !verNova;
+                          });
+                        },
+                      ),
+                      filled: true,
+                      fillColor: inputBg,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 18,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: borderColor,
+                          width: 1.2,
+                        ),
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(16),
+                        ),
+                        borderSide: BorderSide(
+                          color: Color(0xFF0066FF),
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1.8,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                    cursorColor: const Color(0xFF0066FF),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return "Digite uma nova senha";
+                      }
+                      if (v.length < 6) {
+                        return "Mínimo de 6 caracteres";
+                      }
+                      return null;
+                    },
+                  ),
+
+                  if (novaController.text.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Força: ${forcaSenha(novaController.text)}",
+                        style: TextStyle(
+                          color: corForca(novaController.text),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 18),
+
+                  TextFormField(
+                    controller: confirmarController,
+                    obscureText: !verConfirmar,
+                    decoration: InputDecoration(
+                      labelText: "Confirmar senha",
+                      labelStyle: TextStyle(
+                        color: subTextColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      hintText: "Confirme sua nova senha",
+                      hintStyle: TextStyle(color: hintColor),
+                      prefixIcon: const Icon(
+                        Icons.verified_user_rounded,
+                        color: Color(0xFF0066FF),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          verConfirmar
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                          color: subTextColor,
+                        ),
+                        onPressed: () {
+                          setModalState(() {
+                            verConfirmar = !verConfirmar;
+                          });
+                        },
+                      ),
+                      filled: true,
+                      fillColor: inputBg,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 18,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: borderColor,
+                          width: 1.2,
+                        ),
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(16),
+                        ),
+                        borderSide: BorderSide(
+                          color: Color(0xFF0066FF),
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1.8,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                    cursorColor: const Color(0xFF0066FF),
+                    validator: (v) {
+                      if (v != novaController.text) {
+                        return "As senhas não coincidem";
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: carregando
+                              ? null
+                              : () => Navigator.pop(modalContext),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16,
                             ),
-
-                            hintText: "Digite sua senha",
-                            hintStyle: TextStyle(color: hintColor),
-
-                            prefixIcon: const Icon(
-                              Icons.lock_outline_rounded,
-                              color: Color(0xFF0066FF),
-                            ),
-
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                verAtual
-                                    ? Icons.visibility_off_rounded
-                                    : Icons.visibility_rounded,
-                                color: subTextColor,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  verAtual = !verAtual;
-                                });
-                              },
-                            ),
-
-                            filled: true,
-                            fillColor: inputBg,
-
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 18,
-                            ),
-
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide(
-                                color: borderColor,
-                                width: 1.2,
-                              ),
-                            ),
-
-                            focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(18),
-                              ),
-                              borderSide: BorderSide(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: const BorderSide(
                                 color: Color(0xFF0066FF),
-                                width: 2,
-                              ),
-                            ),
-
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1.8,
-                              ),
-                            ),
-
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
                               ),
                             ),
                           ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: textColor,
-                          ),
-                          cursorColor: const Color(0xFF0066FF),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) {
-                              return "Informe sua senha atual";
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        TextFormField(
-                          controller: novaController,
-                          obscureText: !verNova,
-                          onChanged: (_) => setState(() {}),
-                          decoration: InputDecoration(
-                            labelText: "Nova senha",
-                            labelStyle: TextStyle(
-                              color: subTextColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-
-                            hintText: "Digite sua nova senha",
-                            hintStyle: TextStyle(color: hintColor),
-
-                            prefixIcon: const Icon(
-                              Icons.password_rounded,
+                          child: const Text(
+                            "Cancelar",
+                            style: TextStyle(
                               color: Color(0xFF0066FF),
-                            ),
-
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                verNova
-                                    ? Icons.visibility_off_rounded
-                                    : Icons.visibility_rounded,
-                                color: subTextColor,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  verNova = !verNova;
-                                });
-                              },
-                            ),
-
-                            filled: true,
-                            fillColor: inputBg,
-
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 18,
-                            ),
-
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide(
-                                color: borderColor,
-                                width: 1.2,
-                              ),
-                            ),
-
-                            focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(18),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0xFF0066FF),
-                                width: 2,
-                              ),
-                            ),
-
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1.8,
-                              ),
-                            ),
-
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: textColor,
-                          ),
-                          cursorColor: const Color(0xFF0066FF),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) {
-                              return "Digite uma nova senha";
-                            }
-
-                            if (v.length < 6) {
-                              return "Mínimo de 6 caracteres";
-                            }
-
-                            return null;
-                          },
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: carregando
+                              ? null
+                              : () async {
+                                  if (!formKey.currentState!.validate()) {
+                                    return;
+                                  }
 
-                        if (novaController.text.isNotEmpty) ...[
-                          const SizedBox(height: 10),
+                                  setModalState(() {
+                                    carregando = true;
+                                  });
 
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "Força: ${forcaSenha(novaController.text)}",
-                              style: TextStyle(
-                                color: corForca(novaController.text),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
+                                  try {
+                                    await Api.alterarSenha(
+                                      senhaAtual: atualController.text.trim(),
+                                      novaSenha: novaController.text.trim(),
+                                    );
 
-                        const SizedBox(height: 18),
+                                    if (!modalContext.mounted) return;
+                                    Navigator.pop(modalContext);
 
-                        TextFormField(
-                          controller: confirmarController,
-                          obscureText: !verConfirmar,
-                          decoration: InputDecoration(
-                            labelText: "Confirmar senha",
-                            labelStyle: TextStyle(
-                              color: subTextColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-
-                            hintText: "Confirme sua nova senha",
-                            hintStyle: TextStyle(color: hintColor),
-
-                            prefixIcon: const Icon(
-                              Icons.verified_user_rounded,
-                              color: Color(0xFF0066FF),
-                            ),
-
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                verConfirmar
-                                    ? Icons.visibility_off_rounded
-                                    : Icons.visibility_rounded,
-                                color: subTextColor,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  verConfirmar = !verConfirmar;
-                                });
-                              },
-                            ),
-
-                            filled: true,
-                            fillColor: inputBg,
-
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 18,
-                            ),
-
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide(
-                                color: borderColor,
-                                width: 1.2,
-                              ),
-                            ),
-
-                            focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(18),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0xFF0066FF),
-                                width: 2,
-                              ),
-                            ),
-
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1.8,
-                              ),
-                            ),
-
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: textColor,
-                          ),
-                          cursorColor: const Color(0xFF0066FF),
-                          validator: (v) {
-                            if (v != novaController.text) {
-                              return "As senhas não coincidem";
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: carregando
-                                    ? null
-                                    : () => Navigator.pop(dialogContext),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 15,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    side: const BorderSide(
-                                      color: Color(0xFF0066FF),
-                                    ),
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Cancelar",
-                                  style: TextStyle(color: Color(0xFF0066FF)),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 12),
-
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: carregando
-                                    ? null
-                                    : () async {
-                                        if (!formKey.currentState!.validate()) {
-                                          return;
-                                        }
-
-                                        setState(() {
-                                          carregando = true;
-                                        });
-
-                                        try {
-                                          await Api.alterarSenha(
-                                            senhaAtual: atualController.text
-                                                .trim(),
-                                            novaSenha: novaController.text
-                                                .trim(),
-                                          );
-
-                                          if (!dialogContext.mounted) return;
-
-                                          Navigator.pop(dialogContext);
-
-                                          if (!mounted) return;
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                "Senha alterada com sucesso!",
-                                              ),
-                                            ),
-                                          );
-                                        } catch (e) {
-                                          if (dialogContext.mounted) {
-                                            setState(() {
-                                              carregando = false;
-                                            });
-
-                                            ScaffoldMessenger.of(
-                                              dialogContext,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(e.toString()),
-                                              ),
-                                            );
-                                          }
-                                        }
-                                      },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryBlue,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 15,
-                                  ),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: carregando
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text(
-                                        "Salvar",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Senha alterada com sucesso!",
                                         ),
                                       ),
-                              ),
+                                    );
+                                  } catch (e) {
+                                    if (modalContext.mounted) {
+                                      setModalState(() {
+                                        carregando = false;
+                                      });
+
+                                      ScaffoldMessenger.of(modalContext).showSnackBar(
+                                        SnackBar(
+                                          content: Text(e.toString()),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0066FF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16,
                             ),
-                          ],
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: carregando
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  "Salvar",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 20),
+                ],
               ),
             );
           },

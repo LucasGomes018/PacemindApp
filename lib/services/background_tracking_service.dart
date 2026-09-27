@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api.dart';
 
@@ -14,12 +15,15 @@ class BackgroundTrackingService {
       androidConfiguration: AndroidConfiguration(
         onStart: onStart,
         autoStart: false,
+        autoStartOnBoot: false,
         isForegroundMode: true,
         foregroundServiceNotificationId: 888,
         initialNotificationTitle: "PaceMind",
         initialNotificationContent: "Monitorando corrida...",
       ),
-      iosConfiguration: IosConfiguration(),
+      iosConfiguration: IosConfiguration(
+        autoStart: false,
+      ),
     );
   }
 
@@ -45,9 +49,27 @@ void onStart(ServiceInstance service) {
 
   int? idCorrida;
 
+  // Proteção: caso o serviço seja acionado sem uma corrida ativa (ex: reinício do sistema),
+  // encerra a si mesmo se não receber o evento 'startRun' ou se não houver corrida ativa persistida.
+  Timer(const Duration(seconds: 4), () async {
+    if (idCorrida == null) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final corridaAtiva = prefs.getBool('corrida_ativa') ?? false;
+        if (!corridaAtiva) {
+          await positionStream?.cancel();
+          service.stopSelf();
+        }
+      } catch (_) {
+        service.stopSelf();
+      }
+    }
+  });
+
   service.on("startRun").listen((event) {
     idCorrida = event?["idCorrida"];
 
+    positionStream?.cancel();
     positionStream =
         Geolocator.getPositionStream(
           locationSettings: const LocationSettings(
@@ -76,3 +98,4 @@ void onStart(ServiceInstance service) {
     service.stopSelf();
   });
 }
+

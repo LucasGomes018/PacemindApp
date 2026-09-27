@@ -52,6 +52,12 @@ void main() async {
     corridaAtiva = prefs.getBool('corrida_ativa') ?? false;
   } catch (_) {}
 
+  if (!corridaAtiva) {
+    try {
+      await BackgroundTrackingService.stop();
+    } catch (_) {}
+  }
+
   runApp(
     MyApp(
       isAuthenticated: token != null && token.isNotEmpty,
