@@ -136,7 +136,7 @@ Uma das propostas do PaceMind é permitir que o corredor compare diferentes per�
 
 ## ✉️ Contato & Desenvolvedores
 
-**Projeto desenvolvico por Lucas dos Santos Gomes**
+**Projeto desenvolvido por Lucas dos Santos Gomes**
 
 - **E-mail:** [lucasg16809@gmail.com](mailto:lucasg16809@gmail.com)
 - **Linkedin:** https://www.linkedin.com/in/lucas-gomes-350923371
