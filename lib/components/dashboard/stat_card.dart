@@ -27,11 +27,12 @@ class StatCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardBg = theme.cardColor;
+    final animationDuration = MediaQuery.of(context).disableAnimations
+        ? Duration.zero
+        : const Duration(milliseconds: 280);
 
-    final primaryGradient = gradientColors ?? [
-      color,
-      color.withValues(alpha: 0.8),
-    ];
+    final primaryGradient =
+        gradientColors ?? [color, color.withValues(alpha: 0.8)];
 
     return Material(
       color: Colors.transparent,
@@ -107,17 +108,35 @@ class StatCard extends StatelessWidget {
               const SizedBox(height: 8),
 
               // Valor principal
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  value,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 22,
-                    color: theme.colorScheme.onSurface,
-                    letterSpacing: -0.5,
+              SizedBox(
+                height: 28,
+                child: AnimatedSwitcher(
+                  duration: animationDuration,
+                  switchInCurve: Curves.easeOutCubic,
+                  transitionBuilder: (child, animation) {
+                    final position = Tween<Offset>(
+                      begin: const Offset(0, 0.2),
+                      end: Offset.zero,
+                    ).animate(animation);
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(position: position, child: child),
+                    );
+                  },
+                  child: FittedBox(
+                    key: ValueKey(value),
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        color: theme.colorScheme.onSurface,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -136,7 +155,8 @@ class StatCard extends StatelessWidget {
                         subtitle!,
                         maxLines: 1,
                         style: TextStyle(
-                          color: subtitleColor ??
+                          color:
+                              subtitleColor ??
                               (isDark
                                   ? const Color(0xFF64748B)
                                   : const Color(0xFF94A3B8)),

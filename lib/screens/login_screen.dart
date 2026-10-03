@@ -73,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
     final logoAsset = isDark
         ? "assets/images/logoLoginDark.png"
         : "assets/images/logoLogin2.png";
-    final accent = isDark ? colors.secondary : Colors.lightBlue;
+    final accent = isDark ? colors.secondary : colors.primary;
     final fieldFill = isDark ? colors.surface : Colors.grey.shade100;
 
     return Scaffold(
@@ -123,152 +123,182 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  style: TextStyle(color: colors.onSurface, fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: "Email",
-                    labelStyle: TextStyle(
-                      color: isDark ? colors.onSurfaceVariant : const Color(0xFF64748B),
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(Icons.email_rounded, color: accent),
-                    filled: true,
-                    fillColor: fieldFill,
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: accent, width: 2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: senhaController,
-                  obscureText: !mostrarSenha,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => loading ? null : login(),
-                  style: TextStyle(color: colors.onSurface, fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: "Senha",
-                    labelStyle: TextStyle(
-                      color: isDark ? colors.onSurfaceVariant : const Color(0xFF64748B),
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(Icons.lock_rounded, color: accent),
-                    suffixIcon: IconButton(
-                      tooltip: mostrarSenha ? "Ocultar senha" : "Mostrar senha",
-                      onPressed: () =>
-                          setState(() => mostrarSenha = !mostrarSenha),
-                      icon: Icon(
-                        mostrarSenha
-                            ? Icons.visibility_off_rounded
-                            : Icons.visibility_rounded,
-                        color: isDark ? colors.onSurfaceVariant : Colors.grey,
+                    TextField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      style: TextStyle(color: colors.onSurface, fontSize: 16),
+                      decoration: InputDecoration(
+                        labelText: "Email",
+                        labelStyle: TextStyle(
+                          color: isDark
+                              ? colors.onSurfaceVariant
+                              : const Color(0xFF64748B),
+                          fontSize: 14,
+                        ),
+                        prefixIcon: Icon(Icons.email_rounded, color: accent),
+                        filled: true,
+                        fillColor: fieldFill,
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.white10
+                                : const Color(0xFFE2E8F0),
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: accent, width: 2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                     ),
-                    filled: true,
-                    fillColor: fieldFill,
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: accent, width: 2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  child: erro == null
-                      ? const SizedBox(height: 12)
-                      : Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: colors.error.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: colors.error.withValues(alpha: 0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.error_outline_rounded, color: colors.error, size: 18),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  erro!,
-                                  key: ValueKey(erro),
-                                  style: TextStyle(color: colors.error, fontSize: 13, fontWeight: FontWeight.w500),
-                                ),
-                              ),
-                            ],
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: senhaController,
+                      obscureText: !mostrarSenha,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => loading ? null : login(),
+                      style: TextStyle(color: colors.onSurface, fontSize: 16),
+                      decoration: InputDecoration(
+                        labelText: "Senha",
+                        labelStyle: TextStyle(
+                          color: isDark
+                              ? colors.onSurfaceVariant
+                              : const Color(0xFF64748B),
+                          fontSize: 14,
+                        ),
+                        prefixIcon: Icon(Icons.lock_rounded, color: accent),
+                        suffixIcon: IconButton(
+                          tooltip: mostrarSenha
+                              ? "Ocultar senha"
+                              : "Mostrar senha",
+                          onPressed: () =>
+                              setState(() => mostrarSenha = !mostrarSenha),
+                          icon: Icon(
+                            mostrarSenha
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            color: isDark
+                                ? colors.onSurfaceVariant
+                                : Colors.grey,
                           ),
                         ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: loading ? null : login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0066FF),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      textStyle: const TextStyle(fontSize: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        filled: true,
+                        fillColor: fieldFill,
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.white10
+                                : const Color(0xFFE2E8F0),
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: accent, width: 2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                     ),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: loading
-                          ? const SizedBox(
-                              key: ValueKey('loading'),
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.white,
+                    const SizedBox(height: 20),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: erro == null
+                          ? const SizedBox(height: 12)
+                          : Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
                               ),
-                            )
-                          : const Text(
-                              "Entrar",
-                              key: ValueKey('enter'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
+                              margin: const EdgeInsets.only(bottom: 8),
+                              decoration: BoxDecoration(
+                                color: colors.error.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: colors.error.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline_rounded,
+                                    color: colors.error,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      erro!,
+                                      key: ValueKey(erro),
+                                      style: TextStyle(
+                                        color: colors.error,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, "/cadastro"),
-                  child: Text(
-                    "Não tem uma conta? Cadastre-se",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: accent,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: loading ? null : login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0066FF),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          textStyle: const TextStyle(fontSize: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: loading
+                              ? const SizedBox(
+                                  key: ValueKey('loading'),
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  "Entrar",
+                                  key: ValueKey('enter'),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, "/cadastro"),
+                      child: Text(
+                        "Não tem uma conta? Cadastre-se",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  ),
-);
+    );
   }
 }

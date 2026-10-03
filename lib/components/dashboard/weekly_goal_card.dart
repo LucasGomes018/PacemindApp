@@ -24,7 +24,8 @@ class WeeklyGoalCard extends StatelessWidget {
     final colors = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    final bool temMeta = meta != null || (objetivoPerfilKm != null && objetivoPerfilKm! > 0);
+    final bool temMeta =
+        meta != null || (objetivoPerfilKm != null && objetivoPerfilKm! > 0);
 
     return Container(
       width: double.infinity,
@@ -68,7 +69,11 @@ class WeeklyGoalCard extends StatelessWidget {
                     color: const Color(0xFF0066FF).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.flag_rounded, color: Color(0xFF0066FF), size: 20),
+                  child: const Icon(
+                    Icons.flag_rounded,
+                    color: Color(0xFF0066FF),
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -103,7 +108,9 @@ class WeeklyGoalCard extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : const Color(0xFFF8FAFC),
+            color: isDark
+                ? const Color(0xFF1E293B).withValues(alpha: 0.6)
+                : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: isDark
@@ -118,7 +125,9 @@ class WeeklyGoalCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                   height: 1.4,
                 ),
               ),
@@ -170,13 +179,16 @@ class WeeklyGoalCard extends StatelessWidget {
 
     double progressoEfetivo = kmAtual;
     if (meta != null && tipo != "km") {
-      progressoEfetivo = double.tryParse(meta["progresso"]?.toString() ?? "0") ?? 0.0;
+      progressoEfetivo =
+          double.tryParse(meta["progresso"]?.toString() ?? "0") ?? 0.0;
     }
 
     final progressoNormalizado = (progressoEfetivo / objetivo).clamp(0.0, 1.0);
     final porcentagem = (progressoNormalizado * 100).round();
     final faltam = (objetivo - progressoEfetivo).clamp(0.0, objetivo);
-    final bool concluida = progressoEfetivo >= objetivo || (meta != null && meta["concluida"] == true);
+    final bool concluida =
+        progressoEfetivo >= objetivo ||
+        (meta != null && meta["concluida"] == true);
 
     String formatarValor(double v) {
       final f = v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(1);
@@ -195,7 +207,9 @@ class WeeklyGoalCard extends StatelessWidget {
     // Dias restantes na semana
     final agora = DateTime.now();
     final diasRestantes = (7 - agora.weekday) + 1; // contando com hoje
-    final kmPorDiaRestante = diasRestantes > 0 ? (faltam / diasRestantes) : faltam;
+    final kmPorDiaRestante = diasRestantes > 0
+        ? (faltam / diasRestantes)
+        : faltam;
 
     return InkWell(
       onTap: onVerMetas,
@@ -217,17 +231,38 @@ class WeeklyGoalCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: (concluida ? const Color(0xFF10B981) : const Color(0xFF0066FF))
-                          .withValues(alpha: 0.3),
+                      color:
+                          (concluida
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFF0066FF))
+                              .withValues(alpha: 0.3),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Icon(
-                  concluida ? Icons.emoji_events_rounded : Icons.flag_rounded,
-                  color: Colors.white,
-                  size: 18,
+                child: AnimatedSwitcher(
+                  duration: MediaQuery.of(context).disableAnimations
+                      ? Duration.zero
+                      : const Duration(milliseconds: 420),
+                  transitionBuilder: (child, animation) {
+                    final scale = Tween<double>(begin: 0.65, end: 1).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.elasticOut,
+                      ),
+                    );
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(scale: scale, child: child),
+                    );
+                  },
+                  child: Icon(
+                    concluida ? Icons.emoji_events_rounded : Icons.flag_rounded,
+                    key: ValueKey(concluida),
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -253,7 +288,9 @@ class WeeklyGoalCard extends StatelessWidget {
                         fontSize: 11.5,
                         color: concluida
                             ? const Color(0xFF10B981)
-                            : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                            : (isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF64748B)),
                       ),
                     ),
                   ],
@@ -261,16 +298,24 @@ class WeeklyGoalCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: (concluida ? const Color(0xFF10B981) : const Color(0xFF0066FF))
-                      .withValues(alpha: 0.12),
+                  color:
+                      (concluida
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFF0066FF))
+                          .withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   "$porcentagem%",
                   style: TextStyle(
-                    color: concluida ? const Color(0xFF10B981) : const Color(0xFF0066FF),
+                    color: concluida
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFF0066FF),
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
                   ),
@@ -293,7 +338,9 @@ class WeeklyGoalCard extends StatelessWidget {
                     height: 10,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -310,8 +357,11 @@ class WeeklyGoalCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: (concluida ? const Color(0xFF10B981) : const Color(0xFF0066FF))
-                                .withValues(alpha: 0.4),
+                            color:
+                                (concluida
+                                        ? const Color(0xFF10B981)
+                                        : const Color(0xFF0066FF))
+                                    .withValues(alpha: 0.4),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -355,7 +405,9 @@ class WeeklyGoalCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
                       ),
                     ),
                   ),

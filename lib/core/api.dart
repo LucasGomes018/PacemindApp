@@ -139,7 +139,20 @@ class Api {
       }),
     );
 
-    return jsonDecode(response.body);
+    final data = response.body.isEmpty
+        ? <String, dynamic>{}
+        : jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        data is Map
+            ? data["message"] ?? "Erro ao atualizar perfil"
+            : "Erro ao atualizar perfil",
+      );
+    }
+    if (data is! Map<String, dynamic>) {
+      throw Exception("Resposta inválida ao atualizar perfil");
+    }
+    return data;
   }
 
   static Future<Map<String, dynamic>> alterarSenha({
@@ -225,6 +238,18 @@ class Api {
 
     if (response.statusCode != 201) {
       throw Exception("Erro ao salvar mensagem do chat");
+    }
+  }
+
+  static Future<void> deletarRecomendacao(String id) async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/recomendacoes/$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception("Não foi possível excluir uma mensagem do histórico");
     }
   }
 
@@ -674,7 +699,8 @@ class Api {
     try {
       final token = await _getToken();
       final body = <String, dynamic>{};
-      if (distanciaAtualKm != null) body["distancia_atual_km"] = distanciaAtualKm;
+      if (distanciaAtualKm != null)
+        body["distancia_atual_km"] = distanciaAtualKm;
       if (tempoSegundos != null) body["tempo_segundos"] = tempoSegundos;
       if (status != null) body["status"] = status;
       if (idCorrida != null) body["id_corrida"] = idCorrida;
@@ -918,7 +944,9 @@ class Api {
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> salvarFichaAluno(Map<String, dynamic> dados) async {
+  static Future<Map<String, dynamic>> salvarFichaAluno(
+    Map<String, dynamic> dados,
+  ) async {
     final token = await _getToken();
     final response = await http.post(
       Uri.parse("$baseUrl/ficha"),
@@ -964,7 +992,9 @@ class Api {
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> salvarExame(Map<String, dynamic> dados) async {
+  static Future<Map<String, dynamic>> salvarExame(
+    Map<String, dynamic> dados,
+  ) async {
     final token = await _getToken();
     final response = await http.post(
       Uri.parse("$baseUrl/exames"),
@@ -1009,7 +1039,9 @@ class Api {
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> salvarRelatorio(Map<String, dynamic> dados) async {
+  static Future<Map<String, dynamic>> salvarRelatorio(
+    Map<String, dynamic> dados,
+  ) async {
     final token = await _getToken();
     final response = await http.post(
       Uri.parse("$baseUrl/relatorios"),
@@ -1152,7 +1184,9 @@ class Api {
   }
 
   /// Busca a ficha médica/anamnese de um aluno específico pelo id_usuario.
-  static Future<Map<String, dynamic>> buscarFichaPorAluno(String idUsuario) async {
+  static Future<Map<String, dynamic>> buscarFichaPorAluno(
+    String idUsuario,
+  ) async {
     final token = await _getToken();
     final response = await http.get(
       Uri.parse("$baseUrl/ficha?id_usuario=$idUsuario"),
@@ -1222,7 +1256,10 @@ class Api {
     return {};
   }
 
-  static Future<void> marcarNotificacaoLida(dynamic idNotificacao, {bool lida = true}) async {
+  static Future<void> marcarNotificacaoLida(
+    dynamic idNotificacao, {
+    bool lida = true,
+  }) async {
     final token = await _getToken();
     final response = await http.patch(
       Uri.parse("$baseUrl/notificacoes/$idNotificacao"),
@@ -1376,7 +1413,9 @@ class Api {
     return data is List ? data : [];
   }
 
-  static Future<Map<String, dynamic>> criarParceiro(Map<String, dynamic> dados) async {
+  static Future<Map<String, dynamic>> criarParceiro(
+    Map<String, dynamic> dados,
+  ) async {
     final token = await _getToken();
     final response = await http.post(
       Uri.parse("$baseUrl/parceiros"),
@@ -1392,7 +1431,10 @@ class Api {
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> atualizarParceiro(String id, Map<String, dynamic> dados) async {
+  static Future<Map<String, dynamic>> atualizarParceiro(
+    String id,
+    Map<String, dynamic> dados,
+  ) async {
     final token = await _getToken();
     final response = await http.put(
       Uri.parse("$baseUrl/parceiros/$id"),
@@ -1433,7 +1475,9 @@ class Api {
     return data is List ? data : [];
   }
 
-  static Future<Map<String, dynamic>> criarWellness(Map<String, dynamic> dados) async {
+  static Future<Map<String, dynamic>> criarWellness(
+    Map<String, dynamic> dados,
+  ) async {
     final token = await _getToken();
     final response = await http.post(
       Uri.parse("$baseUrl/wellness"),
@@ -1499,4 +1543,3 @@ class Api {
     return jsonDecode(response.body);
   }
 }
-

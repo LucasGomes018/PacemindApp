@@ -25,8 +25,12 @@ class AutoNotificacaoService {
 
     try {
       await NotificacaoService.inicializar();
-      await _configurarLembretesDiarios();
       _inicializado = true;
+
+      final prefs = await SharedPreferences.getInstance();
+      if (!(prefs.getBool("notificacoes") ?? true)) return;
+
+      await _configurarLembretesDiarios();
 
       // Executa verificação silenciosa inicial com o backend e sincroniza push
       executarChecagemInteligente();
@@ -41,13 +45,31 @@ class AutoNotificacaoService {
     }
   }
 
+  static Future<void> atualizarPreferencia(bool ativa) async {
+    if (!ativa) {
+      _timerSincronizacao?.cancel();
+      _timerSincronizacao = null;
+      await NotificacaoService.cancelarTodas();
+      return;
+    }
+
+    await NotificacaoService.inicializar();
+    await _configurarLembretesDiarios();
+    await executarChecagemInteligente();
+    _timerSincronizacao?.cancel();
+    _timerSincronizacao = Timer.periodic(const Duration(seconds: 90), (_) {
+      sincronizarNotificacoesPush();
+    });
+  }
+
   /// ⏰ 1. Configura os lembretes diários recorrentes no dispositivo
   static Future<void> _configurarLembretesDiarios() async {
     // 07:30 - Lembrete Matinal de Treino do Dia
     await NotificacaoService.agendarNotificacaoDiaria(
       id: 101,
       titulo: "🏃 Bom dia, corredor!",
-      corpo: "Abra o PaceMind para conferir seu treino planejado de hoje e preparar o tênis.",
+      corpo:
+          "Abra o PaceMind para conferir seu treino planejado de hoje e preparar o tênis.",
       hora: 7,
       minuto: 30,
       canal: 'lembretes',
@@ -57,7 +79,8 @@ class AutoNotificacaoService {
     await NotificacaoService.agendarNotificacaoDiaria(
       id: 102,
       titulo: "❤️ Como você acordou hoje?",
-      corpo: "Faça seu check-in diário de energia, sono e dores para calcular sua prontidão de treino.",
+      corpo:
+          "Faça seu check-in diário de energia, sono e dores para calcular sua prontidão de treino.",
       hora: 8,
       minuto: 30,
       canal: 'lembretes',
@@ -67,7 +90,8 @@ class AutoNotificacaoService {
     await NotificacaoService.agendarNotificacaoDiaria(
       id: 103,
       titulo: "🌙 Hora de desacelerar",
-      corpo: "O sono de qualidade é onde ocorrem as principais adaptações musculares do treino. Durma bem!",
+      corpo:
+          "O sono de qualidade é onde ocorrem as principais adaptações musculares do treino. Durma bem!",
       hora: 21,
       minuto: 30,
       canal: 'lembretes',
@@ -77,6 +101,9 @@ class AutoNotificacaoService {
   /// 🤖 2. Executa a checagem inteligente com o backend e projeta alertas locais sem duplicar
   static Future<void> executarChecagemInteligente() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!(prefs.getBool("notificacoes") ?? true)) return;
+
       // 1. O backend avalia as regras esportivas e insere no banco caso haja novidade
       await Api.verificarNotificacoesAutomaticas();
     } catch (e) {
@@ -88,10 +115,15 @@ class AutoNotificacaoService {
   }
 
   /// 🛡️ Registra uma notificação disparada localmente para que o polling do banco não a duplique
-  static Future<void> registrarNotificacaoLocalEnviada(String titulo, String corpo, {String? idStr}) async {
+  static Future<void> registrarNotificacaoLocalEnviada(
+    String titulo,
+    String corpo, {
+    String? idStr,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final enviadasList = prefs.getStringList('push_notificacoes_enviadas') ?? [];
+      final enviadasList =
+          prefs.getStringList('push_notificacoes_enviadas') ?? [];
       final Set<String> enviadasSet = enviadasList.toSet();
 
       if (idStr != null && idStr.isNotEmpty) {
@@ -112,10 +144,12 @@ class AutoNotificacaoService {
   static Future<void> sincronizarNotificacoesPush() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (!(prefs.getBool("notificacoes") ?? true)) return;
       final token = prefs.getString("token");
       if (token == null || token.isEmpty) return;
 
-      final enviadasList = prefs.getStringList('push_notificacoes_enviadas') ?? [];
+      final enviadasList =
+          prefs.getStringList('push_notificacoes_enviadas') ?? [];
       final Set<String> enviadasSet = enviadasList.toSet();
 
       final notificacoes = await Api.listarNotificacoes();
@@ -124,7 +158,10 @@ class AutoNotificacaoService {
       bool houveEnvio = false;
 
       // Pega as notificações não lidas mais recentes (até 5)
-      final naoLidas = notificacoes.where((n) => n['lida'] != true).take(5).toList();
+      final naoLidas = notificacoes
+          .where((n) => n['lida'] != true)
+          .take(5)
+          .toList();
 
       for (final n in naoLidas) {
         final idStr = (n['id_notificacao'] ?? '').toString();
@@ -134,7 +171,9 @@ class AutoNotificacaoService {
 
         // 🛡️ Filtro Antiduplicação: pula se o ID ou se o conteúdo exato já tiverem sido notificados
         if (idStr.isNotEmpty && enviadasSet.contains(idStr)) continue;
-        if (chaveConteudo.isNotEmpty && enviadasSet.contains(chaveConteudo)) continue;
+        if (chaveConteudo.isNotEmpty && enviadasSet.contains(chaveConteudo)) {
+          continue;
+        }
 
         final tipo = (n['tipo'] ?? '').toString().toLowerCase();
         String canal = 'lembretes';
@@ -168,7 +207,9 @@ class AutoNotificacaoService {
         await prefs.setStringList('push_notificacoes_enviadas', listFinal);
       }
     } catch (e) {
-      debugPrint("[AutoNotificacaoService] Erro ao sincronizar notificações push: $e");
+      debugPrint(
+        "[AutoNotificacaoService] Erro ao sincronizar notificações push: $e",
+      );
     }
   }
 
@@ -181,12 +222,16 @@ class AutoNotificacaoService {
     int? fcMedia,
   }) async {
     final paceEfetivo = paceMedioSegundos ?? ritmoMedioSegundos;
-    final paceStr = paceEfetivo != null ? _formatarPace(paceEfetivo) : "--'--\"";
+    final paceStr = paceEfetivo != null
+        ? _formatarPace(paceEfetivo)
+        : "--'--\"";
     final tempoStr = _formatarTempo(tempoSegundos);
     final tituloPush = "🏁 Treino Concluído com Sucesso!";
-    final corpoPush = "${distanciaKm.toStringAsFixed(2)} km em $tempoStr • Pace $paceStr/km${fcMedia != null ? ' • FC $fcMedia bpm' : ''}. Excelente trabalho!";
+    final corpoPush =
+        "${distanciaKm.toStringAsFixed(2)} km em $tempoStr • Pace $paceStr/km${fcMedia != null ? ' • FC $fcMedia bpm' : ''}. Excelente trabalho!";
     final tituloApi = "Treino Concluído 🏁";
-    final msgApi = "Você completou ${distanciaKm.toStringAsFixed(2)} km em $tempoStr com ritmo de $paceStr/km.";
+    final msgApi =
+        "Você completou ${distanciaKm.toStringAsFixed(2)} km em $tempoStr com ritmo de $paceStr/km.";
 
     // 1. Notificação imediata de celebração do treino
     await NotificacaoService.mostrarNotificacao(
@@ -212,7 +257,8 @@ class AutoNotificacaoService {
     await NotificacaoService.agendarNotificacao(
       id: 202,
       titulo: "💧 Hora de Hidratar e Repor Nutrientes!",
-      corpo: "Excelente treino de ${distanciaKm.toStringAsFixed(2)} km há pouco! Beba água e consuma fontes de carboidrato e proteína para acelerar a recuperação muscular.",
+      corpo:
+          "Excelente treino de ${distanciaKm.toStringAsFixed(2)} km há pouco! Beba água e consuma fontes de carboidrato e proteína para acelerar a recuperação muscular.",
       dataHora: horaHidratacao,
       canal: 'lembretes',
     );
@@ -229,9 +275,11 @@ class AutoNotificacaoService {
     required double totalKm,
   }) async {
     final tituloPush = "🏆 Meta Semanal Conquistada!";
-    final corpoPush = "Parabéns! Você atingiu sua meta semanal de ${metaKm.toStringAsFixed(1)} km (${totalKm.toStringAsFixed(1)} km percorridos). Continue assim!";
+    final corpoPush =
+        "Parabéns! Você atingiu sua meta semanal de ${metaKm.toStringAsFixed(1)} km (${totalKm.toStringAsFixed(1)} km percorridos). Continue assim!";
     final tituloApi = "Meta Semanal Batida! 🏆";
-    final msgApi = "Você completou com sucesso sua meta semanal de ${metaKm.toStringAsFixed(1)} km!";
+    final msgApi =
+        "Você completou com sucesso sua meta semanal de ${metaKm.toStringAsFixed(1)} km!";
 
     await NotificacaoService.mostrarNotificacao(
       id: 301,
@@ -253,7 +301,8 @@ class AutoNotificacaoService {
   /// ⚠️ 6. Alerta automático de risco de overtraining / sobrecarga
   static Future<void> notificarAlertaOvertraining(double acwr) async {
     final titulo = "⚠️ Alerta Fisiológico: Sobrecarga Aguda";
-    final corpo = "Sua razão de carga aguda:crônica atingiu ${acwr.toStringAsFixed(2)} (zona de sobrecarga). Reduza a intensidade e priorize repouso para evitar lesões.";
+    final corpo =
+        "Sua razão de carga aguda:crônica atingiu ${acwr.toStringAsFixed(2)} (zona de sobrecarga). Reduza a intensidade e priorize repouso para evitar lesões.";
 
     await NotificacaoService.mostrarNotificacao(
       id: 401,
@@ -277,7 +326,8 @@ class AutoNotificacaoService {
           : "Índice de prontidão moderado a baixo ($prontidao/100)";
 
       final titulo = "⚠️ Alerta de Recuperação: $motivo";
-      final corpo = "Sua recuperação física precisa de atenção hoje. Sugerimos trocar o treino intenso por um trote regenerativo leve em Zona 1/2 ou descanso total.";
+      final corpo =
+          "Sua recuperação física precisa de atenção hoje. Sugerimos trocar o treino intenso por um trote regenerativo leve em Zona 1/2 ou descanso total.";
 
       await NotificacaoService.mostrarNotificacao(
         id: 402,
@@ -300,15 +350,23 @@ class AutoNotificacaoService {
     final agora = DateTime.now();
 
     // Se for prova, lembra 1 dia antes às 18:00
-    if (tipo.toLowerCase().contains("prova") || tipo.toLowerCase().contains("evento")) {
+    if (tipo.toLowerCase().contains("prova") ||
+        tipo.toLowerCase().contains("evento")) {
       final diaAnterior = dataInicio.subtract(const Duration(days: 1));
-      final horaLembrete = DateTime(diaAnterior.year, diaAnterior.month, diaAnterior.day, 18, 0);
+      final horaLembrete = DateTime(
+        diaAnterior.year,
+        diaAnterior.month,
+        diaAnterior.day,
+        18,
+        0,
+      );
 
       if (horaLembrete.isAfter(agora)) {
         await NotificacaoService.agendarNotificacao(
           id: id,
           titulo: "🏁 Sua prova é amanhã: $titulo!",
-          corpo: "Prepare seu uniforme, número de peito, hidrate-se bem e garanta uma ótima noite de sono.",
+          corpo:
+              "Prepare seu uniforme, número de peito, hidrate-se bem e garanta uma ótima noite de sono.",
           dataHora: horaLembrete,
           canal: 'lembretes',
         );
@@ -320,7 +378,8 @@ class AutoNotificacaoService {
         await NotificacaoService.agendarNotificacao(
           id: id,
           titulo: "⏰ Lembrete de Compromisso: $titulo",
-          corpo: "Seu compromisso está marcado para às ${dataInicio.hour.toString().padLeft(2, '0')}:${dataInicio.minute.toString().padLeft(2, '0')}.",
+          corpo:
+              "Seu compromisso está marcado para às ${dataInicio.hour.toString().padLeft(2, '0')}:${dataInicio.minute.toString().padLeft(2, '0')}.",
           dataHora: horaLembrete,
           canal: 'lembretes',
         );
@@ -337,7 +396,8 @@ class AutoNotificacaoService {
         await NotificacaoService.mostrarNotificacao(
           id: 901,
           titulo: "🔔 PaceMind: Push Ativo!",
-          corpo: "Se você está vendo este banner no topo do seu celular, as notificações push estão funcionando 100%!",
+          corpo:
+              "Se você está vendo este banner no topo do seu celular, as notificações push estão funcionando 100%!",
           canal: 'treinos',
         );
         break;
@@ -347,7 +407,8 @@ class AutoNotificacaoService {
         await NotificacaoService.agendarNotificacao(
           id: 902,
           titulo: "⏱️ Push Agendado (5s) Funcionando!",
-          corpo: "O agendador do PaceMind disparou com sucesso em segundo plano!",
+          corpo:
+              "O agendador do PaceMind disparou com sucesso em segundo plano!",
           dataHora: dataAgendada,
           canal: 'lembretes',
         );
@@ -357,7 +418,8 @@ class AutoNotificacaoService {
         await NotificacaoService.mostrarNotificacao(
           id: 903,
           titulo: "🏆 Meta Semanal Conquistada!",
-          corpo: "Parabéns! Você atingiu sua meta semanal planejada. Excelente consistência e volume!",
+          corpo:
+              "Parabéns! Você atingiu sua meta semanal planejada. Excelente consistência e volume!",
           canal: 'metas',
         );
         break;
@@ -366,7 +428,8 @@ class AutoNotificacaoService {
         await NotificacaoService.mostrarNotificacao(
           id: 904,
           titulo: "⚠️ Alerta Fisiológico de Sobrecarga",
-          corpo: "Sua razão de carga aguda:crônica (ACWR) atingiu 1.55. Sugerimos repouso ativo ou treino regenerativo hoje.",
+          corpo:
+              "Sua razão de carga aguda:crônica (ACWR) atingiu 1.55. Sugerimos repouso ativo ou treino regenerativo hoje.",
           canal: 'alertas',
         );
         break;
@@ -375,7 +438,8 @@ class AutoNotificacaoService {
         await NotificacaoService.mostrarNotificacao(
           id: 905,
           titulo: "💧 Hora de Hidratar e Recuperar!",
-          corpo: "Beba água e consuma nutrientes para restaurar seus estoques de energia e acelerar a recuperação muscular.",
+          corpo:
+              "Beba água e consuma nutrientes para restaurar seus estoques de energia e acelerar a recuperação muscular.",
           canal: 'lembretes',
         );
         break;

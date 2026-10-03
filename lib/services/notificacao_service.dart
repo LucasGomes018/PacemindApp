@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -19,6 +20,11 @@ class NotificacaoService {
   static const String canalMetas = 'metas_channel_v2';
   static const String canalAlertas = 'alertas_channel_v2';
   static const String canalLembretes = 'lembretes_channel_v2';
+
+  static Future<bool> _notificacoesAtivas() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool("notificacoes") ?? true;
+  }
 
   /// Inicializa o plugin, configura os fusos horários e cria canais com alta prioridade no Android
   static Future<void> inicializar() async {
@@ -44,7 +50,9 @@ class NotificacaoService {
     await flutterLocalNotificationsPlugin.initialize(
       settings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        debugPrint("[NotificacaoService] Notificação clicada: ${response.payload}");
+        debugPrint(
+          "[NotificacaoService] Notificação clicada: ${response.payload}",
+        );
       },
     );
 
@@ -53,7 +61,8 @@ class NotificacaoService {
       try {
         final androidImpl = flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>();
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
         if (androidImpl != null) {
           // Cria canais explicitamente com prioridade máxima para exibir banners push
@@ -61,7 +70,8 @@ class NotificacaoService {
             AndroidNotificationChannel(
               canalTreinos,
               'Treinos e Corridas',
-              description: 'Alertas e progresso de treinos em tempo real e metas de distância.',
+              description:
+                  'Alertas e progresso de treinos em tempo real e metas de distância.',
               importance: Importance.max,
               enableVibration: true,
               playSound: true,
@@ -70,7 +80,8 @@ class NotificacaoService {
             AndroidNotificationChannel(
               canalMetas,
               'Metas e Conquistas',
-              description: 'Notificações de metas semanais batidas e recordes de volume.',
+              description:
+                  'Notificações de metas semanais batidas e recordes de volume.',
               importance: Importance.max,
               enableVibration: true,
               playSound: true,
@@ -79,7 +90,8 @@ class NotificacaoService {
             AndroidNotificationChannel(
               canalAlertas,
               'Alertas de Saúde e Sobrecarga',
-              description: 'Alertas críticos de sobrecarga (ACWR), dor muscular e fadiga.',
+              description:
+                  'Alertas críticos de sobrecarga (ACWR), dor muscular e fadiga.',
               importance: Importance.max,
               enableVibration: true,
               playSound: true,
@@ -88,7 +100,8 @@ class NotificacaoService {
             AndroidNotificationChannel(
               canalLembretes,
               'Lembretes Diários e Agenda',
-              description: 'Lembretes de treino matinal, hidratação pós-treino e eventos.',
+              description:
+                  'Lembretes de treino matinal, hidratação pós-treino e eventos.',
               importance: Importance.max,
               enableVibration: true,
               playSound: true,
@@ -116,10 +129,12 @@ class NotificacaoService {
     try {
       final androidImpl = flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+            AndroidFlutterLocalNotificationsPlugin
+          >();
 
       if (androidImpl != null) {
-        final notifConcedida = await androidImpl.requestNotificationsPermission() ?? false;
+        final notifConcedida =
+            await androidImpl.requestNotificationsPermission() ?? false;
         try {
           await androidImpl.requestExactAlarmsPermission();
         } catch (_) {}
@@ -139,7 +154,8 @@ class NotificacaoService {
     try {
       final androidImpl = flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+            AndroidFlutterLocalNotificationsPlugin
+          >();
 
       if (androidImpl != null) {
         final ativas = await androidImpl.areNotificationsEnabled();
@@ -152,7 +168,11 @@ class NotificacaoService {
   }
 
   /// Retorna os detalhes do canal Android correspondente com Importance.max e BigTextStyle
-  static AndroidNotificationDetails _obterDetalhesCanal(String canal, String titulo, String corpo) {
+  static AndroidNotificationDetails _obterDetalhesCanal(
+    String canal,
+    String titulo,
+    String corpo,
+  ) {
     String channelId;
     String channelName;
     String channelDesc;
@@ -161,23 +181,27 @@ class NotificacaoService {
       case 'alertas':
         channelId = canalAlertas;
         channelName = 'Alertas de Saúde e Sobrecarga';
-        channelDesc = 'Alertas críticos de sobrecarga (ACWR), dor muscular e fadiga.';
+        channelDesc =
+            'Alertas críticos de sobrecarga (ACWR), dor muscular e fadiga.';
         break;
       case 'metas':
         channelId = canalMetas;
         channelName = 'Metas e Conquistas';
-        channelDesc = 'Notificações de metas semanais batidas e novos recordes de volume.';
+        channelDesc =
+            'Notificações de metas semanais batidas e novos recordes de volume.';
         break;
       case 'lembretes':
         channelId = canalLembretes;
         channelName = 'Lembretes Diários e Agenda';
-        channelDesc = 'Lembretes de treino matinal, check-in de bem-estar e sono.';
+        channelDesc =
+            'Lembretes de treino matinal, check-in de bem-estar e sono.';
         break;
       case 'treinos':
       default:
         channelId = canalTreinos;
         channelName = 'Treinos e Corridas';
-        channelDesc = 'Notificações de início, progresso e conclusão de treinos GPS.';
+        channelDesc =
+            'Notificações de início, progresso e conclusão de treinos GPS.';
         break;
     }
 
@@ -207,6 +231,7 @@ class NotificacaoService {
     String canal = 'treinos',
     String? payload,
   }) async {
+    if (!await _notificacoesAtivas()) return;
     await inicializar();
 
     // 🛡️ Filtro Antiduplicação: Evita disparar a mesma notificação repetida em menos de 10 segundos
@@ -216,13 +241,17 @@ class NotificacaoService {
     if (_ultimasNotificacoesExibidas.containsKey(chaveUnica)) {
       final ultimaVez = _ultimasNotificacoesExibidas[chaveUnica]!;
       if (agora.difference(ultimaVez).inSeconds < 10) {
-        debugPrint("[NotificacaoService] 🚫 Notificação push duplicada suprimida: '$titulo'");
+        debugPrint(
+          "[NotificacaoService] 🚫 Notificação push duplicada suprimida: '$titulo'",
+        );
         return;
       }
     }
     _ultimasNotificacoesExibidas[chaveUnica] = agora;
     if (_ultimasNotificacoesExibidas.length > 60) {
-      _ultimasNotificacoesExibidas.removeWhere((_, time) => agora.difference(time).inMinutes > 5);
+      _ultimasNotificacoesExibidas.removeWhere(
+        (_, time) => agora.difference(time).inMinutes > 5,
+      );
     }
 
     final androidDetails = _obterDetalhesCanal(canal, titulo, corpo);
@@ -236,7 +265,9 @@ class NotificacaoService {
         details,
         payload: payload,
       );
-      debugPrint("[NotificacaoService] Notificação push exibida com sucesso: id=$id, titulo='$titulo'");
+      debugPrint(
+        "[NotificacaoService] Notificação push exibida com sucesso: id=$id, titulo='$titulo'",
+      );
     } catch (e) {
       debugPrint("[NotificacaoService] Erro ao exibir notificação: $e");
     }
@@ -251,6 +282,7 @@ class NotificacaoService {
     String canal = 'lembretes',
     String? payload,
   }) async {
+    if (!await _notificacoesAtivas()) return;
     await inicializar();
 
     final agora = DateTime.now();
@@ -273,7 +305,9 @@ class NotificacaoService {
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
       );
-      debugPrint("[NotificacaoService] Notificação agendada para: $scheduledDate (exact)");
+      debugPrint(
+        "[NotificacaoService] Notificação agendada para: $scheduledDate (exact)",
+      );
     } catch (e) {
       // Fallback para agendamento aproximado caso exact alarm seja restrito pelo SO
       try {
@@ -288,7 +322,9 @@ class NotificacaoService {
               UILocalNotificationDateInterpretation.absoluteTime,
           payload: payload,
         );
-        debugPrint("[NotificacaoService] Notificação agendada (fallback inexact)");
+        debugPrint(
+          "[NotificacaoService] Notificação agendada (fallback inexact)",
+        );
       } catch (err) {
         debugPrint("[NotificacaoService] Falha ao agendar notificação: $err");
       }
@@ -305,6 +341,7 @@ class NotificacaoService {
     String canal = 'lembretes',
     String? payload,
   }) async {
+    if (!await _notificacoesAtivas()) return;
     await inicializar();
 
     final agora = tz.TZDateTime.now(tz.local);
@@ -338,9 +375,13 @@ class NotificacaoService {
         matchDateTimeComponents: DateTimeComponents.time,
         payload: payload,
       );
-      debugPrint("[NotificacaoService] Notificação diária configurada para $hora:$minuto (id=$id)");
+      debugPrint(
+        "[NotificacaoService] Notificação diária configurada para $hora:$minuto (id=$id)",
+      );
     } catch (e) {
-      debugPrint("[NotificacaoService] Erro ao agendar notificação diária ($hora:$minuto): $e");
+      debugPrint(
+        "[NotificacaoService] Erro ao agendar notificação diária ($hora:$minuto): $e",
+      );
     }
   }
 

@@ -114,10 +114,28 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
     _rolarParaFim();
 
     // Salva mensagem do usuário no backend em background
-    Api.salvarMensagemChat(mensagem: texto, enviadaPeloUsuario: true).catchError((_) {});
+    Api.salvarMensagemChat(
+      mensagem: texto,
+      enviadaPeloUsuario: true,
+    ).catchError((_) {});
 
     // Processa a pergunta ou comando no motor do agente
-    final resposta = await _iaService.processarComandoOuPergunta(texto);
+    late final RespostaIa resposta;
+    try {
+      resposta = await _iaService.processarComandoOuPergunta(texto);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _mensagens.add({
+          "texto": "Não consegui gerar uma resposta agora. Tente novamente.",
+          "usuario": false,
+          "hora": "",
+        });
+        _respondendo = false;
+      });
+      _rolarParaFim();
+      return;
+    }
 
     if (!mounted) return;
 
@@ -149,7 +167,10 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
       _rolarParaFim();
 
       // Salva cada bloco de resposta da IA
-      Api.salvarMensagemChat(mensagem: msg, enviadaPeloUsuario: false).catchError((_) {});
+      Api.salvarMensagemChat(
+        mensagem: msg,
+        enviadaPeloUsuario: false,
+      ).catchError((_) {});
     }
 
     if (!mounted) return;
@@ -184,7 +205,11 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
         surfaceTintColor: Colors.transparent,
         titleSpacing: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: colors.onSurface,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -212,9 +237,13 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
                     ),
                   ),
                   Text(
-                    _respondendo ? _statusDigitando : "Seu apoio para treinar melhor",
+                    _respondendo
+                        ? _statusDigitando
+                        : "Seu apoio para treinar melhor",
                     style: TextStyle(
-                      color: _respondendo ? colors.primary : colors.onSurfaceVariant,
+                      color: _respondendo
+                          ? colors.primary
+                          : colors.onSurfaceVariant,
                       fontSize: 12,
                     ),
                     maxLines: 1,
@@ -308,7 +337,9 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
               label: Text(
                 sugestao,
                 style: TextStyle(
-                  color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0066FF),
+                  color: isDark
+                      ? const Color(0xFF93C5FD)
+                      : const Color(0xFF0066FF),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -348,13 +379,17 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
           color: usuario
               ? null
               : isDark
-                  ? colors.surface
-                  : Colors.white,
+              ? colors.surface
+              : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
-            bottomLeft: usuario ? const Radius.circular(20) : const Radius.circular(4),
-            bottomRight: usuario ? const Radius.circular(4) : const Radius.circular(20),
+            bottomLeft: usuario
+                ? const Radius.circular(20)
+                : const Radius.circular(4),
+            bottomRight: usuario
+                ? const Radius.circular(4)
+                : const Radius.circular(20),
           ),
           border: usuario
               ? null
@@ -377,9 +412,7 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
             SelectableText(
               texto,
               style: TextStyle(
-                color: usuario
-                    ? Colors.white
-                    : colors.onSurface,
+                color: usuario ? Colors.white : colors.onSurface,
                 fontSize: 14.5,
                 height: 1.45,
                 fontWeight: usuario ? FontWeight.w500 : FontWeight.normal,
@@ -464,7 +497,10 @@ class _RecomendacoesPageState extends State<RecomendacoesPage>
                 icon: const Icon(Icons.arrow_forward_rounded, size: 15),
                 label: Text(
                   acao.textoBotao ?? "Ver no aplicativo",
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),

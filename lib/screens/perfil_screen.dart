@@ -10,7 +10,14 @@ import '../components/app_snackbar.dart';
 import '/core/api.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final bool abrirEditorInicial;
+  final bool abrirFotoInicial;
+
+  const ProfilePage({
+    super.key,
+    this.abrirEditorInicial = false,
+    this.abrirFotoInicial = false,
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -46,6 +53,17 @@ class _ProfilePageState extends State<ProfilePage> {
         loading = false;
       });
 
+      if (widget.abrirEditorInicial || widget.abrirFotoInicial) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (widget.abrirFotoInicial) {
+            abrirOpcoesFoto();
+          } else {
+            abrirEditarPerfil();
+          }
+        });
+      }
+
       // Carrega métricas complementares em background sem bloquear a UI
       _carregarEstatisticas();
     } catch (e) {
@@ -68,9 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
               int.tryParse(resumo['total_treinos']?.toString() ?? '0') ?? 0;
           totalKm =
               double.tryParse(resumo['total_km']?.toString() ?? '0') ?? 0.0;
-          final rm = double.tryParse(
-            resumo['ritmo_medio']?.toString() ?? '0',
-          );
+          final rm = double.tryParse(resumo['ritmo_medio']?.toString() ?? '0');
           if (rm != null && rm > 0) {
             ritmoMedioSegundos = rm.toInt();
           }
@@ -162,10 +178,7 @@ class _ProfilePageState extends State<ProfilePage> {
             initAspectRatio: CropAspectRatioPreset.square,
             lockAspectRatio: true,
           ),
-          IOSUiSettings(
-            title: 'Ajustar foto',
-            aspectRatioLockEnabled: true,
-          ),
+          IOSUiSettings(title: 'Ajustar foto', aspectRatioLockEnabled: true),
         ],
       );
 
@@ -220,7 +233,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void abrirEditarPerfil() {
-    final nomeController = TextEditingController(text: user!["nome_usuario"] ?? "");
+    final nomeController = TextEditingController(
+      text: user!["nome_usuario"] ?? "",
+    );
     final objetivoController = TextEditingController(
       text: user!["objetivo_semanal_km"] != null
           ? user!["objetivo_semanal_km"].toString()
@@ -243,11 +258,13 @@ class _ProfilePageState extends State<ProfilePage> {
       child: StatefulBuilder(
         builder: (modalContext, setModalState) {
           final isDark = Theme.of(modalContext).brightness == Brightness.dark;
-          final selectBackground =
-              isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+          final selectBackground = isDark
+              ? const Color(0xFF1E293B)
+              : const Color(0xFFF1F5F9);
           final selectText = isDark ? Colors.white : const Color(0xFF0F172A);
-          final selectIcon =
-              isDark ? Colors.cyanAccent : const Color(0xFF0284C7);
+          final selectIcon = isDark
+              ? Colors.cyanAccent
+              : const Color(0xFF0284C7);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -284,7 +301,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0066FF).withValues(alpha: 0.15),
+                            color: const Color(
+                              0xFF0066FF,
+                            ).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
@@ -309,7 +328,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               Text(
                                 "Seu ritmo padrão por quilômetro",
                                 style: TextStyle(
-                                  color: isDark ? Colors.white60 : Colors.black54,
+                                  color: isDark
+                                      ? Colors.white60
+                                      : Colors.black54,
                                   fontSize: 12,
                                 ),
                               ),
@@ -329,7 +350,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               Text(
                                 "Minutos",
                                 style: TextStyle(
-                                  color: isDark ? Colors.white70 : Colors.black54,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -337,7 +360,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               const SizedBox(height: 6),
                               Container(
                                 height: 50,
-                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
                                 decoration: BoxDecoration(
                                   color: isDark
                                       ? const Color(0xFF1E293B)
@@ -402,7 +427,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               Text(
                                 "Segundos",
                                 style: TextStyle(
-                                  color: isDark ? Colors.white70 : Colors.black54,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -410,7 +437,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               const SizedBox(height: 6),
                               Container(
                                 height: 50,
-                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
                                 decoration: BoxDecoration(
                                   color: isDark
                                       ? const Color(0xFF1E293B)
@@ -484,7 +513,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0xFF0066FF).withValues(alpha: 0.25),
+                          color: const Color(
+                            0xFF0066FF,
+                          ).withValues(alpha: 0.25),
                         ),
                       ),
                       child: Row(
@@ -531,7 +562,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(modalContext),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                        foregroundColor: isDark
+                            ? Colors.white70
+                            : Colors.black87,
                         side: BorderSide(
                           color: isDark
                               ? Colors.white.withValues(alpha: 0.2)
@@ -773,7 +806,11 @@ class _ProfilePageState extends State<ProfilePage> {
   // ===========================================================================
   // 🌟 1. HERO ATHLETE HEADER
   // ===========================================================================
-  Widget _buildHeroHeader(BuildContext context, bool isDark, double screenWidth) {
+  Widget _buildHeroHeader(
+    BuildContext context,
+    bool isDark,
+    double screenWidth,
+  ) {
     final nome = user!["nome_usuario"]?.toString().trim() ?? "Atleta PaceMind";
     final email = user!["email"]?.toString().trim() ?? "";
     final fotoUrl = user!["foto_url"]?.toString().trim();
@@ -789,7 +826,11 @@ class _ProfilePageState extends State<ProfilePage> {
         gradient: LinearGradient(
           colors: isDark
               ? [const Color(0xFF0F172A), const Color(0xFF1E3A8A)]
-              : [const Color(0xFF0052D4), const Color(0xFF4364F7), const Color(0xFF6FB1FC)],
+              : [
+                  const Color(0xFF0052D4),
+                  const Color(0xFF4364F7),
+                  const Color(0xFF6FB1FC),
+                ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -799,8 +840,9 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: (isDark ? Colors.black : const Color(0xFF0052D4))
-                .withValues(alpha: 0.25),
+            color: (isDark ? Colors.black : const Color(0xFF0052D4)).withValues(
+              alpha: 0.25,
+            ),
             blurRadius: 28,
             offset: const Offset(0, 10),
           ),
@@ -817,8 +859,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
@@ -894,7 +938,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0066FF).withValues(alpha: 0.5),
+                            color: const Color(
+                              0xFF0066FF,
+                            ).withValues(alpha: 0.5),
                             blurRadius: 20,
                             spreadRadius: 2,
                           ),
@@ -1002,8 +1048,10 @@ class _ProfilePageState extends State<ProfilePage> {
               // DATA DE ENTRADA OU STATUS
               if (criadoEm.isNotEmpty)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -1050,9 +1098,7 @@ class _ProfilePageState extends State<ProfilePage> {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
           ),
           child: Icon(icon, color: Colors.white, size: 20),
         ),
@@ -1064,7 +1110,9 @@ class _ProfilePageState extends State<ProfilePage> {
     if (nome.isEmpty) return "P";
     final partes = nome.trim().split(RegExp(r'\s+'));
     if (partes.length == 1) {
-      return partes.first.substring(0, min(2, partes.first.length)).toUpperCase();
+      return partes.first
+          .substring(0, min(2, partes.first.length))
+          .toUpperCase();
     }
     return "${partes.first[0]}${partes.last[0]}".toUpperCase();
   }
@@ -1072,7 +1120,11 @@ class _ProfilePageState extends State<ProfilePage> {
   // ===========================================================================
   // 🏃 2. KPI METRICS STRIP (Treinos, Volume, Pace Ref, Meta)
   // ===========================================================================
-  Widget _buildKpiMetrics(BuildContext context, bool isDark, double screenWidth) {
+  Widget _buildKpiMetrics(
+    BuildContext context,
+    bool isDark,
+    double screenWidth,
+  ) {
     final paceRef = user!["pace_referencia_segundos"];
     final metaSemanal = user!["objetivo_semanal_km"];
 
@@ -1234,10 +1286,8 @@ class _ProfilePageState extends State<ProfilePage> {
     bool isDark,
     double screenWidth,
   ) {
-    final meta = double.tryParse(
-          user!["objetivo_semanal_km"]?.toString() ?? "0",
-        ) ??
-        0.0;
+    final meta =
+        double.tryParse(user!["objetivo_semanal_km"]?.toString() ?? "0") ?? 0.0;
 
     final progresso = meta > 0 ? (kmSemanaAtual / meta).clamp(0.0, 1.0) : 0.0;
     final porcentagem = (progresso * 100).toInt();
@@ -1536,8 +1586,10 @@ class _ProfilePageState extends State<ProfilePage> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 11,
+                  ),
                   decoration: BoxDecoration(
                     color: cor.withValues(alpha: isDark ? 0.08 : 0.06),
                     borderRadius: BorderRadius.circular(16),
@@ -1709,7 +1761,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 subtitle: "Consulte nossos termos de uso e política LGPD",
                 accentColor: const Color(0xFF0284C7),
                 isDark: isDark,
-                onTap: () => Navigator.pushNamed(context, "/politica-privacidade"),
+                onTap: () =>
+                    Navigator.pushNamed(context, "/politica-privacidade"),
               ),
               _divider(isDark),
               _hubTile(
@@ -1815,50 +1868,59 @@ class _ProfilePageState extends State<ProfilePage> {
     String? hint,
     TextInputType keyboard = TextInputType.text,
   }) {
-    return Builder(builder: (context) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final txtColor = isDark ? Colors.white : const Color(0xFF0F172A);
-      final subColor =
-          isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-      final fill = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
-      final borderColor =
-          isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1);
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final txtColor = isDark ? Colors.white : const Color(0xFF0F172A);
+        final subColor = isDark
+            ? const Color(0xFF94A3B8)
+            : const Color(0xFF64748B);
+        final fill = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
+        final borderColor = isDark
+            ? const Color(0xFF334155)
+            : const Color(0xFFCBD5E1);
 
-      return TextField(
-        controller: controller,
-        keyboardType: keyboard,
-        style: TextStyle(color: txtColor, fontSize: 15),
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          hintStyle: TextStyle(color: subColor.withValues(alpha: 0.6), fontSize: 14),
-          labelStyle: TextStyle(color: subColor, fontSize: 14),
-          prefixIcon: Icon(
-            icon,
-            color: isDark ? Colors.lightBlueAccent : const Color(0xFF0066FF),
-          ),
-          filled: true,
-          fillColor: fill,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: borderColor),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: borderColor),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: Color(0xFF0066FF),
-              width: 1.8,
+        return TextField(
+          controller: controller,
+          keyboardType: keyboard,
+          style: TextStyle(color: txtColor, fontSize: 15),
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: subColor.withValues(alpha: 0.6),
+              fontSize: 14,
+            ),
+            labelStyle: TextStyle(color: subColor, fontSize: 14),
+            prefixIcon: Icon(
+              icon,
+              color: isDark ? Colors.lightBlueAccent : const Color(0xFF0066FF),
+            ),
+            filled: true,
+            fillColor: fill,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: borderColor),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: borderColor),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(
+                color: Color(0xFF0066FF),
+                width: 1.8,
+              ),
             ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 
   Widget _fotoOption({
@@ -1867,73 +1929,71 @@ class _ProfilePageState extends State<ProfilePage> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Builder(builder: (context) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final txtColor = isDark ? Colors.white : const Color(0xFF0F172A);
-      final subColor =
-          isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-      final bg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
-      final border =
-          isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final txtColor = isDark ? Colors.white : const Color(0xFF0F172A);
+        final subColor = isDark
+            ? const Color(0xFF94A3B8)
+            : const Color(0xFF64748B);
+        final bg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
+        final border = isDark
+            ? const Color(0xFF334155)
+            : const Color(0xFFE2E8F0);
 
-      return InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0066FF)
-                      .withValues(alpha: isDark ? 0.2 : 0.12),
-                  borderRadius: BorderRadius.circular(14),
+        return InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(
+                      0xFF0066FF,
+                    ).withValues(alpha: isDark ? 0.2 : 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: const Color(0xFF0066FF), size: 24),
                 ),
-                child: Icon(
-                  icon,
-                  color: const Color(0xFF0066FF),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: txtColor,
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.bold,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: txtColor,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: subColor,
-                        fontSize: 12.5,
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(color: subColor, fontSize: 12.5),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: subColor,
-                size: 16,
-              ),
-            ],
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: subColor,
+                  size: 16,
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 }

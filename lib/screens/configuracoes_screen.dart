@@ -3,9 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/core/api.dart'; // Assumindo que este caminho está correto
 import 'package:provider/provider.dart';
 import '../core/theme_provider.dart';
-import '../core/theme.dart';
 import '../components/app_modal.dart';
 import '../components/app_snackbar.dart';
+import '../screens/perfil_screen.dart';
+import '../services/auto_notificacao_service.dart';
+import '../services/background_tracking_service.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -17,23 +19,12 @@ class ConfiguracoesPage extends StatefulWidget {
 class _ConfiguracoesPage extends State<ConfiguracoesPage> {
   bool notificacoes = true;
   bool gpsSegundoPlano = true;
+  bool _limpandoHistorico = false;
+  double? metaSemanalKm;
 
   // Cores personalizadas para o tema do aplicativo (Branco e Azul)
-  static const Color primaryBlue = Color(
-    0xFF007AFF,
-  ); // Azul principal, vibrante e moderno
-  static const Color lightBlue = Color(
-    0xFFEBF5FF,
-  ); // Azul muito claro para fundos sutis
-  static const Color darkBlue = Color(
-    0xFF1A237E,
-  ); // Azul escuro para textos e ícones importantes
-  static const Color lightTextColor = Color(
-    0xFF6C757D,
-  ); // Cor de texto secundário (cinza médio)
-  static const Color errorRed = Color(
-    0xFFDC3545,
-  ); // Vermelho para ações de erro/logout
+  static const Color primaryBlue = Color(0xFF0066FF);
+  static const Color errorRed = Color(0xFFDC3545);
 
   @override
   void initState() {
@@ -45,7 +36,8 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
     final sair = await AppModal.showConfirmDialog(
       context: context,
       title: "Sair da conta",
-      message: "Tem certeza que deseja sair da sua conta?\nSerá necessário fazer login novamente.",
+      message:
+          "Tem certeza que deseja sair da sua conta?\nSerá necessário fazer login novamente.",
       confirmText: "Sair",
       cancelText: "Cancelar",
       icon: Icons.logout_rounded,
@@ -67,28 +59,188 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
   Future<void> _carregarConfiguracoes() async {
     final prefs = await SharedPreferences.getInstance();
 
+    if (!mounted) return;
     setState(() {
       notificacoes = prefs.getBool("notificacoes") ?? true;
       gpsSegundoPlano = prefs.getBool("gpsSegundoPlano") ?? true;
+      metaSemanalKm = prefs.getDouble("metaSemanalKmCache");
     });
+
+    try {
+      final perfil = await Api.getProfile();
+      final meta = double.tryParse(
+        perfil["objetivo_semanal_km"]?.toString() ?? "",
+      );
+      if (meta != null && meta > 0) {
+        await prefs.setDouble("metaSemanalKmCache", meta);
+        if (mounted) setState(() => metaSemanalKm = meta);
+      }
+    } catch (_) {}
   }
 
   Future<void> _salvarNotificacoes(bool valor) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool("notificacoes", valor);
 
-    setState(() {
-      notificacoes = valor;
-    });
+    if (mounted) setState(() => notificacoes = valor);
+
+    try {
+      await AutoNotificacaoService.atualizarPreferencia(valor);
+    } catch (e) {
+      await prefs.setBool("notificacoes", !valor);
+      if (!mounted) return;
+      setState(() => notificacoes = !valor);
+      AppSnackBar.erro(
+        context,
+        "Não foi possível atualizar as notificações.",
+        titulo: "Preferência não salva",
+      );
+    }
   }
 
   Future<void> _salvarGPS(bool valor) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool("gpsSegundoPlano", valor);
 
-    setState(() {
-      gpsSegundoPlano = valor;
-    });
+    if (!valor) {
+      await BackgroundTrackingService.stop();
+    } else if (prefs.getBool("corrida_ativa") == true) {
+      final idCorrida = prefs.getInt("id_corrida_ativa");
+      if (idCorrida != null) await BackgroundTrackingService.start(idCorrida);
+    }
+
+    if (mounted) setState(() => gpsSegundoPlano = valor);
+  }
+
+  Future<void> _editarMetaSemanal() async {
+    final prefs = await SharedPreferences.getInstance();
+    Map<String, dynamic> perfil = {};
+    try {
+      perfil = await Api.getProfile();
+    } catch (_) {}
+    if (!mounted) return;
+    final valorAtual =
+        double.tryParse(perfil["objetivo_semanal_km"]?.toString() ?? "") ??
+        metaSemanalKm;
+    var valorDigitado = valorAtual?.toStringAsFixed(1) ?? "";
+    String? erro;
+
+    final novaMeta = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text("Meta semanal"),
+          content: TextFormField(
+            initialValue: valorDigitado,
+            onChanged: (value) => valorDigitado = value,
+            decoration: InputDecoration(
+              labelText: "Distância semanal",
+              suffixText: "km",
+              errorText: erro,
+            ),
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text("Cancelar"),
+            ),
+            FilledButton(
+              onPressed: () {
+                final valor = double.tryParse(
+                  valorDigitado.trim().replaceAll(",", "."),
+                );
+                if (valor == null || valor <= 0 || valor > 500) {
+                  setDialogState(
+                    () => erro = "Informe um valor entre 0 e 500 km",
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext, valor);
+              },
+              child: const Text("Salvar"),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (novaMeta == null) return;
+
+    try {
+      await Api.atualizarPerfil(objetivo: novaMeta);
+      await prefs.setDouble("metaSemanalKmCache", novaMeta);
+      if (!mounted) return;
+      setState(() => metaSemanalKm = novaMeta);
+      AppSnackBar.sucesso(
+        context,
+        "Meta semanal atualizada para ${novaMeta.toStringAsFixed(1)} km.",
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBar.erro(
+        context,
+        e.toString().replaceAll("Exception: ", ""),
+        titulo: "Erro ao salvar meta",
+      );
+    }
+  }
+
+  Future<void> _limparHistoricoIa() async {
+    final confirmado = await AppModal.showConfirmDialog(
+      context: context,
+      title: "Limpar histórico da IA",
+      message: "As mensagens da conversa serão excluídas permanentemente.",
+      confirmText: "Limpar histórico",
+      cancelText: "Cancelar",
+      icon: Icons.delete_outline_rounded,
+      iconColor: errorRed,
+      confirmButtonColor: errorRed,
+      isDestructive: true,
+    );
+    if (confirmado != true) return;
+
+    setState(() => _limpandoHistorico = true);
+    try {
+      final historico = await Api.listarMensagensChat();
+      final mensagens = historico.where((item) {
+        return item["tipo"] == "chat_usuario" || item["tipo"] == "chat_ia";
+      });
+      var excluidas = 0;
+      for (final item in mensagens) {
+        final id = item["id_recomendacao"]?.toString();
+        if (id == null || id.isEmpty) continue;
+        await Api.deletarRecomendacao(id);
+        excluidas++;
+      }
+
+      if (!mounted) return;
+      AppSnackBar.sucesso(
+        context,
+        excluidas == 0
+            ? "O histórico já está vazio."
+            : "$excluidas mensagens removidas.",
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBar.erro(
+        context,
+        e.toString().replaceAll("Exception: ", ""),
+        titulo: "Não foi possível limpar o histórico",
+      );
+    } finally {
+      if (mounted) setState(() => _limpandoHistorico = false);
+    }
+  }
+
+  void _abrirPerfil({bool editar = false, bool foto = false}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ProfilePage(abrirEditorInicial: editar, abrirFotoInicial: foto),
+      ),
+    );
   }
 
   Future<void> _alterarSenhaDialog() async {
@@ -128,16 +280,27 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
           builder: (modalContext, setModalState) {
             final isDark = Theme.of(modalContext).brightness == Brightness.dark;
             final textColor = Theme.of(modalContext).colorScheme.onSurface;
-            final subTextColor = isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600;
-            final inputBg = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-            final borderColor = isDark ? const Color(0xFF334155) : Colors.grey.shade300;
-            final hintColor = isDark ? const Color(0xFF64748B) : Colors.grey.shade400;
+            final subTextColor = isDark
+                ? const Color(0xFF94A3B8)
+                : Colors.grey.shade600;
+            final inputBg = isDark
+                ? const Color(0xFF0F172A)
+                : const Color(0xFFF8FAFC);
+            final borderColor = isDark
+                ? const Color(0xFF334155)
+                : Colors.grey.shade300;
+            final hintColor = isDark
+                ? const Color(0xFF64748B)
+                : Colors.grey.shade400;
 
             return Form(
               key: formKey,
               child: ListView(
                 controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 children: [
                   TextFormField(
                     controller: atualController,
@@ -175,15 +338,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: borderColor,
-                          width: 1.2,
-                        ),
+                        borderSide: BorderSide(color: borderColor, width: 1.2),
                       ),
                       focusedBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(16),
-                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(16)),
                         borderSide: BorderSide(
                           color: Color(0xFF0066FF),
                           width: 2,
@@ -257,15 +415,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: borderColor,
-                          width: 1.2,
-                        ),
+                        borderSide: BorderSide(color: borderColor, width: 1.2),
                       ),
                       focusedBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(16),
-                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(16)),
                         borderSide: BorderSide(
                           color: Color(0xFF0066FF),
                           width: 2,
@@ -355,15 +508,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: borderColor,
-                          width: 1.2,
-                        ),
+                        borderSide: BorderSide(color: borderColor, width: 1.2),
                       ),
                       focusedBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(16),
-                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(16)),
                         borderSide: BorderSide(
                           color: Color(0xFF0066FF),
                           width: 2,
@@ -408,14 +556,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                               ? null
                               : () => Navigator.pop(modalContext),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 16,
-                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
-                              side: const BorderSide(
-                                color: Color(0xFF0066FF),
-                              ),
+                              side: const BorderSide(color: Color(0xFF0066FF)),
                             ),
                           ),
                           child: const Text(
@@ -464,7 +608,10 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
 
                                       AppSnackBar.erro(
                                         modalContext,
-                                        e.toString().replaceAll("Exception: ", ""),
+                                        e.toString().replaceAll(
+                                          "Exception: ",
+                                          "",
+                                        ),
                                         titulo: "Erro ao Alterar Senha",
                                       );
                                     }
@@ -473,9 +620,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF0066FF),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 16,
-                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -492,9 +637,7 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                                 )
                               : const Text(
                                   "Salvar",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                         ),
                       ),
@@ -511,23 +654,52 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
   }
 
   Widget _buildSectionTitle(String texto) {
-    final customTheme = Theme.of(context).extension<AppCustomTheme>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sectionTitleColor = customTheme?.sectionTitle ??
-        (isDark ? const Color(0xFF64B5F6) : darkBlue);
-
     return Padding(
-      padding: const EdgeInsets.only(left: 20, top: 32, bottom: 12),
-      child: AnimatedDefaultTextStyle(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
+      padding: const EdgeInsets.only(left: 4, top: 22, bottom: 9),
+      child: Text(
+        texto,
         style: TextStyle(
-          fontSize: 17,
-          fontWeight: FontWeight.w600,
-          color: sectionTitleColor,
+          color: Theme.of(context).colorScheme.primary,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
         ),
-        child: Text(texto),
       ),
+    );
+  }
+
+  Widget _buildSettingsGroup({
+    required String title,
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildSectionTitle(title),
+        Material(
+          color: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.65)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (var index = 0; index < children.length; index++) ...[
+                children[index],
+                if (index < children.length - 1)
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    indent: 66,
+                    endIndent: 14,
+                    color: theme.dividerColor.withValues(alpha: 0.65),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -538,111 +710,33 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
     VoidCallback? onTap,
     Widget? trailing,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final customTheme = Theme.of(context).extension<AppCustomTheme>();
-    final cardBg = customTheme?.cardBackground ?? Theme.of(context).cardColor;
-    final cardShadow = customTheme?.cardShadow ??
-        (isDark ? const Color(0x4D000000) : const Color(0x14000000));
-    final avatarBg = customTheme?.avatarBackground ??
-        (isDark ? const Color(0xFF1E3A8A) : lightBlue);
-    final avatarIconColor = customTheme?.avatarIcon ??
-        (isDark ? const Color(0xFF60A5FA) : primaryBlue);
-    final txtColor = Theme.of(context).colorScheme.onSurface;
-    final subColor = customTheme?.subtitleText ??
-        (isDark ? const Color(0xFF94A3B8) : lightTextColor);
+    final colors = Theme.of(context).colorScheme;
+    final activeTrailing =
+        trailing ??
+        (onTap == null
+            ? null
+            : Icon(
+                Icons.chevron_right_rounded,
+                color: colors.onSurfaceVariant,
+              ));
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: cardShadow,
-            spreadRadius: 0,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      minLeadingWidth: 40,
+      horizontalTitleGap: 12,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colors.primary.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeInOut,
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: avatarBg,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: TweenAnimationBuilder<Color?>(
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeInOut,
-                      tween: ColorTween(end: avatarIconColor),
-                      builder: (context, color, _) {
-                        return Icon(
-                          icon,
-                          color: color,
-                          size: 24,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 400),
-                        curve: Curves.easeInOut,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                          color: txtColor,
-                        ),
-                        child: Text(title),
-                      ),
-                      if (subtitle != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2.0),
-                          child: AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeInOut,
-                            style: TextStyle(fontSize: 13, color: subColor),
-                            child: Text(subtitle),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                trailing ??
-                    TweenAnimationBuilder<Color?>(
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeInOut,
-                      tween: ColorTween(end: subColor),
-                      builder: (context, color, _) => Icon(
-                        Icons.chevron_right_rounded,
-                        color: color,
-                      ),
-                    ),
-              ],
-            ),
-          ),
         ),
+        child: Icon(icon, color: colors.primary, size: 21),
       ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: subtitle == null ? null : Text(subtitle),
+      trailing: activeTrailing,
     );
   }
 
@@ -654,319 +748,259 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
     required ValueChanged<bool> onChanged,
   }) {
     final isDark = context.watch<ThemeProvider>().darkMode;
-    final customTheme = Theme.of(context).extension<AppCustomTheme>();
-    final cardBg = customTheme?.cardBackground ?? Theme.of(context).cardColor;
-    final cardShadow = customTheme?.cardShadow ??
-        (isDark ? const Color(0x4D000000) : const Color(0x14000000));
-    final avatarBg = customTheme?.avatarBackground ??
-        (isDark ? const Color(0xFF1E3A8A) : lightBlue);
-    final avatarIconColor = customTheme?.avatarIcon ??
-        (isDark ? const Color(0xFF60A5FA) : primaryBlue);
-    final txtColor = Theme.of(context).colorScheme.onSurface;
-    final subColor = customTheme?.subtitleText ??
-        (isDark ? const Color(0xFF94A3B8) : lightTextColor);
+    final colors = Theme.of(context).colorScheme;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: cardShadow,
-            spreadRadius: 0,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: SwitchListTile(
-        activeThumbColor: primaryBlue,
-        inactiveThumbColor: isDark
-            ? Colors.grey.shade600
-            : Colors.grey.shade300,
-        inactiveTrackColor: isDark
-            ? Colors.grey.shade800
-            : Colors.grey.shade200,
-        title: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
-            color: txtColor,
-          ),
-          child: Text(title),
+    return SwitchListTile(
+      activeThumbColor: primaryBlue,
+      inactiveThumbColor: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+      inactiveTrackColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: subtitle == null ? null : Text(subtitle),
+      secondary: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colors.primary.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(12),
         ),
-        subtitle: subtitle == null
-            ? null
-            : AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOut,
-                style: TextStyle(fontSize: 13, color: subColor),
-                child: Text(subtitle),
-              ),
-        secondary: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: avatarBg,
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: TweenAnimationBuilder<Color?>(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-              tween: ColorTween(end: avatarIconColor),
-              builder: (context, color, _) {
-                return Icon(
-                  icon,
-                  color: color,
-                  size: 24,
-                );
-              },
-            ),
-          ),
-        ),
-        value: value,
-        onChanged: onChanged,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Icon(icon, color: colors.primary, size: 21),
       ),
+      value: value,
+      onChanged: onChanged,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
     );
   }
 
   Widget _buildThemeSettingsItem() {
     final isDark = context.watch<ThemeProvider>().darkMode;
-    final customTheme = Theme.of(context).extension<AppCustomTheme>();
-    final cardBg = customTheme?.cardBackground ?? Theme.of(context).cardColor;
-    final cardShadow = customTheme?.cardShadow ??
-        (isDark ? const Color(0x4D000000) : const Color(0x14000000));
-    final avatarBg = customTheme?.avatarBackground ??
-        (isDark ? const Color(0xFF1E3A8A) : lightBlue);
-    final txtColor = Theme.of(context).colorScheme.onSurface;
-    final subColor = customTheme?.subtitleText ??
-        (isDark ? const Color(0xFF94A3B8) : lightTextColor);
+    final colors = Theme.of(context).colorScheme;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: cardShadow,
-            spreadRadius: 0,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: avatarBg,
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 350),
-              transitionBuilder: (child, anim) => RotationTransition(
-                turns: anim,
-                child: FadeTransition(opacity: anim, child: child),
-              ),
-              child: Icon(
-                isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-                key: ValueKey<bool>(isDark),
-                color: isDark ? Colors.amberAccent : Colors.orange,
-                size: 24,
-              ),
-            ),
-          ),
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colors.primary.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(12),
         ),
-        title: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-            color: txtColor,
-          ),
-          child: const Text("Tema Escuro"),
-        ),
-        subtitle: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          transitionBuilder: (child, anim) =>
-              FadeTransition(opacity: anim, child: child),
-          child: Text(
-            isDark ? "Modo escuro ativado" : "Modo claro ativado",
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: Icon(
+            isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
             key: ValueKey<bool>(isDark),
-            style: TextStyle(fontSize: 13, color: subColor),
+            color: isDark ? Colors.amber : Colors.orange,
+            size: 21,
           ),
         ),
-        trailing: _SmoothDayNightSwitch(
-          isDark: isDark,
-          onChanged: (value) {
-            context.read<ThemeProvider>().alterarTema(value);
-          },
-        ),
-        onTap: () {
-          context.read<ThemeProvider>().alterarTema(!isDark);
-        },
       ),
+      title: const Text(
+        "Tema escuro",
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(isDark ? "Ativado" : "Desativado"),
+      trailing: Semantics(
+        button: true,
+        label: "Tema escuro",
+        value: isDark ? "Ativado" : "Desativado",
+        child: _SmoothDayNightSwitch(
+          isDark: isDark,
+          onChanged: (value) =>
+              context.read<ThemeProvider>().alterarTema(value),
+        ),
+      ),
+      onTap: () => context.read<ThemeProvider>().alterarTema(!isDark),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: theme.scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: theme.colorScheme.onSurface,
           ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Configurações",
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
+            color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        children: [
-          _buildSectionTitle("Conta"),
-          _buildSettingsItem(
-            icon: Icons.person_outline,
-            title: "Editar perfil",
-          ),
-          _buildSettingsItem(
-            icon: Icons.lock_outline,
-            title: "Alterar senha",
-            onTap: _alterarSenhaDialog,
-          ),
-          _buildSettingsItem(
-            icon: Icons.camera_alt_outlined,
-            title: "Trocar foto",
-          ),
-
-          _buildSectionTitle("Treinos"),
-          _buildSettingsItem(
-            icon: Icons.flag_outlined,
-            title: "Meta semanal",
-            subtitle: "30 km",
-          ),
-          _buildSettingsItem(
-            icon: Icons.straighten,
-            title: "Unidade",
-            subtitle: "Quilômetros",
-          ),
-
-          _buildSectionTitle("Localização"),
-          _buildSwitchSettingsItem(
-            icon: Icons.location_on_outlined,
-            title: "GPS em segundo plano",
-            value: gpsSegundoPlano,
-            onChanged: _salvarGPS,
-          ),
-
-          _buildSectionTitle("Notificações"),
-          _buildSwitchSettingsItem(
-            icon: Icons.notifications_none,
-            title: "Receber notificações",
-            subtitle: "Receba lembretes de treinos e avisos importantes",
-            value: notificacoes,
-            onChanged: _salvarNotificacoes,
-          ),
-
-          _buildSectionTitle("Aparência"),
-          _buildThemeSettingsItem(),
-
-          _buildSectionTitle("PaceMind AI"),
-          _buildSettingsItem(
-            icon: Icons.smart_toy_outlined,
-            title: "Limpar histórico da IA",
-          ),
-          _buildSettingsItem(
-            icon: Icons.psychology_outlined,
-            title: "Modelo da IA",
-            subtitle: "Treinador",
-          ),
-
-          _buildSectionTitle("Dados"),
-          _buildSettingsItem(
-            icon: Icons.download_outlined,
-            title: "Exportar treinos e relatórios",
-            subtitle: "Gerar e compartilhar PDF completo com métricas",
-            onTap: () => Navigator.pushNamed(context, "/relatorios"),
-          ),
-          _buildSettingsItem(icon: Icons.backup_outlined, title: "Backup"),
-
-          _buildSectionTitle("Sobre"),
-          _buildSettingsItem(
-            icon: Icons.info_outline,
-            title: "Versão",
-            subtitle: "1.0.0",
-          ),
-          _buildSettingsItem(
-            icon: Icons.privacy_tip_outlined,
-            title: "Política de Privacidade",
-            onTap: () => Navigator.pushNamed(context, "/politica-privacidade"),
-          ),
-          _buildSettingsItem(
-            icon: Icons.description_outlined,
-            title: "Termos de Uso",
-            onTap: () => Navigator.pushNamed(context, "/termos-uso"),
-          ),
-
-          const SizedBox(height: 32),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: errorRed, // Vermelho para ação de logout
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-                elevation: 3, // Sutil elevação para o botão
+      body: SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final horizontalPadding = constraints.maxWidth >= 700 ? 24.0 : 16.0;
+            return ListView(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                12,
+                horizontalPadding,
+                28,
               ),
-              onPressed: _logout,
-              icon: const Icon(Icons.logout_rounded, size: 24),
-              label: const Text("Sair da conta"),
-            ),
-          ),
-
-          const SizedBox(height: 40),
-        ],
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 680),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildSettingsGroup(
+                          title: "Conta",
+                          children: [
+                            _buildSettingsItem(
+                              icon: Icons.person_outline_rounded,
+                              title: "Editar perfil",
+                              onTap: () => _abrirPerfil(editar: true),
+                            ),
+                            _buildSettingsItem(
+                              icon: Icons.lock_outline_rounded,
+                              title: "Alterar senha",
+                              onTap: _alterarSenhaDialog,
+                            ),
+                            _buildSettingsItem(
+                              icon: Icons.camera_alt_outlined,
+                              title: "Trocar foto",
+                              onTap: () => _abrirPerfil(foto: true),
+                            ),
+                          ],
+                        ),
+                        _buildSettingsGroup(
+                          title: "Treinos",
+                          children: [
+                            _buildSettingsItem(
+                              icon: Icons.flag_outlined,
+                              title: "Meta semanal",
+                              subtitle: metaSemanalKm == null
+                                  ? "Definir objetivo de distância"
+                                  : "${metaSemanalKm!.toStringAsFixed(1)} km por semana",
+                              onTap: _editarMetaSemanal,
+                            ),
+                          ],
+                        ),
+                        _buildSettingsGroup(
+                          title: "Aplicativo",
+                          children: [
+                            _buildSwitchSettingsItem(
+                              icon: Icons.location_on_outlined,
+                              title: "GPS em segundo plano",
+                              subtitle:
+                                  "Manter o registro durante uma corrida com o app minimizado",
+                              value: gpsSegundoPlano,
+                              onChanged: _salvarGPS,
+                            ),
+                            _buildSwitchSettingsItem(
+                              icon: Icons.notifications_none_rounded,
+                              title: "Receber notificações",
+                              subtitle: "Lembretes e avisos no dispositivo",
+                              value: notificacoes,
+                              onChanged: _salvarNotificacoes,
+                            ),
+                            _buildThemeSettingsItem(),
+                          ],
+                        ),
+                        _buildSettingsGroup(
+                          title: "PaceMind IA",
+                          children: [
+                            _buildSettingsItem(
+                              icon: Icons.smart_toy_outlined,
+                              title: "Abrir treinador",
+                              subtitle: "Conversar com a PaceMind IA",
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                "/recomendacoes",
+                              ),
+                            ),
+                            _buildSettingsItem(
+                              icon: Icons.delete_outline_rounded,
+                              title: "Limpar histórico",
+                              subtitle: "Excluir mensagens salvas da conversa",
+                              onTap: _limpandoHistorico
+                                  ? null
+                                  : _limparHistoricoIa,
+                              trailing: _limpandoHistorico
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: theme.colorScheme.error,
+                                    ),
+                            ),
+                          ],
+                        ),
+                        _buildSettingsGroup(
+                          title: "Dados e privacidade",
+                          children: [
+                            _buildSettingsItem(
+                              icon: Icons.download_outlined,
+                              title: "Exportar treinos e relatórios",
+                              subtitle: "Gerar e compartilhar PDF",
+                              onTap: () =>
+                                  Navigator.pushNamed(context, "/relatorios"),
+                            ),
+                            _buildSettingsItem(
+                              icon: Icons.privacy_tip_outlined,
+                              title: "Política de privacidade",
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                "/politica-privacidade",
+                              ),
+                            ),
+                            _buildSettingsItem(
+                              icon: Icons.description_outlined,
+                              title: "Termos de uso",
+                              onTap: () =>
+                                  Navigator.pushNamed(context, "/termos-uso"),
+                            ),
+                            _buildSettingsItem(
+                              icon: Icons.info_outline_rounded,
+                              title: "Versão",
+                              subtitle: "1.0.0",
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        OutlinedButton.icon(
+                          onPressed: _logout,
+                          icon: const Icon(Icons.logout_rounded),
+                          label: const Text("Sair da conta"),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: errorRed,
+                            side: BorderSide(
+                              color: errorRed.withValues(alpha: 0.55),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -976,10 +1010,7 @@ class _SmoothDayNightSwitch extends StatelessWidget {
   final bool isDark;
   final ValueChanged<bool> onChanged;
 
-  const _SmoothDayNightSwitch({
-    required this.isDark,
-    required this.onChanged,
-  });
+  const _SmoothDayNightSwitch({required this.isDark, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {

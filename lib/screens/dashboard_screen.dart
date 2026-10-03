@@ -199,7 +199,9 @@ class _DashboardPageState extends State<DashboardPage> {
         color: isDark ? const Color(0xFF161F33) : const Color(0xFFEFF4F9),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: Row(
@@ -262,7 +264,9 @@ class _DashboardPageState extends State<DashboardPage> {
               size: 15,
               color: isSelected
                   ? const Color(0xFF0066FF)
-                  : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                  : (isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B)),
             ),
             const SizedBox(width: 6),
             Flexible(
@@ -275,7 +279,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                     color: isSelected
                         ? (isDark ? Colors.white : const Color(0xFF0F172A))
-                        : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                        : (isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B)),
                   ),
                 ),
               ),
@@ -293,10 +299,7 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(
-              color: Color(0xFF0066FF),
-              strokeWidth: 3,
-            ),
+            CircularProgressIndicator(color: Color(0xFF0066FF), strokeWidth: 3),
             SizedBox(height: 14),
             Text(
               "Carregando seu treino...",
@@ -353,7 +356,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0066FF),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -366,9 +372,15 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     final d = data!;
-    final resumo = d["resumo"] is Map ? d["resumo"] as Map<String, dynamic> : {};
-    final resumoGeral = d["resumo_geral"] is Map ? d["resumo_geral"] as Map<String, dynamic> : {};
-    final perfil = d["perfil"] is Map ? d["perfil"] as Map<String, dynamic> : {};
+    final resumo = d["resumo"] is Map
+        ? d["resumo"] as Map<String, dynamic>
+        : {};
+    final resumoGeral = d["resumo_geral"] is Map
+        ? d["resumo_geral"] as Map<String, dynamic>
+        : {};
+    final perfil = d["perfil"] is Map
+        ? d["perfil"] as Map<String, dynamic>
+        : {};
 
     // Dados do usuário
     final nomeUsuario = _asString(
@@ -392,7 +404,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final treinosSemanaSelecionada = treinosConcluidos.where((t) {
       final dt = AppDateUtils.extrairDataPura(t["data"]);
       if (dt == null) return false;
-      return !dt.isBefore(DateTime(inicioSemana.year, inicioSemana.month, inicioSemana.day)) &&
+      return !dt.isBefore(
+            DateTime(inicioSemana.year, inicioSemana.month, inicioSemana.day),
+          ) &&
           !dt.isAfter(DateTime(fimSemana.year, fimSemana.month, fimSemana.day));
     }).toList();
 
@@ -405,14 +419,18 @@ class _DashboardPageState extends State<DashboardPage> {
       "Quinta-feira",
       "Sexta-feira",
       "Sábado",
-      "Domingo"
+      "Domingo",
     ];
 
     final agora = DateTime.now();
     final hoje = DateTime(agora.year, agora.month, agora.day);
 
     final kmPorDiaSemana = List.generate(7, (i) {
-      final diaAlvo = DateTime(inicioSemana.year, inicioSemana.month, inicioSemana.day + i);
+      final diaAlvo = DateTime(
+        inicioSemana.year,
+        inicioSemana.month,
+        inicioSemana.day + i,
+      );
       double kmNoDia = 0.0;
 
       for (var t in treinosConcluidos) {
@@ -425,8 +443,12 @@ class _DashboardPageState extends State<DashboardPage> {
         }
       }
 
-      final diaFormatado = "${diaAlvo.day.toString().padLeft(2, '0')}/${diaAlvo.month.toString().padLeft(2, '0')}";
-      final isHoje = diaAlvo.year == hoje.year && diaAlvo.month == hoje.month && diaAlvo.day == hoje.day;
+      final diaFormatado =
+          "${diaAlvo.day.toString().padLeft(2, '0')}/${diaAlvo.month.toString().padLeft(2, '0')}";
+      final isHoje =
+          diaAlvo.year == hoje.year &&
+          diaAlvo.month == hoje.month &&
+          diaAlvo.day == hoje.day;
 
       return {
         "dia": diasNomes[i],
@@ -467,30 +489,45 @@ class _DashboardPageState extends State<DashboardPage> {
     final bool modoSemana = periodoFiltroIndex == 0;
 
     final kmExibicao = modoSemana
-        ? (_asDouble(resumo["total_km"]) > 0 ? _asDouble(resumo["total_km"]) : kmCalculadoSemana)
-        : (_asDouble(resumoGeral["total_km"]) > 0 ? _asDouble(resumoGeral["total_km"]) : _asDouble(resumo["total_km"]));
+        ? (_asDouble(resumo["total_km"]) > 0
+              ? _asDouble(resumo["total_km"])
+              : kmCalculadoSemana)
+        : (_asDouble(resumoGeral["total_km"]) > 0
+              ? _asDouble(resumoGeral["total_km"])
+              : _asDouble(resumo["total_km"]));
 
     final tempoExibicaoSegundos = modoSemana
-        ? (_asInt(resumo["total_tempo"]) > 0 ? _asInt(resumo["total_tempo"]) : tempoCalculadoSemanaSegundos)
-        : (_asInt(resumoGeral["total_tempo"]) > 0 ? _asInt(resumoGeral["total_tempo"]) : _asInt(resumo["total_tempo"]));
+        ? (_asInt(resumo["total_tempo"]) > 0
+              ? _asInt(resumo["total_tempo"])
+              : tempoCalculadoSemanaSegundos)
+        : (_asInt(resumoGeral["total_tempo"]) > 0
+              ? _asInt(resumoGeral["total_tempo"])
+              : _asInt(resumo["total_tempo"]));
 
     final treinosQtd = modoSemana
-        ? (_asInt(resumo["total_treinos"]) > 0 ? _asInt(resumo["total_treinos"]) : treinosSemanaSelecionada.length)
-        : (_asInt(resumoGeral["total_treinos"]) > 0 ? _asInt(resumoGeral["total_treinos"]) : treinosConcluidos.length);
+        ? (_asInt(resumo["total_treinos"]) > 0
+              ? _asInt(resumo["total_treinos"])
+              : treinosSemanaSelecionada.length)
+        : (_asInt(resumoGeral["total_treinos"]) > 0
+              ? _asInt(resumoGeral["total_treinos"])
+              : treinosConcluidos.length);
 
     final ritmoExibicao = modoSemana
         ? _asDouble(resumo["ritmo_medio"])
         : _asDouble(resumoGeral["ritmo_medio"]);
 
     // Comparação semanal
-    final comparacao = d["comparacao"] is Map ? d["comparacao"] as Map<String, dynamic> : null;
+    final comparacao = d["comparacao"] is Map
+        ? d["comparacao"] as Map<String, dynamic>
+        : null;
 
     // Metas
     final listaMetas = (d["metas"] as List? ?? []);
     dynamic metaAtiva;
 
     for (var m in listaMetas) {
-      if (m["concluida"] != true && (m["tipo"]?.toString().toLowerCase() == "km")) {
+      if (m["concluida"] != true &&
+          (m["tipo"]?.toString().toLowerCase() == "km")) {
         metaAtiva = m;
         break;
       }
@@ -566,7 +603,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const MetasPage(abrirCriarMetaAoIniciar: true),
+                    builder: (_) =>
+                        const MetasPage(abrirCriarMetaAoIniciar: true),
                   ),
                 );
                 carregarDados();
@@ -574,9 +612,7 @@ class _DashboardPageState extends State<DashboardPage> {
               onVerMetas: () async {
                 await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const MetasPage(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const MetasPage()),
                 );
                 carregarDados();
               },
@@ -588,7 +624,8 @@ class _DashboardPageState extends State<DashboardPage> {
             WeeklyChartCard(
               dados: kmPorDiaSemana,
               titulo: isSemanaAtual ? "Volume Semanal" : "Volume da Semana",
-              subtitulo: "Segunda a Domingo (${kmCalculadoSemana.toStringAsFixed(1)} km)",
+              subtitulo:
+                  "Segunda a Domingo (${kmCalculadoSemana.toStringAsFixed(1)} km)",
             ),
 
             const SizedBox(height: 18),
@@ -644,13 +681,17 @@ class _DashboardPageState extends State<DashboardPage> {
     required int treinosSemana,
     required bool isDark,
   }) {
-    String dica = "Inicie seus treinos da semana para desbloquear diagnósticos da inteligência artificial.";
+    String dica =
+        "Inicie seus treinos da semana para desbloquear diagnósticos da inteligência artificial.";
     if (kmSemana > 30) {
-      dica = "Excelente volume semanal! Mantenha a hidratação reforçada e faça treinos regenerativos para evitar fadiga excessiva.";
+      dica =
+          "Excelente volume semanal! Mantenha a hidratação reforçada e faça treinos regenerativos para evitar fadiga excessiva.";
     } else if (kmSemana > 15) {
-      dica = "Ritmo constante! Seu volume está equilibrado para ganho de resistência aeróbica sem sobrecarga.";
+      dica =
+          "Ritmo constante! Seu volume está equilibrado para ganho de resistência aeróbica sem sobrecarga.";
     } else if (treinosSemana >= 1) {
-      dica = "Bom início de semana! Manter um ritmo controlado nos primeiros treinos prepara as fibras musculares para sessões mais intensas.";
+      dica =
+          "Bom início de semana! Manter um ritmo controlado nos primeiros treinos prepara as fibras musculares para sessões mais intensas.";
     }
 
     return Container(
@@ -717,7 +758,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       "Inteligência e Análise do Atleta",
                       style: TextStyle(
                         fontSize: 11.5,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
                       ),
                     ),
                   ],
@@ -729,7 +772,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 },
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF6366F1).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
@@ -765,14 +811,19 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark
                         ? const Color(0xFF1E293B).withValues(alpha: 0.6)
                         : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : const Color(0xFFE2E8F0),
                     ),
                   ),
                   child: Row(
@@ -780,7 +831,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0066FF).withValues(alpha: 0.12),
+                          color: const Color(
+                            0xFF0066FF,
+                          ).withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -798,7 +851,9 @@ class _DashboardPageState extends State<DashboardPage> {
                               "Ritmo Geral",
                               style: TextStyle(
                                 fontSize: 10.5,
-                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                color: isDark
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFF64748B),
                               ),
                             ),
                             FittedBox(
@@ -824,14 +879,19 @@ class _DashboardPageState extends State<DashboardPage> {
 
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark
                         ? const Color(0xFF1E293B).withValues(alpha: 0.6)
                         : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : const Color(0xFFE2E8F0),
                     ),
                   ),
                   child: Row(
@@ -839,7 +899,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                          color: const Color(
+                            0xFF10B981,
+                          ).withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -857,7 +919,9 @@ class _DashboardPageState extends State<DashboardPage> {
                               "Sessões",
                               style: TextStyle(
                                 fontSize: 10.5,
-                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                color: isDark
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFF64748B),
                               ),
                             ),
                             FittedBox(
@@ -1051,7 +1115,27 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
 
-      body: pages[selectedIndex],
+      body: AnimatedSwitcher(
+        duration: MediaQuery.of(context).disableAnimations
+            ? Duration.zero
+            : const Duration(milliseconds: 260),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          final position = Tween<Offset>(
+            begin: const Offset(0, 0.02),
+            end: Offset.zero,
+          ).animate(animation);
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(position: position, child: child),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey(selectedIndex),
+          child: pages[selectedIndex],
+        ),
+      ),
 
       // 🔥 MENU INFERIOR
       bottomNavigationBar: BottomMenu(

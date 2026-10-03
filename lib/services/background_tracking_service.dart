@@ -22,13 +22,14 @@ class BackgroundTrackingService {
         initialNotificationTitle: "PaceMind",
         initialNotificationContent: "Monitorando corrida...",
       ),
-      iosConfiguration: IosConfiguration(
-        autoStart: false,
-      ),
+      iosConfiguration: IosConfiguration(autoStart: false),
     );
   }
 
   static Future<void> start(int idCorrida) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!(prefs.getBool("gpsSegundoPlano") ?? true)) return;
+
     final service = FlutterBackgroundService();
 
     await service.startService();
@@ -121,4 +122,3 @@ void onStart(ServiceInstance service) {
     service.stopSelf();
   });
 }
-
