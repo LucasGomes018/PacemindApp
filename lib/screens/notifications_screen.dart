@@ -34,6 +34,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   void initState() {
     super.initState();
+    // ⚡ INSTANTÂNEO: Se houver cache de notificações, exibe imediatamente
+    if (Api.notificacoesCache != null) {
+      notificacoes = Api.notificacoesCache!;
+      loading = false;
+    }
     _verificarPermissoes();
     carregarNotificacoes();
   }
@@ -51,9 +56,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  Future<void> carregarNotificacoes() async {
+  Future<void> carregarNotificacoes({bool forcar = false}) async {
+    if (notificacoes.isEmpty) {
+      if (mounted) {
+        setState(() {
+          loading = true;
+          erroCarregamento = null;
+        });
+      }
+    }
+
     try {
-      final data = await Api.listarNotificacoes();
+      final data = await Api.listarNotificacoes(forcarAtualizacao: forcar);
       if (!mounted) return;
 
       setState(() {
@@ -62,13 +76,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
         erroCarregamento = null;
       });
 
-      // Sincroniza qualquer notificação não lida diretamente para o push do celular
-      AutoNotificacaoService.sincronizarNotificacoesPush();
+      // Lista carregada na tela; não dispara banners push redundantes enquanto o usuário lê
     } catch (e) {
       if (!mounted) return;
       setState(() {
         loading = false;
-        erroCarregamento = "Não foi possível carregar as notificações.";
+        if (notificacoes.isEmpty) {
+          erroCarregamento = "Não foi possível carregar as notificações.";
+        }
       });
     }
   }

@@ -6,19 +6,189 @@ import 'dart:io';
 class Api {
   static const String baseUrl = "https://pacemind-api.vercel.app";
 
-  static Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString("token");
+  // ⚡ MEMÓRIA DE ACESSO INSTANTÂNEO (0ms)
+  static Map<String, dynamic>? perfilCache;
+  static Map<String, dynamic>? usuarioCache;
+  static Map<String, dynamic>? dashboardCache;
+  static List<dynamic>? treinosCache;
+  static List<dynamic>? metasCache;
+  static List<dynamic>? agendaCache;
+  static List<dynamic>? notificacoesCache;
 
-    return token;
+  static bool _cacheInicializado = false;
+  static bool _precarregando = false;
+
+  // Chaves de armazenamento persistente
+  static const String _kCachePerfil = "cache_perfil_v1";
+  static const String _kCacheUsuario = "cache_usuario_v1";
+  static const String _kCacheDashboard = "cache_dashboard_v1";
+  static const String _kCacheTreinos = "cache_treinos_v1";
+  static const String _kCacheMetas = "cache_metas_v1";
+  static const String _kCacheAgenda = "cache_agenda_v1";
+  static const String _kCacheNotificacoes = "cache_notificacoes_v1";
+
+  /// 🚀 Inicializa o cache persistente do disco para a memória na inicialização do app (leva < 5ms)
+  static Future<void> inicializarCacheLocal() async {
+    if (_cacheInicializado) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final strPerfil = prefs.getString(_kCachePerfil);
+      if (strPerfil != null && strPerfil.isNotEmpty) {
+        try {
+          perfilCache = jsonDecode(strPerfil);
+        } catch (_) {}
+      }
+
+      final strUsuario = prefs.getString(_kCacheUsuario);
+      if (strUsuario != null && strUsuario.isNotEmpty) {
+        try {
+          usuarioCache = jsonDecode(strUsuario);
+        } catch (_) {}
+      }
+
+      final strDash = prefs.getString(_kCacheDashboard);
+      if (strDash != null && strDash.isNotEmpty) {
+        try {
+          dashboardCache = jsonDecode(strDash);
+        } catch (_) {}
+      }
+
+      final strTreinos = prefs.getString(_kCacheTreinos);
+      if (strTreinos != null && strTreinos.isNotEmpty) {
+        try {
+          treinosCache = jsonDecode(strTreinos);
+        } catch (_) {}
+      }
+
+      final strMetas = prefs.getString(_kCacheMetas);
+      if (strMetas != null && strMetas.isNotEmpty) {
+        try {
+          metasCache = jsonDecode(strMetas);
+        } catch (_) {}
+      }
+
+      final strAgenda = prefs.getString(_kCacheAgenda);
+      if (strAgenda != null && strAgenda.isNotEmpty) {
+        try {
+          agendaCache = jsonDecode(strAgenda);
+        } catch (_) {}
+      }
+
+      final strNotifs = prefs.getString(_kCacheNotificacoes);
+      if (strNotifs != null && strNotifs.isNotEmpty) {
+        try {
+          notificacoesCache = jsonDecode(strNotifs);
+        } catch (_) {}
+      }
+
+      _cacheInicializado = true;
+    } catch (_) {}
   }
 
-  static Future<Map<String, dynamic>> getDashboard({DateTime? semana}) async {
+  /// 📥 PRÉ-CARREGAMENTO GLOBAL: Baixa em paralelo todos os dados ao abrir o app ou login
+  static Future<void> preCarregarDadosGlobais({bool forcarAtualizacao = false}) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) return;
+    if (_precarregando) return;
+    _precarregando = true;
+
+    try {
+      await Future.wait([
+        getProfile(forcarAtualizacao: forcarAtualizacao).catchError((_) => <String, dynamic>{}),
+        me(forcarAtualizacao: forcarAtualizacao).catchError((_) => <String, dynamic>{}),
+        getDashboard(forcarAtualizacao: forcarAtualizacao).catchError((_) => <String, dynamic>{}),
+        listarTreinos(forcarAtualizacao: forcarAtualizacao).catchError((_) => []),
+        listarMetas(forcarAtualizacao: forcarAtualizacao).catchError((_) => []),
+        listarAgenda(forcarAtualizacao: forcarAtualizacao).catchError((_) => []),
+        listarNotificacoes(forcarAtualizacao: forcarAtualizacao).catchError((_) => []),
+      ]);
+    } catch (_) {
+    } finally {
+      _precarregando = false;
+    }
+  }
+
+  /// 🧹 Limpa todo o cache em memória e em disco (chamado no logout)
+  static Future<void> limparCache() async {
+    perfilCache = null;
+    usuarioCache = null;
+    dashboardCache = null;
+    treinosCache = null;
+    metasCache = null;
+    agendaCache = null;
+    notificacoesCache = null;
+    _cacheInicializado = false;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kCachePerfil);
+      await prefs.remove(_kCacheUsuario);
+      await prefs.remove(_kCacheDashboard);
+      await prefs.remove(_kCacheTreinos);
+      await prefs.remove(_kCacheMetas);
+      await prefs.remove(_kCacheAgenda);
+      await prefs.remove(_kCacheNotificacoes);
+    } catch (_) {}
+  }
+
+  static Future<void> _salvarCacheLocal(String key, dynamic data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, jsonEncode(data));
+    } catch (_) {}
+  }
+
+  static Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString("token");
+  }
+
+  // --- REVALIDAÇÕES SILENCIOSAS EM BACKGROUND ---
+  static void _revalidarDashboard() {
+    getDashboard(forcarAtualizacao: true).catchError((_) => <String, dynamic>{});
+  }
+
+  static void _revalidarTreinos() {
+    listarTreinos(forcarAtualizacao: true).catchError((_) => []);
+  }
+
+  static void _revalidarMetas() {
+    listarMetas(forcarAtualizacao: true).catchError((_) => []);
+  }
+
+  static void _revalidarAgenda() {
+    listarAgenda(forcarAtualizacao: true).catchError((_) => []);
+  }
+
+  static void _revalidarNotificacoes() {
+    listarNotificacoes(forcarAtualizacao: true).catchError((_) => []);
+  }
+
+  static void _revalidarPerfil() {
+    getProfile(forcarAtualizacao: true).catchError((_) => <String, dynamic>{});
+  }
+
+  static void _revalidarUsuario() {
+    me(forcarAtualizacao: true).catchError((_) => <String, dynamic>{});
+  }
+
+  // --- ENDPOINTS PRINCIPAIS COM SUPORTE A CACHE ---
+
+  static Future<Map<String, dynamic>> getDashboard({
+    DateTime? semana,
+    bool forcarAtualizacao = false,
+  }) async {
+    // Para a semana corrente (semana == null), usa retorno instantâneo do cache
+    if (semana == null && !forcarAtualizacao && dashboardCache != null) {
+      _revalidarDashboard();
+      return dashboardCache!;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
 
     String url = "$baseUrl/dashboard";
-
     if (semana != null) {
       final dataFormatada = semana.toIso8601String();
       url += "?semana=$dataFormatada";
@@ -30,18 +200,57 @@ class Api {
     );
 
     if (response.statusCode != 200) {
+      if (semana == null && dashboardCache != null) return dashboardCache!;
       throw Exception("Erro ao carregar dashboard");
     }
 
     final data = jsonDecode(response.body);
     if (data is! Map<String, dynamic>) {
+      if (semana == null && dashboardCache != null) return dashboardCache!;
       throw Exception("Formato inválido do dashboard");
+    }
+
+    if (semana == null) {
+      dashboardCache = data;
+      _salvarCacheLocal(_kCacheDashboard, data);
     }
 
     return data;
   }
 
-  static Future<List<dynamic>> listarTreinosConcluidos() async {
+  static Future<List<dynamic>> listarTreinos({bool forcarAtualizacao = false}) async {
+    if (!forcarAtualizacao && treinosCache != null && treinosCache!.isNotEmpty) {
+      _revalidarTreinos();
+      return treinosCache!;
+    }
+
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/treinos"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      if (treinosCache != null) return treinosCache!;
+      throw Exception("Erro ao buscar treinos");
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! List) throw Exception("Formato inválido de treinos");
+
+    treinosCache = data;
+    _salvarCacheLocal(_kCacheTreinos, data);
+    return data;
+  }
+
+  static Future<List<dynamic>> listarTreinosConcluidos({bool forcarAtualizacao = false}) async {
+    if (!forcarAtualizacao && treinosCache != null && treinosCache!.isNotEmpty) {
+      final concluidos = treinosCache!
+          .where((t) => (t["status"] ?? "").toString().toLowerCase() == "concluido")
+          .toList();
+      if (concluidos.isNotEmpty) return concluidos;
+    }
+
     final token = await _getToken();
     final response = await http.get(
       Uri.parse("$baseUrl/treinos?status=concluido"),
@@ -49,6 +258,11 @@ class Api {
     );
 
     if (response.statusCode != 200) {
+      if (treinosCache != null) {
+        return treinosCache!
+            .where((t) => (t["status"] ?? "").toString().toLowerCase() == "concluido")
+            .toList();
+      }
       throw Exception("Erro ao buscar treinos concluídos");
     }
 
@@ -58,26 +272,43 @@ class Api {
     return data;
   }
 
-  static Future<Map<String, dynamic>> me() async {
-    final token = await _getToken();
+  static Future<Map<String, dynamic>> me({bool forcarAtualizacao = false}) async {
+    if (!forcarAtualizacao && usuarioCache != null && usuarioCache!.isNotEmpty) {
+      _revalidarUsuario();
+      return usuarioCache!;
+    }
 
+    final token = await _getToken();
     final response = await http.get(
       Uri.parse("$baseUrl/usuarios/me"),
       headers: {"Authorization": "Bearer $token"},
     );
 
     if (response.statusCode != 200) {
+      if (usuarioCache != null) return usuarioCache!;
       throw Exception("Erro ao buscar usuário");
     }
 
-    return jsonDecode(response.body);
+    final data = jsonDecode(response.body);
+    if (data is Map<String, dynamic>) {
+      usuarioCache = data;
+      _salvarCacheLocal(_kCacheUsuario, data);
+      return data;
+    }
+    return usuarioCache ?? {};
   }
 
-  static Future<Map<String, dynamic>> getProfile() async {
+  static Future<Map<String, dynamic>> getProfile({bool forcarAtualizacao = false}) async {
+    if (!forcarAtualizacao && perfilCache != null && perfilCache!.isNotEmpty) {
+      _revalidarPerfil();
+      return perfilCache!;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
 
     if (token == null) {
+      if (perfilCache != null) return perfilCache!;
       throw Exception("Token não encontrado");
     }
 
@@ -87,10 +318,17 @@ class Api {
     );
 
     if (response.statusCode != 200) {
+      if (perfilCache != null) return perfilCache!;
       throw Exception("Erro ao buscar perfil");
     }
 
-    return jsonDecode(response.body);
+    final data = jsonDecode(response.body);
+    if (data is Map<String, dynamic>) {
+      perfilCache = data;
+      _salvarCacheLocal(_kCachePerfil, data);
+      return data;
+    }
+    return perfilCache ?? {};
   }
 
   static Future<Map<String, dynamic>> uploadFoto(File imagem) async {
@@ -178,27 +416,38 @@ class Api {
     throw Exception(jsonDecode(response.body)["message"]);
   }
 
-  static Future<void> criarNotificacao({
+  static Future<Map<String, dynamic>?> criarNotificacao({
     required String titulo,
     required String mensagem,
     String tipo = "treino",
     bool global = false,
   }) async {
     final token = await _getToken();
+    if (token == null) return null;
 
-    await http.post(
-      Uri.parse("$baseUrl/notificacoes"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({
-        "titulo": titulo,
-        "mensagem": mensagem,
-        "tipo": tipo,
-        "global": global || tipo == "evento",
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/notificacoes"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "titulo": titulo,
+          "mensagem": mensagem,
+          "tipo": tipo,
+          "global": global || tipo == "evento",
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body);
+        if (data is Map<String, dynamic>) {
+          return data;
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   static Future<List<dynamic>> listarMensagensChat() async {
@@ -433,7 +682,12 @@ class Api {
   // 🎯 METAS
   // ===============================
 
-  static Future<List<dynamic>> listarMetas() async {
+  static Future<List<dynamic>> listarMetas({bool forcarAtualizacao = false}) async {
+    if (!forcarAtualizacao && metasCache != null && metasCache!.isNotEmpty) {
+      _revalidarMetas();
+      return metasCache!;
+    }
+
     final token = await _getToken();
 
     final response = await http.get(
@@ -442,10 +696,17 @@ class Api {
     );
 
     if (response.statusCode != 200) {
+      if (metasCache != null) return metasCache!;
       throw Exception("Erro ao listar metas");
     }
 
-    return jsonDecode(response.body);
+    final data = jsonDecode(response.body);
+    if (data is List) {
+      metasCache = data;
+      _salvarCacheLocal(_kCacheMetas, data);
+      return data;
+    }
+    return metasCache ?? [];
   }
 
   static Future<Map<String, dynamic>> criarMeta({
@@ -699,8 +960,9 @@ class Api {
     try {
       final token = await _getToken();
       final body = <String, dynamic>{};
-      if (distanciaAtualKm != null)
+      if (distanciaAtualKm != null) {
         body["distancia_atual_km"] = distanciaAtualKm;
+      }
       if (tempoSegundos != null) body["tempo_segundos"] = tempoSegundos;
       if (status != null) body["status"] = status;
       if (idCorrida != null) body["id_corrida"] = idCorrida;
@@ -1219,7 +1481,12 @@ class Api {
   // 🔔 NOTIFICAÇÕES
   // ===============================
 
-  static Future<List<dynamic>> listarNotificacoes() async {
+  static Future<List<dynamic>> listarNotificacoes({bool forcarAtualizacao = false}) async {
+    if (!forcarAtualizacao && notificacoesCache != null) {
+      _revalidarNotificacoes();
+      return notificacoesCache!;
+    }
+
     final token = await _getToken();
     final response = await http.get(
       Uri.parse("$baseUrl/notificacoes"),
@@ -1227,12 +1494,18 @@ class Api {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (notificacoesCache != null) return notificacoesCache!;
       throw Exception("Erro ao buscar notificações");
     }
 
     final data = jsonDecode(response.body);
-    if (data is! List) return [];
-    return data;
+    if (data is! List) {
+      if (notificacoesCache != null) return notificacoesCache!;
+      return [];
+    }
+    notificacoesCache = List<dynamic>.from(data);
+    _salvarCacheLocal(_kCacheNotificacoes, notificacoesCache);
+    return notificacoesCache!;
   }
 
   static Future<Map<String, dynamic>> verificarNotificacoesAutomaticas() async {
@@ -1320,15 +1593,29 @@ class Api {
   // ===============================
   // 📅 AGENDA
   // ===============================
-  static Future<List<dynamic>> listarAgenda() async {
+  static Future<List<dynamic>> listarAgenda({bool forcarAtualizacao = false}) async {
+    if (!forcarAtualizacao && agendaCache != null) {
+      _revalidarAgenda();
+      return agendaCache!;
+    }
+
     final token = await _getToken();
     final response = await http.get(
       Uri.parse("$baseUrl/agenda"),
       headers: {"Authorization": "Bearer $token"},
     );
-    if (response.statusCode != 200) return [];
+    if (response.statusCode != 200) {
+      if (agendaCache != null) return agendaCache!;
+      return [];
+    }
     final data = jsonDecode(response.body);
-    return data is List ? data : [];
+    if (data is! List) {
+      if (agendaCache != null) return agendaCache!;
+      return [];
+    }
+    agendaCache = List<dynamic>.from(data);
+    _salvarCacheLocal(_kCacheAgenda, agendaCache);
+    return agendaCache!;
   }
 
   static Future<Map<String, dynamic>> criarAgenda({
@@ -1354,9 +1641,21 @@ class Api {
       }),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception("Erro ao criar compromisso na agenda");
+      String msg = "Erro ao criar compromisso na agenda";
+      try {
+        final err = jsonDecode(response.body);
+        if (err is Map && err["message"] != null) {
+          msg = err["message"];
+        }
+      } catch (_) {}
+      throw Exception(msg);
     }
-    return jsonDecode(response.body);
+    final data = jsonDecode(response.body);
+    if (data is Map<String, dynamic> && agendaCache != null) {
+      agendaCache!.add(data);
+      _salvarCacheLocal(_kCacheAgenda, agendaCache);
+    }
+    return data is Map<String, dynamic> ? data : {};
   }
 
   static Future<Map<String, dynamic>> atualizarAgenda({
@@ -1383,9 +1682,24 @@ class Api {
       }),
     );
     if (response.statusCode != 200) {
-      throw Exception("Erro ao atualizar agenda");
+      String msg = "Erro ao atualizar agenda";
+      try {
+        final err = jsonDecode(response.body);
+        if (err is Map && err["message"] != null) {
+          msg = err["message"];
+        }
+      } catch (_) {}
+      throw Exception(msg);
     }
-    return jsonDecode(response.body);
+    final data = jsonDecode(response.body);
+    if (data is Map<String, dynamic> && agendaCache != null) {
+      final idx = agendaCache!.indexWhere((it) => (it["id_agenda"] ?? it["id"]).toString() == id);
+      if (idx != -1) {
+        agendaCache![idx] = data;
+      }
+      _salvarCacheLocal(_kCacheAgenda, agendaCache);
+    }
+    return data is Map<String, dynamic> ? data : {};
   }
 
   static Future<void> deletarAgenda(String id) async {

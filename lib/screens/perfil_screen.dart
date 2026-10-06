@@ -40,12 +40,30 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    // ⚡ INSTANTÂNEO: Se houver cache de perfil, já renderiza imediatamente
+    if (Api.perfilCache != null) {
+      user = Api.perfilCache;
+      loading = false;
+    }
+    // Pre-popula estatísticas se dashboard estiver em cache
+    if (Api.dashboardCache != null && Api.dashboardCache!['resumo'] != null) {
+      final resumo = Api.dashboardCache!['resumo'];
+      totalTreinos = int.tryParse(resumo['total_treinos']?.toString() ?? '0') ?? 0;
+      totalKm = double.tryParse(resumo['total_km']?.toString() ?? '0') ?? 0.0;
+      final rm = double.tryParse(resumo['ritmo_medio']?.toString() ?? '0');
+      if (rm != null && rm > 0) ritmoMedioSegundos = rm.toInt();
+    }
+
     carregarPerfil();
   }
 
-  Future<void> carregarPerfil() async {
+  Future<void> carregarPerfil({bool forcar = false}) async {
+    if (user == null) {
+      if (mounted) setState(() => loading = true);
+    }
+
     try {
-      final data = await Api.getProfile();
+      final data = await Api.getProfile(forcarAtualizacao: forcar);
       if (!mounted) return;
 
       setState(() {

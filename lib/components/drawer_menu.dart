@@ -18,21 +18,27 @@ class _AppDrawerState extends State<AppDrawer> {
   @override
   void initState() {
     super.initState();
+    // ⚡ INSTANTÂNEO: Pega imediatamente da memória/cache local sem delay
+    perfil = Api.perfilCache;
+    usuario = Api.usuarioCache;
+    isAdmin = (usuario?["tipo_usuario"] == "admin") || (perfil?["tipo_usuario"] == "admin");
     carregarPerfil();
   }
 
   Future<void> carregarPerfil() async {
     try {
-      final data = await Api.getProfile();
-      Map<String, dynamic>? u;
-      try {
-        u = await Api.me();
-      } catch (_) {}
+      final results = await Future.wait([
+        Api.getProfile(forcarAtualizacao: perfil == null),
+        Api.me(forcarAtualizacao: usuario == null).catchError((_) => <String, dynamic>{}),
+      ]);
+      final data = results[0];
+      final u = results[1].isNotEmpty ? results[1] : null;
+
       if (!mounted) return;
       setState(() {
         perfil = data;
-        usuario = u;
-        isAdmin = (u?["tipo_usuario"] == "admin") || (data["tipo_usuario"] == "admin");
+        if (u != null) usuario = u;
+        isAdmin = (usuario?["tipo_usuario"] == "admin") || (perfil?["tipo_usuario"] == "admin");
       });
     } catch (_) {
       try {
@@ -63,6 +69,7 @@ class _AppDrawerState extends State<AppDrawer> {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("token");
+    await Api.limparCache();
 
     if (!mounted) return;
 

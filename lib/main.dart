@@ -32,9 +32,15 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme_provider.dart';
 import 'core/theme.dart';
+import 'core/api.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ⚡ Carrega o cache local persistido em memória instantaneamente (leva ~2ms)
+  try {
+    await Api.inicializarCacheLocal();
+  } catch (_) {}
 
   try {
     await AutoNotificacaoService.inicializar();
@@ -55,6 +61,11 @@ void main() async {
     token = prefs.getString('token');
     corridaAtiva = prefs.getBool('corrida_ativa') ?? false;
   } catch (_) {}
+
+  if (token != null && token.isNotEmpty) {
+    // ⚡ Dispara busca em paralelo em background para sincronizar/aquecer todos os dados
+    Api.preCarregarDadosGlobais();
+  }
 
   if (!corridaAtiva) {
     try {

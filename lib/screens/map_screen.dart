@@ -775,11 +775,21 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     await AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloPush, corpoPush);
     await AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloApi, msgApi);
 
-    Api.criarNotificacao(
-      titulo: tituloApi,
-      mensagem: msgApi,
-      tipo: "treino",
-    ).catchError((_) => {});
+    try {
+      final notifCriada = await Api.criarNotificacao(
+        titulo: tituloApi,
+        mensagem: msgApi,
+        tipo: "treino",
+      );
+      final idCriado = notifCriada?["id_notificacao"]?.toString();
+      if (idCriado != null && idCriado.isNotEmpty) {
+        await AutoNotificacaoService.registrarNotificacaoLocalEnviada(
+          tituloApi,
+          msgApi,
+          idStr: idCriado,
+        );
+      }
+    } catch (_) {}
 
     await NotificacaoService.mostrarNotificacao(
       id: 200,

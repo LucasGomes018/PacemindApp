@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api.dart';
 import '../utils/date_utils.dart';
@@ -41,25 +39,26 @@ class _TreinosPageState extends State<TreinosPage> {
   @override
   void initState() {
     super.initState();
+    // ⚡ INSTANTÂNEO: Se houver cache de treinos, renderiza imediatamente sem delay
+    if (Api.treinosCache != null) {
+      treinos = Api.treinosCache!;
+      loading = false;
+    }
     carregarTreinos();
   }
 
-  Future<void> carregarTreinos() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("token");
-
-      final response = await http.get(
-        Uri.parse("${Api.baseUrl}/treinos"),
-        headers: {"Authorization": "Bearer $token"},
-      );
-
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception("Falha ao carregar treinos");
+  Future<void> carregarTreinos({bool forcar = false}) async {
+    if (treinos.isEmpty) {
+      if (mounted) {
+        setState(() {
+          loading = true;
+          erroCarregamento = null;
+        });
       }
+    }
 
-      final data = jsonDecode(response.body);
-      if (data is! List) throw Exception("Formato inválido");
+    try {
+      final data = await Api.listarTreinos(forcarAtualizacao: forcar);
       if (!mounted) return;
 
       setState(() {
@@ -71,7 +70,9 @@ class _TreinosPageState extends State<TreinosPage> {
       if (!mounted) return;
       setState(() {
         loading = false;
-        erroCarregamento = "Não foi possível carregar seus treinos.";
+        if (treinos.isEmpty) {
+          erroCarregamento = "Não foi possível carregar seus treinos.";
+        }
       });
     }
   }

@@ -346,6 +346,7 @@ class _WellnessPageState extends State<WellnessPage> {
 
               // 🤖 Notificação automática caso prontidão esteja baixa ou haja dor
               final scoreCalculado = ((humor * 4.0) + (energia * 4.0) + (dormiuBem ? 15.0 : 0.0) - (acordouComDor ? 20.0 : 0.0)).clamp(10.0, 100.0).round();
+              AutoNotificacaoService.registrarCheckinRealizadoHoje();
               AutoNotificacaoService.notificarCheckinWellness(
                 prontidao: scoreCalculado,
                 acordouComDor: acordouComDor,

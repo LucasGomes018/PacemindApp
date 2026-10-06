@@ -53,6 +53,9 @@ class _LoginPageState extends State<LoginPage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("token", data["token"]);
 
+        // ⚡ Dispara imediatamente o pré-carregamento dos dados em paralelo
+        Api.preCarregarDadosGlobais(forcarAtualizacao: true);
+
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, "/home");
       } else if (mounted) {

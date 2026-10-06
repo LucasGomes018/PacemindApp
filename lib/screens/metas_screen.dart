@@ -21,6 +21,11 @@ class _MetasPageState extends State<MetasPage> {
   @override
   void initState() {
     super.initState();
+    // ⚡ INSTANTÂNEO: Se houver cache de metas, exibe imediatamente sem spinner
+    if (Api.metasCache != null) {
+      metas = Api.metasCache!;
+      loading = false;
+    }
     carregarMetas();
     if (widget.abrirCriarMetaAoIniciar) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -29,9 +34,18 @@ class _MetasPageState extends State<MetasPage> {
     }
   }
 
-  Future<void> carregarMetas() async {
+  Future<void> carregarMetas({bool forcar = false}) async {
+    if (metas.isEmpty) {
+      if (mounted) {
+        setState(() {
+          loading = true;
+          erroCarregamento = null;
+        });
+      }
+    }
+
     try {
-      final data = await Api.listarMetas();
+      final data = await Api.listarMetas(forcarAtualizacao: forcar);
 
       // Sincroniza metas de km com a quilometragem real dos treinos
       try {
@@ -64,7 +78,9 @@ class _MetasPageState extends State<MetasPage> {
       if (!mounted) return;
       setState(() {
         loading = false;
-        erroCarregamento = "Não foi possível carregar suas metas.";
+        if (metas.isEmpty) {
+          erroCarregamento = "Não foi possível carregar suas metas.";
+        }
       });
     }
   }

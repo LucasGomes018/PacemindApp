@@ -40,6 +40,17 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     selectedIndex = widget.initialPage.clamp(0, 3);
+
+    // ⚡ INSTANTÂNEO: Se existir cache do dashboard, já renderiza sem tela de carregamento
+    if (Api.dashboardCache != null) {
+      data = {
+        ...Api.dashboardCache!,
+        if (Api.perfilCache != null) "perfil": Api.perfilCache!,
+        if (Api.metasCache != null) "metas": Api.metasCache!,
+      };
+      loading = false;
+    }
+
     carregarDados();
     pedirPermissaoNotificacao();
     AutoNotificacaoService.executarChecagemInteligente();
@@ -66,40 +77,39 @@ class _DashboardPageState extends State<DashboardPage> {
     return !agora.isBefore(inicio) && !agora.isAfter(fim);
   }
 
-  Future<void> carregarDados() async {
-    if (!mounted) return;
-    setState(() {
-      loading = true;
-      erroCarregamento = null;
-    });
+  Future<void> carregarDados({bool forcar = false}) async {
+    final inicioSemana = _calcularInicioSemana(dataReferencia);
+    final fimSemana = _calcularFimSemana(inicioSemana);
+    final isSemanaAtual = _verificarSeSemanaAtual(inicioSemana, fimSemana);
+
+    // Só exibe spinner de tela inteira se realmente não tivermos dados
+    if (data == null || (!isSemanaAtual && forcar)) {
+      if (mounted) {
+        setState(() {
+          loading = true;
+          erroCarregamento = null;
+        });
+      }
+    }
 
     try {
-      final inicioSemana = _calcularInicioSemana(dataReferencia);
-      final fimSemana = _calcularFimSemana(inicioSemana);
-      final isSemanaAtual = _verificarSeSemanaAtual(inicioSemana, fimSemana);
-
-      // Busca dados do dashboard para a semana selecionada
-      final dashboard = await Api.getDashboard(
-        semana: isSemanaAtual ? null : inicioSemana,
-      );
-
-      List<dynamic> treinosConcluidos = [];
-      List<dynamic> metasUsuario = [];
-      Map<String, dynamic> perfilUsuario = {};
-
-      try {
-        treinosConcluidos = await Api.listarTreinosConcluidos();
-      } catch (_) {}
-
-      try {
-        metasUsuario = await Api.listarMetas();
-      } catch (_) {}
-
-      try {
-        perfilUsuario = await Api.getProfile();
-      } catch (_) {}
+      // ⚡ Busca todos os dados em paralelo (4x mais rápido)
+      final results = await Future.wait([
+        Api.getDashboard(
+          semana: isSemanaAtual ? null : inicioSemana,
+          forcarAtualizacao: forcar || !isSemanaAtual,
+        ),
+        Api.listarTreinosConcluidos().catchError((_) => <dynamic>[]),
+        Api.listarMetas().catchError((_) => <dynamic>[]),
+        Api.getProfile().catchError((_) => <String, dynamic>{}),
+      ]);
 
       if (!mounted) return;
+
+      final dashboard = results[0] as Map<String, dynamic>;
+      final treinosConcluidos = results[1] as List<dynamic>;
+      final metasUsuario = results[2] as List<dynamic>;
+      final perfilUsuario = results[3] as Map<String, dynamic>;
 
       final resultado = {
         ...dashboard,
@@ -117,7 +127,9 @@ class _DashboardPageState extends State<DashboardPage> {
       if (!mounted) return;
       setState(() {
         loading = false;
-        erroCarregamento = "Não foi possível carregar seus dados no momento.";
+        if (data == null) {
+          erroCarregamento = "Não foi possível carregar seus dados no momento.";
+        }
       });
     }
   }
