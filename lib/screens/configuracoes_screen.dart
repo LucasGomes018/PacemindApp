@@ -8,6 +8,7 @@ import '../components/app_snackbar.dart';
 import '../screens/perfil_screen.dart';
 import '../services/auto_notificacao_service.dart';
 import '../services/background_tracking_service.dart';
+import '../services/notificacao_service.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -909,6 +910,22 @@ class _ConfiguracoesPage extends State<ConfiguracoesPage> {
                               value: notificacoes,
                               onChanged: _salvarNotificacoes,
                             ),
+                            if (notificacoes)
+                              _buildSettingsItem(
+                                icon: Icons.notification_important_outlined,
+                                title: "Testar notificação",
+                                subtitle: "Ver popup com a nova logo no celular",
+                                onTap: () async {
+                                  await NotificacaoService.dispararNotificacaoTeste();
+                                  if (context.mounted) {
+                                    AppSnackBar.sucesso(
+                                      context,
+                                      "Notificação enviada com sua nova logo!",
+                                      titulo: "Notificação Disparada 🔔",
+                                    );
+                                  }
+                                },
+                              ),
                             _buildThemeSettingsItem(),
                           ],
                         ),

@@ -14,6 +14,7 @@ import '../services/background_tracking_service.dart';
 import '../services/notificacao_service.dart';
 import '../services/auto_notificacao_service.dart';
 import '../components/app_snackbar.dart';
+import 'historico_corridas_screen.dart';
 
 class MapPage extends StatefulWidget {
   final Map<String, dynamic>? treinoInicial;
@@ -28,6 +29,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
   LatLng? posicaoAtual;
   List<LatLng> percurso = [];
+  List<LatLng>? trajetoHistorico;
+  Map<String, dynamic>? corridaHistorica;
   StreamSubscription<Position>? positionStream;
 
   bool corridaIniciada = false;
@@ -292,12 +295,12 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       return false;
     }
 
-    // Identifica se a pessoa está em movimento real
+    // Identifica se a pessoa está em movimento real (passada a pé, caminhada ou corrida)
     final bool velocidadeValida = !pos.speed.isNaN && !pos.speed.isNegative;
-    final bool emMovimento = (velocidadeValida && pos.speed >= 0.35) || distMetros >= 0.8;
+    final bool emMovimento = (velocidadeValida && pos.speed >= 0.25) || distMetros >= 0.5 || dtSegundos >= 2.0;
 
-    // Se estiver praticamente parado em repouso estático, descarta oscilações milimétricas (< 0.7m)
-    if (!emMovimento && distMetros < 0.7) {
+    // Se estiver praticamente parado em repouso estático, descarta ruídos milimétricos (< 0.4m)
+    if (!emMovimento && distMetros < 0.4 && dtSegundos < 2.0) {
       return false;
     }
 
@@ -677,6 +680,76 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     return false;
   }
 
+  Future<void> _abrirHistoricoCorridas() async {
+    final resultado = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HistoricoCorridasScreen(
+          posicaoAtleta: posicaoAtual,
+        ),
+      ),
+    );
+
+    if (!mounted || resultado == null) return;
+
+    if (resultado is Map && resultado["acao"] == "exibir_no_mapa") {
+      final pontos = resultado["pontos"] as List<LatLng>?;
+      final corrida = resultado["corrida"] as Map<String, dynamic>?;
+
+      if (pontos != null && pontos.isNotEmpty) {
+        setState(() {
+          trajetoHistorico = pontos;
+          corridaHistorica = corrida;
+          seguirUsuario = false;
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            if (pontos.length == 1) {
+              mapController.move(pontos.first, 16.5);
+            } else {
+              final bounds = LatLngBounds.fromPoints(pontos);
+              final distMetros = Geolocator.distanceBetween(
+                bounds.south,
+                bounds.west,
+                bounds.north,
+                bounds.east,
+              );
+
+              // Evita o zoom gigante se a rota física for minúscula (< 80m)
+              if (distMetros < 80.0) {
+                mapController.move(bounds.center, 16.5);
+              } else {
+                mapController.fitCamera(
+                  CameraFit.bounds(
+                    bounds: bounds,
+                    padding: const EdgeInsets.only(
+                      top: 240,
+                      bottom: 130,
+                      left: 44,
+                      right: 44,
+                    ),
+                    maxZoom: 16.5,
+                  ),
+                );
+              }
+            }
+          } catch (_) {}
+        });
+
+        final distMetros = double.tryParse(corrida?["distancia_metros"]?.toString() ?? "0") ?? 0.0;
+        final distKm = (distMetros / 1000.0).toStringAsFixed(2);
+        AppSnackBar.info(
+          context,
+          "Trajeto de $distKm km projetado no mapa.",
+          titulo: "Histórico Carregado 🗺️",
+        );
+      }
+    }
+  }
+
+
+
   void iniciarCorrida() async {
     if (!await garantirLocalizacaoSegundoPlano()) return;
     if (!mounted) return;
@@ -693,6 +766,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     }
 
     percurso.clear();
+    trajetoHistorico = null;
+    corridaHistorica = null;
     // Continua de onde parou caso seja a retomada de um treino vinculado
     distanciaTotal = distanciaBaseMetros;
     tempoSegundos = tempoBaseSegundos;
@@ -731,6 +806,16 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         );
       }
       return;
+    }
+
+    // Salva a posição inicial imediatamente no backend
+    if (posicaoAtual != null) {
+      Api.salvarPosicao(
+        idCorrida: idCorrida!,
+        latitude: posicaoAtual!.latitude,
+        longitude: posicaoAtual!.longitude,
+        precisao: acuraciaAtual,
+      ).catchError((_) {});
     }
 
     if (idTreinoVinculado != null) {
@@ -871,11 +956,32 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         distCorridaKm >= (distanciaMetaTreinoKm! * 0.99);
 
     if (idCorrida != null) {
+      // 1. Sincroniza em lote a rota completa (percurso) gravada no app para garantir 100% dos pontos
+      if (percurso.isNotEmpty) {
+        final posicoesLote = percurso.map((p) => {
+          "latitude": p.latitude,
+          "longitude": p.longitude,
+          "precisao": 5.0,
+        }).toList();
+        await Api.salvarPosicoesLote(
+          idCorrida: idCorrida!,
+          posicoes: posicoesLote,
+        ).catchError((_) {});
+      }
+
+      // Distância da sessão de GPS real desta corrida (desconta histórico anterior se for treino vinculado retomado)
+      final double distEfetivaSessaoMetros = (distanciaTotal >= distanciaBaseMetros && distanciaBaseMetros > 0)
+          ? (distanciaTotal - distanciaBaseMetros)
+          : distanciaTotal;
+      final int tempoEfetivoSessaoSegundos = (tempoSegundos >= tempoBaseSegundos && tempoBaseSegundos > 0)
+          ? (tempoSegundos - tempoBaseSegundos)
+          : tempoSegundos;
+
       try {
         await Api.finalizarCorrida(
           idCorrida: idCorrida!,
-          distanciaMetros: distanciaTotal,
-          tempoSegundos: tempoSegundos,
+          distanciaMetros: distEfetivaSessaoMetros,
+          tempoSegundos: tempoEfetivoSessaoSegundos,
           paceMedioSegundos: paceMedioSegundos,
           velocidadeMedia: velocidadeMedia,
         );
@@ -1240,6 +1346,25 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               // ROTA PERCORRIDA (LINHA DUPLA COM EFEITO GLOW)
               PolylineLayer(
                 polylines: [
+                  // Rota Histórica Projetada (Violeta com Glow)
+                  if (trajetoHistorico != null && trajetoHistorico!.length > 1) ...[
+                    Polyline(
+                      points: trajetoHistorico!,
+                      strokeWidth: 9,
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
+                      strokeCap: StrokeCap.round,
+                      strokeJoin: StrokeJoin.round,
+                    ),
+                    Polyline(
+                      points: trajetoHistorico!,
+                      strokeWidth: 5.5,
+                      color: const Color(0xFF8B5CF6),
+                      strokeCap: StrokeCap.round,
+                      strokeJoin: StrokeJoin.round,
+                    ),
+                  ],
+
+                  // Rota ao Vivo / Em Andamento (Azul PaceMind)
                   if (percurso.length > 1) ...[
                     // Linha de fundo / brilho (Glow)
                     Polyline(
@@ -1261,10 +1386,61 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                 ],
               ),
 
-              // MARCADORES: INÍCIO E ATLETA
+              // MARCADORES: INÍCIO, HISTÓRICO E ATLETA
               MarkerLayer(
                 markers: [
-                  // Marcador de Início (Largada)
+                  // Marcadores de Início e Fim do Trajeto Histórico
+                  if (trajetoHistorico != null && trajetoHistorico!.isNotEmpty) ...[
+                    Marker(
+                      point: trajetoHistorico!.first,
+                      width: 36,
+                      height: 36,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.flag_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                    if (trajetoHistorico!.length > 1)
+                      Marker(
+                        point: trajetoHistorico!.last,
+                        width: 36,
+                        height: 36,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.sports_score_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                  ],
+
+                  // Marcador de Início (Largada da corrida atual)
                   if (percurso.isNotEmpty)
                     Marker(
                       point: percurso.first,
@@ -1551,13 +1727,101 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             ),
           ),
 
-          // BOTÕES FLUTUANTES LATERAIS (SEGUIR ATLETA E ZOOM)
+          // BANNER DE PERCURSO HISTÓRICO ATIVO
+          if (trajetoHistorico != null)
+            Positioned(
+              top: MediaQuery.paddingOf(context).top + 200,
+              left: 20,
+              right: 20,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withValues(alpha: isDark ? 0.35 : 0.18),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.4)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.route_rounded, color: Color(0xFF8B5CF6), size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Trajeto histórico (${trajetoHistorico!.length} coordenadas GPS)",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.5,
+                              color: isDark ? Colors.white : const Color(0xFF5B21B6),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              trajetoHistorico = null;
+                              corridaHistorica = null;
+                              seguirUsuario = true;
+                            });
+                            if (posicaoAtual != null) {
+                              mapController.move(posicaoAtual!, currentZoom);
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF8B5CF6),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              "Fechar",
+                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // BOTÕES FLUTUANTES LATERAIS (HISTÓRICO, SEGUIR ATLETA E ZOOM)
           Positioned(
             right: 18,
             bottom: MediaQuery.paddingOf(context).bottom + 215,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Botão Histórico de Corridas
+                FloatingActionButton.small(
+                  heroTag: "historico_runs",
+                  elevation: 4,
+                  backgroundColor: cardBg,
+                  foregroundColor: const Color(0xFF0066FF),
+                  onPressed: _abrirHistoricoCorridas,
+                  tooltip: "Histórico de Corridas",
+                  child: const Icon(
+                    Icons.history_rounded,
+                    size: 20,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
                 // Botão Centralizar / Seguir Atleta
                 FloatingActionButton.small(
                   heroTag: "center_user",
@@ -1636,7 +1900,27 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                         tooltip: "Vincular a treino da planilha",
                         icon: const Icon(Icons.fitness_center_rounded, size: 24),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
+
+                      // Botão Histórico de Corridas
+                      IconButton.filled(
+                        style: IconButton.styleFrom(
+                          backgroundColor: cardBg,
+                          foregroundColor: const Color(0xFF0066FF),
+                          padding: const EdgeInsets.all(16),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                        ),
+                        onPressed: _abrirHistoricoCorridas,
+                        tooltip: "Histórico de Corridas",
+                        icon: const Icon(Icons.history_rounded, size: 24),
+                      ),
+                      const SizedBox(width: 10),
 
                       // Botão Iniciar Corrida
                       Expanded(
@@ -1660,12 +1944,15 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                           child: ElevatedButton.icon(
                             onPressed: iniciarCorrida,
                             icon: const Icon(Icons.play_arrow_rounded, size: 28),
-                            label: const Text(
-                              "Iniciar Corrida",
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.4,
+                            label: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "Iniciar Corrida",
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.4,
+                                ),
                               ),
                             ),
                             style: ElevatedButton.styleFrom(

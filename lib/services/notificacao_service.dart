@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,7 +42,7 @@ class NotificacaoService {
     }
 
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('ic_notification');
 
     const InitializationSettings settings = InitializationSettings(
       android: androidSettings,
@@ -211,6 +212,8 @@ class NotificacaoService {
       channelDescription: channelDesc,
       importance: Importance.max,
       priority: Priority.high,
+      icon: 'ic_notification',
+      color: const Color(0xFF0066FF),
       enableVibration: true,
       playSound: true,
       channelShowBadge: true,
@@ -393,5 +396,15 @@ class NotificacaoService {
   /// Cancela todas as notificações agendadas
   static Future<void> cancelarTodas() async {
     await flutterLocalNotificationsPlugin.cancelAll();
+  }
+
+  /// 🧪 Dispara uma notificação de teste para verificar a logo e o visual
+  static Future<void> dispararNotificacaoTeste() async {
+    await mostrarNotificacao(
+      id: 9999,
+      titulo: "PaceMind em Ação! 🏃‍♂️",
+      corpo: "Sua nova logo está ativa nas notificações popup e na central de alertas.",
+      canal: 'treinos',
+    );
   }
 }

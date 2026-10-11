@@ -854,45 +854,92 @@ class Api {
   }
 
   static Future<List<dynamic>> listarCorridas() async {
-    final token = await _getToken();
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse("$baseUrl/corridas"),
+        headers: {"Authorization": "Bearer $token"},
+      );
 
-    final response = await http.get(
-      Uri.parse("$baseUrl/corridas"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return decoded;
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
   }
 
-  static Future<Map<String, dynamic>> buscarCorrida(int idCorrida) async {
-    final token = await _getToken();
+  static Future<Map<String, dynamic>?> buscarCorrida(int idCorrida) async {
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse("$baseUrl/corridas/$idCorrida"),
+        headers: {"Authorization": "Bearer $token"},
+      );
 
-    final response = await http.get(
-      Uri.parse("$baseUrl/corridas/$idCorrida"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) return decoded;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   static Future<List<dynamic>> buscarTrajeto(int idCorrida) async {
-    final token = await _getToken();
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse("$baseUrl/corridas/$idCorrida/trajeto"),
+        headers: {"Authorization": "Bearer $token"},
+      );
 
-    final response = await http.get(
-      Uri.parse("$baseUrl/corridas/$idCorrida/trajeto"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return decoded;
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
   }
 
-  static Future<void> deletarCorrida(int idCorrida) async {
-    final token = await _getToken();
+  static Future<void> salvarPosicoesLote({
+    required int idCorrida,
+    required List<Map<String, dynamic>> posicoes,
+  }) async {
+    if (posicoes.isEmpty) return;
+    try {
+      final token = await _getToken();
+      await http.post(
+        Uri.parse("$baseUrl/corridas/$idCorrida/posicoes-lote"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({"posicoes": posicoes}),
+      );
+    } catch (_) {}
+  }
 
-    await http.delete(
-      Uri.parse("$baseUrl/corridas/$idCorrida"),
-      headers: {"Authorization": "Bearer $token"},
-    );
+  static Future<bool> deletarCorrida(int idCorrida) async {
+    try {
+      final token = await _getToken();
+      final response = await http.delete(
+        Uri.parse("$baseUrl/corridas/$idCorrida"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 
   // Treino
