@@ -129,7 +129,15 @@ class _FichaPageState extends State<FichaPage> {
     final alturaStr = _alturaController.text.replaceAll(',', '.').trim();
 
     final peso = double.tryParse(pesoStr);
-    final altura = int.tryParse(alturaStr);
+    final alturaDouble = double.tryParse(alturaStr);
+    int? altura;
+    if (alturaDouble != null) {
+      if (alturaDouble <= 3.0 && alturaDouble > 0.5) {
+        altura = (alturaDouble * 100).round();
+      } else {
+        altura = alturaDouble.round();
+      }
+    }
 
     if (peso == null || peso <= 20 || peso > 300) {
       AppSnackBar.aviso(
@@ -140,10 +148,10 @@ class _FichaPageState extends State<FichaPage> {
       return;
     }
 
-    if (altura == null || altura <= 50 || altura > 260) {
+    if (altura == null || altura < 50 || altura > 260) {
       AppSnackBar.aviso(
         context,
-        "Por favor, insira uma altura válida em cm (ex: 175).",
+        "Por favor, insira uma altura válida em cm (ex: 175) ou metros (ex: 1.75).",
         titulo: "Altura Inválida",
       );
       return;

@@ -74,8 +74,8 @@ class _CadastroPageState extends State<CadastroPage> {
         Uri.parse("${Api.baseUrl}/usuarios/cadastro"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "nome": nomeController.text,
-          "email": emailController.text,
+          "nome": nomeController.text.trim(),
+          "email": emailController.text.trim(),
           "senha": senhaController.text,
         }),
       );
@@ -88,7 +88,7 @@ class _CadastroPageState extends State<CadastroPage> {
           Uri.parse("${Api.baseUrl}/usuarios/login"),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({
-            "email": emailController.text,
+            "email": emailController.text.trim(),
             "senha": senhaController.text,
           }),
         );

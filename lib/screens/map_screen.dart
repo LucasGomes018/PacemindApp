@@ -427,7 +427,17 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   }
 
   Future<void> escolherTreino() async {
-    final treinos = await Api.buscarTreinosPlanejados();
+    List<dynamic> treinos = [];
+    try {
+      treinos = await Api.buscarTreinosPlanejados();
+    } catch (_) {
+      if (Api.treinosCache != null) {
+        treinos = Api.treinosCache!.where((t) {
+          final s = (t["status"] ?? "").toString().toLowerCase();
+          return s == "planejado" || s == "em_andamento";
+        }).toList();
+      }
+    }
     if (!mounted) return;
 
     final theme = Theme.of(context);
@@ -630,12 +640,14 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       await _pedirAcesso(
         titulo: "Ative a localização",
         mensagem:
-            "A localização do aparelho está desligada. Ative-a para iniciar e continuar o rastreamento da corrida.",
+            "A localização do aparelho está desligada. Ative-a para iniciar e registrar o percurso da corrida.",
         abrirConfiguracoes: Geolocator.openLocationSettings,
       );
       final servicoReativado = await Geolocator.isLocationServiceEnabled();
       final permissaoAtualizada = await Geolocator.checkPermission();
-      return servicoReativado && permissaoAtualizada == LocationPermission.always;
+      return servicoReativado &&
+          (permissaoAtualizada == LocationPermission.always ||
+              permissaoAtualizada == LocationPermission.whileInUse);
     }
 
     var permissao = await Geolocator.checkPermission();
@@ -643,18 +655,22 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       permissao = await Geolocator.requestPermission();
     }
 
-    if (permissao == LocationPermission.always) return true;
+    if (permissao == LocationPermission.always ||
+        permissao == LocationPermission.whileInUse) {
+      return true;
+    }
 
     if (!mounted) return false;
     await _pedirAcesso(
-      titulo: "Permita localização em segundo plano",
+      titulo: "Permissão de Localização Necessária",
       mensagem:
-          "Para registrar sua corrida com a tela bloqueada ou enquanto usa outros apps, escolha \"Permitir o tempo todo\" nas permissões.",
+          "Para registrar o mapa e a distância da sua corrida via GPS, precisamos de acesso à localização.",
       abrirConfiguracoes: Geolocator.openAppSettings,
     );
 
     final permissaoAtualizada = await Geolocator.checkPermission();
-    return permissaoAtualizada == LocationPermission.always;
+    return permissaoAtualizada == LocationPermission.always ||
+        permissaoAtualizada == LocationPermission.whileInUse;
   }
 
   Future<bool> _pedirAcesso({
@@ -912,6 +928,29 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     final distKm = (distanciaTotal / 1000).toStringAsFixed(2);
     final tempo = formatarTempo();
 
+    final bool corridaMuitoCurta = distanciaTotal < 50 && tempoSegundos < 60;
+
+    if (corridaMuitoCurta && idTreinoVinculado == null) {
+      final descartar = await AppModal.showConfirmDialog(
+        context: context,
+        title: "Corrida Muito Curta",
+        message:
+            "Esta gravação teve apenas ${distanciaTotal.toStringAsFixed(0)}m e $tempo.\n\nDeseja descartar esta atividade ou salvar mesmo assim?",
+        confirmText: "Descartar",
+        cancelText: "Salvar Mesmo Assim",
+        isDestructive: true,
+        icon: Icons.delete_outline_rounded,
+        iconColor: const Color(0xFFEF4444),
+      );
+
+      if (descartar == true) {
+        descartarCorrida();
+        return;
+      }
+    }
+
+    if (!mounted) return;
+
     final bool atingiuMeta = distanciaMetaTreinoKm != null &&
         distanciaMetaTreinoKm! > 0 &&
         (distanciaTotal / 1000.0) >= (distanciaMetaTreinoKm! * 0.99);
@@ -941,13 +980,54 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     }
   }
 
+  void descartarCorrida() async {
+    timer?.cancel();
+    positionStream?.cancel();
+    await BackgroundTrackingService.stop();
+
+    if (idCorrida != null) {
+      try {
+        await Api.deletarCorrida(idCorrida!);
+      } catch (_) {}
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("corrida_ativa");
+    await prefs.remove("id_corrida_ativa");
+    await prefs.remove("corrida_iniciada_em");
+
+    if (!mounted) return;
+
+    setState(() {
+      corridaIniciada = false;
+      corridaPausada = false;
+      distanciaTotal = 0.0;
+      tempoSegundos = 0;
+      paceMedioSegundos = 0;
+      paceAtualSegundos = 0;
+      velocidadeMedia = 0.0;
+      percurso.clear();
+    });
+
+    AppSnackBar.info(
+      context,
+      "A gravação de teste foi descartada sem salvar nos treinos.",
+      titulo: "Corrida Descartada 🗑️",
+    );
+
+    _iniciarStreamGps();
+  }
+
   void pararCorrida() async {
     timer?.cancel();
     positionStream?.cancel();
 
-    if (distanciaTotal > 0 && tempoSegundos > 0) {
+    if (distanciaTotal >= 50 && tempoSegundos > 0) {
       paceMedioSegundos = (tempoSegundos / (distanciaTotal / 1000)).round();
       velocidadeMedia = (distanciaTotal / 1000) / (tempoSegundos / 3600);
+    } else {
+      paceMedioSegundos = 0;
+      velocidadeMedia = 0.0;
     }
 
     final distCorridaKm = distanciaTotal / 1000.0;
@@ -1023,26 +1103,29 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           tempoBaseSegundos = tempoSegundos;
         }
       } else {
-        try {
-          // Corrida avulsa sem treino vinculado
-          final hojeIso = DateTime.now().toIso8601String().substring(0, 10);
-          await Api.criarTreinoCompleto(
-            tipo: "Corrida GPS",
-            distanciaKm: distanciaTotal / 1000,
-            tempoSegundos: tempoSegundos,
-            data: hojeIso,
-            sensacao: 6,
-            status: "concluido",
-            observacoes: "Corrida gravada via GPS no PaceMind.",
-            idCorrida: idCorrida,
-          );
-        } catch (_) {}
+        // Se a corrida for muito curta (< 50m e < 30s), NÃO cria treino fantasma concluído
+        if (distanciaTotal >= 50 || tempoSegundos >= 30) {
+          try {
+            // Corrida avulsa sem treino vinculado
+            final hojeIso = DateTime.now().toIso8601String().substring(0, 10);
+            await Api.criarTreinoCompleto(
+              tipo: "Corrida GPS",
+              distanciaKm: distanciaTotal / 1000,
+              tempoSegundos: tempoSegundos,
+              data: hojeIso,
+              sensacao: 6,
+              status: "concluido",
+              observacoes: "Corrida gravada via GPS no PaceMind.",
+              idCorrida: idCorrida,
+            );
+          } catch (_) {}
 
-        await AutoNotificacaoService.notificarTreinoConcluido(
-          distanciaKm: distCorridaKm,
-          tempoSegundos: tempoSegundos,
-          paceMedioSegundos: paceMedioSegundos,
-        );
+          await AutoNotificacaoService.notificarTreinoConcluido(
+            distanciaKm: distCorridaKm,
+            tempoSegundos: tempoSegundos,
+            paceMedioSegundos: paceMedioSegundos,
+          );
+        }
       }
     }
 

@@ -407,9 +407,14 @@ class _DashboardPageState extends State<DashboardPage> {
     final isSemanaAtual = _verificarSeSemanaAtual(inicioSemana, fimSemana);
 
     // Treinos concluídos
+    // Treinos concluídos válidos (ignora treinos de teste abortados com menos de 50 metros e menos de 30 segundos)
     final ultimosTreinos = (d["treinos"] as List? ?? []);
     final treinosConcluidos = ultimosTreinos.where((t) {
-      return _asString(t["status"]).toLowerCase() == "concluido";
+      final statusOk = _asString(t["status"]).toLowerCase() == "concluido";
+      final dist = _asDouble(t["distancia_km"] ?? t["km"]);
+      final tempo = _asInt(t["tempo_segundos"]);
+      final isFantasma = dist < 0.05 && tempo < 30;
+      return statusOk && !isFantasma;
     }).toList();
 
     // Filtra treinos da semana selecionada
@@ -509,24 +514,33 @@ class _DashboardPageState extends State<DashboardPage> {
               : _asDouble(resumo["total_km"]));
 
     final tempoExibicaoSegundos = modoSemana
-        ? (_asInt(resumo["total_tempo"]) > 0
-              ? _asInt(resumo["total_tempo"])
-              : tempoCalculadoSemanaSegundos)
+        ? (treinosSemanaSelecionada.isEmpty && kmCalculadoSemana <= 0.05
+              ? 0
+              : (_asInt(resumo["total_tempo"]) > 0
+                    ? _asInt(resumo["total_tempo"])
+                    : tempoCalculadoSemanaSegundos))
         : (_asInt(resumoGeral["total_tempo"]) > 0
               ? _asInt(resumoGeral["total_tempo"])
               : _asInt(resumo["total_tempo"]));
 
     final treinosQtd = modoSemana
-        ? (_asInt(resumo["total_treinos"]) > 0
-              ? _asInt(resumo["total_treinos"])
-              : treinosSemanaSelecionada.length)
+        ? (treinosSemanaSelecionada.isEmpty && kmCalculadoSemana <= 0.05
+              ? 0
+              : (_asInt(resumo["total_treinos"]) > 0
+                    ? _asInt(resumo["total_treinos"])
+                    : treinosSemanaSelecionada.length))
         : (_asInt(resumoGeral["total_treinos"]) > 0
               ? _asInt(resumoGeral["total_treinos"])
               : treinosConcluidos.length);
 
-    final ritmoExibicao = modoSemana
+    final ritmoExibicaoRaw = modoSemana
         ? _asDouble(resumo["ritmo_medio"])
         : _asDouble(resumoGeral["ritmo_medio"]);
+
+    // Validação estrita de pace: se km <= 0 ou fora da faixa de 1:30 a 30:00/km, é nulo
+    final ritmoExibicao = (kmExibicao >= 0.05 && ritmoExibicaoRaw >= 90 && ritmoExibicaoRaw <= 1800)
+        ? ritmoExibicaoRaw
+        : 0.0;
 
     // Comparação semanal
     final comparacao = d["comparacao"] is Map

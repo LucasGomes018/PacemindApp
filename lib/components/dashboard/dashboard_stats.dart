@@ -45,6 +45,8 @@ class DashboardStats extends StatelessWidget {
 
   String _formatarPace(double? segundos) {
     if (segundos == null || segundos <= 0) return "--:--";
+    // Paces humanos aceitáveis: entre 1:30/km (90s) e 30:00/km (1800s)
+    if (segundos < 90 || segundos > 1800) return "--:--";
     final minutos = segundos ~/ 60;
     final segs = (segundos % 60).round();
     return "$minutos:${segs.toString().padLeft(2, '0')} /km";
@@ -97,7 +99,7 @@ class DashboardStats extends StatelessWidget {
 
         final subtituloKm = _obterSubtituloKm();
         final corSubtituloKm = _obterCorSubtituloKm();
-        final paceTexto = (ritmoMedioSegundos != null && ritmoMedioSegundos! > 0)
+        final paceTexto = (ritmoMedioSegundos != null && ritmoMedioSegundos! > 0 && kmSemana >= 0.05)
             ? _formatarPace(ritmoMedioSegundos)
             : null;
 
@@ -136,7 +138,7 @@ class DashboardStats extends StatelessWidget {
               icon: Icons.speed_rounded,
               title: "Pace Médio",
               value: paceTexto ?? "--:--",
-              subtitle: (ritmoMedioSegundos != null && ritmoMedioSegundos! > 0) ? "Ritmo da semana" : "Pace não calc.",
+              subtitle: (paceTexto != null && paceTexto != "--:--") ? "Ritmo da semana" : "Pace não calc.",
               subtitleColor: const Color(0xFF10B981),
               color: const Color(0xFF10B981),
               gradientColors: const [Color(0xFF10B981), Color(0xFF34D399)],

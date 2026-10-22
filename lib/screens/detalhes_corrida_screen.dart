@@ -27,7 +27,6 @@ class _DetalhesCorridaScreenState extends State<DetalhesCorridaScreen> {
   bool _carregandoTrajeto = true;
   String? _erroTrajeto;
   List<LatLng> _pontosTrajeto = [];
-  bool _mapaCentralizado = false;
   LatLng? _posicaoAtleta;
   bool _painelExpandido = true;
 
@@ -99,12 +98,18 @@ class _DetalhesCorridaScreenState extends State<DetalhesCorridaScreen> {
         }
       });
 
-      // Enquadra a câmera adequadamente
+      // Enquadra a câmera imediatamente e agenda reforço de 350ms para garantir enquadramento total
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_pontosTrajeto.isNotEmpty) {
           _enquadrarPercurso();
         } else if (_posicaoAtleta != null) {
           _mapController.move(_posicaoAtleta!, 16.0);
+        }
+      });
+
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (mounted && _pontosTrajeto.isNotEmpty) {
+          _enquadrarPercurso();
         }
       });
     } catch (_) {
@@ -128,8 +133,7 @@ class _DetalhesCorridaScreenState extends State<DetalhesCorridaScreen> {
 
     try {
       if (_pontosTrajeto.length == 1) {
-        _mapController.move(_pontosTrajeto.first, 16.5);
-        _mapaCentralizado = true;
+        _mapController.move(_pontosTrajeto.first, 15.5);
         return;
       }
 
@@ -143,25 +147,44 @@ class _DetalhesCorridaScreenState extends State<DetalhesCorridaScreen> {
         bounds.east,
       );
 
-      // Evita o "zoom gigante" caso o percurso seja minúsculo ou de teste parado (< 80 metros)
-      if (distMetros < 80.0) {
-        _mapController.move(bounds.center, 16.5);
+      // Evita o "zoom gigante" caso o percurso seja minúsculo ou de teste parado (< 50 metros)
+      if (distMetros < 50.0) {
+        _mapController.move(bounds.center, 16.0);
       } else {
         _mapController.fitCamera(
           CameraFit.bounds(
             bounds: bounds,
-            padding: const EdgeInsets.only(
-              top: 110,
-              bottom: 260,
-              left: 44,
-              right: 44,
+            padding: EdgeInsets.only(
+              top: 80,
+              bottom: _painelExpandido ? 250 : 120,
+              left: 36,
+              right: 36,
             ),
-            maxZoom: 16.5,
+            maxZoom: 16.0,
           ),
         );
       }
-      _mapaCentralizado = true;
-    } catch (_) {}
+    } catch (_) {
+      // Se falhou (render box ainda calculando tamanho), tenta após o frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _pontosTrajeto.isEmpty) return;
+        try {
+          final bounds = LatLngBounds.fromPoints(_pontosTrajeto);
+          _mapController.fitCamera(
+            CameraFit.bounds(
+              bounds: bounds,
+              padding: EdgeInsets.only(
+                top: 80,
+                bottom: _painelExpandido ? 250 : 120,
+                left: 36,
+                right: 36,
+              ),
+              maxZoom: 16.0,
+            ),
+          );
+        } catch (_) {}
+      });
+    }
   }
 
   String _formatarPace(dynamic paceRaw) {
@@ -251,14 +274,25 @@ class _DetalhesCorridaScreenState extends State<DetalhesCorridaScreen> {
           // MAPA INTERATIVO COM O TRAJETO DA CORRIDA
           Positioned.fill(
             child: FlutterMap(
+              key: ValueKey("map_track_${_pontosTrajeto.length}"),
               mapController: _mapController,
               options: MapOptions(
                 initialCenter: defaultCenter,
                 initialZoom: 15.5,
+                initialCameraFit: _pontosTrajeto.length > 1
+                    ? CameraFit.bounds(
+                        bounds: LatLngBounds.fromPoints(_pontosTrajeto),
+                        padding: EdgeInsets.only(
+                          top: 80,
+                          bottom: _painelExpandido ? 250 : 120,
+                          left: 36,
+                          right: 36,
+                        ),
+                        maxZoom: 16.0,
+                      )
+                    : null,
                 onMapReady: () {
-                  if (!_mapaCentralizado) {
-                    _enquadrarPercurso();
-                  }
+                  _enquadrarPercurso();
                 },
               ),
               children: [

@@ -149,12 +149,14 @@ class _TreinosPageState extends State<TreinosPage> {
     return "${s}s";
   }
 
-  String formatarPace(dynamic ritmoRaw) {
+  String formatarPace(dynamic ritmoRaw, [double? distKm]) {
     if (ritmoRaw == null) return "--:--";
+    if (distKm != null && distKm < 0.05) return "--:--";
 
     // Usa double.tryParse para aceitar valores com decimais da API (ex: "320.5")
     final numVal = double.tryParse(ritmoRaw.toString())?.round() ?? 0;
-    if (numVal <= 0) return "--:--";
+    // Paces humanos aceitáveis: entre 1:30/km (90s) e 30:00/km (1800s)
+    if (numVal < 90 || numVal > 1800) return "--:--";
 
     final min = numVal ~/ 60;
     final seg = numVal % 60;
@@ -435,16 +437,45 @@ class _TreinosPageState extends State<TreinosPage> {
   }
 
   Widget _buildResumoTopo(bool isDark) {
-    final concluidos = treinos.where((t) => (t["status"] ?? "").toString().toLowerCase() == "concluido").toList();
+    // Usa treinosFiltrados para respeitar a categoria selecionada (Todos, Corrida, Caminhada, Bike)
+    final listaBase = treinosFiltrados;
+
+    // Filtra treinos fantasmas abortados (< 50m e < 30s)
+    final concluidos = listaBase.where((t) {
+      final status = (t["status"] ?? "").toString().toLowerCase();
+      final km = double.tryParse((t["distancia_km"] ?? t["km"] ?? "0").toString()) ?? 0.0;
+      final tempo = int.tryParse((t["tempo_segundos"] ?? "0").toString()) ?? 0;
+      final isFantasma = km < 0.05 && tempo < 30;
+      return status == "concluido" && !isFantasma;
+    }).toList();
+
     double totalKm = 0.0;
-    int totalTempoSegs = 0;
+    double totalKmPace = 0.0;
+    int totalTempoSegsPace = 0;
 
     for (var t in concluidos) {
-      totalKm += double.tryParse((t["distancia_km"] ?? t["km"] ?? "0").toString()) ?? 0.0;
-      totalTempoSegs += int.tryParse((t["tempo_segundos"] ?? "0").toString()) ?? 0;
+      final tipo = (t["tipo"] ?? "").toString().toLowerCase();
+      final km = double.tryParse((t["distancia_km"] ?? t["km"] ?? "0").toString()) ?? 0.0;
+      final tempo = int.tryParse((t["tempo_segundos"] ?? "0").toString()) ?? 0;
+
+      totalKm += km;
+
+      // Pace médio só se aplica a corridas e caminhadas com distância e tempo reais
+      final isCorridaOuCaminhada = tipo.contains("corrida") ||
+          tipo.contains("run") ||
+          tipo.contains("caminhada") ||
+          tipo.contains("walk") ||
+          (!tipo.contains("bike") && !tipo.contains("muscul"));
+
+      if (isCorridaOuCaminhada && km >= 0.05 && tempo > 0) {
+        totalKmPace += km;
+        totalTempoSegsPace += tempo;
+      }
     }
 
-    final mediaPace = totalKm > 0 ? (totalTempoSegs / totalKm) : 0.0;
+    final mediaPace = (totalKmPace >= 0.05 && totalTempoSegsPace > 0)
+        ? (totalTempoSegsPace / totalKmPace)
+        : 0.0;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -461,7 +492,7 @@ class _TreinosPageState extends State<TreinosPage> {
         children: [
           _miniMetric(
             label: "Total Treinos",
-            value: "${treinos.length}",
+            value: "${concluidos.length}",
             icon: Icons.fitness_center_rounded,
             color: const Color(0xFF0066FF),
             isDark: isDark,
@@ -485,7 +516,7 @@ class _TreinosPageState extends State<TreinosPage> {
           ),
           _miniMetric(
             label: "Pace Médio",
-            value: mediaPace > 0 ? formatarPace(mediaPace) : "--:--",
+            value: mediaPace > 0 ? formatarPace(mediaPace, totalKmPace) : "--:--",
             icon: Icons.speed_rounded,
             color: const Color(0xFFF59E0B),
             isDark: isDark,
@@ -632,7 +663,10 @@ class _TreinosPageState extends State<TreinosPage> {
     final distMeta = double.tryParse((treino["distancia_km"] ?? treino["km"] ?? "0").toString()) ?? 0.0;
     final distAtual = double.tryParse((treino["distancia_atual_km"] ?? "0").toString()) ?? 0.0;
     final tempoFormatado = formatarTempo(treino["tempo_segundos"]);
-    final paceFormatado = formatarPace(treino["ritmo_medio_segundos"]);
+    final paceFormatado = formatarPace(
+      treino["ritmo_medio_segundos"],
+      distAtual > 0 ? distAtual : distMeta,
+    );
     final fcMedia = treino["fc_media"];
     final sensacao = treino["sensacao"];
     final observacoes = treino["observacoes"];

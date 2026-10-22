@@ -1026,14 +1026,38 @@ class Api {
   }
 
   static Future<List<dynamic>> buscarTreinosPlanejados() async {
-    final token = await _getToken();
+    try {
+      final token = await _getToken();
+      if (token == null || token.isEmpty) {
+        if (treinosCache != null && treinosCache!.isNotEmpty) {
+          return treinosCache!.where((t) {
+            final s = (t["status"] ?? "").toString().toLowerCase();
+            return s == "planejado" || s == "em_andamento";
+          }).toList();
+        }
+        return [];
+      }
 
-    final response = await http.get(
-      Uri.parse("$baseUrl/treinos?status=planejado,em_andamento"),
-      headers: {"Authorization": "Bearer $token"},
-    );
+      final response = await http.get(
+        Uri.parse("$baseUrl/treinos?status=planejado,em_andamento"),
+        headers: {"Authorization": "Bearer $token"},
+      ).timeout(const Duration(seconds: 8));
 
-    return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) return decoded;
+      }
+    } catch (_) {}
+
+    // Fallback gracioso com cache de treinos na memória se houver falha de rede
+    if (treinosCache != null && treinosCache!.isNotEmpty) {
+      return treinosCache!.where((t) {
+        final s = (t["status"] ?? "").toString().toLowerCase();
+        return s == "planejado" || s == "em_andamento";
+      }).toList();
+    }
+
+    return [];
   }
 
   // ===============================
@@ -1266,17 +1290,21 @@ class Api {
       body: jsonEncode(dados),
     );
 
-    if (response.statusCode == 400) {
-      // Se já existe, tenta atualizar
-      final putResp = await http.put(
-        Uri.parse("$baseUrl/ficha"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(dados),
-      );
-      if (putResp.statusCode == 200) return jsonDecode(putResp.body);
+    if (response.statusCode >= 400 && response.statusCode < 500) {
+      // Se já existe ficha ou requisição pediu atualização, tenta atualizar via PUT
+      try {
+        final putResp = await http.put(
+          Uri.parse("$baseUrl/ficha"),
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $token",
+          },
+          body: jsonEncode(dados),
+        );
+        if (putResp.statusCode >= 200 && putResp.statusCode < 300) {
+          return jsonDecode(putResp.body);
+        }
+      } catch (_) {}
     }
 
     if (response.statusCode != 201 && response.statusCode != 200) {
@@ -1580,7 +1608,19 @@ class Api {
     dynamic idNotificacao, {
     bool lida = true,
   }) async {
+    // 1. Atualiza imediatamente o cache em memória e o armazenamento local
+    if (notificacoesCache != null) {
+      for (var n in notificacoesCache!) {
+        if (n is Map && (n["id_notificacao"] == idNotificacao || n["id"] == idNotificacao)) {
+          n["lida"] = lida;
+        }
+      }
+      _salvarCacheLocal(_kCacheNotificacoes, notificacoesCache);
+    }
+
     final token = await _getToken();
+    if (token == null) return;
+
     final response = await http.patch(
       Uri.parse("$baseUrl/notificacoes/$idNotificacao"),
       headers: {
@@ -1591,30 +1631,94 @@ class Api {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      // Tenta fallback com rota /lida caso seja versão alternativa
+      // Tenta fallback com PUT caso método PATCH seja bloqueado
       try {
-        await http.patch(
-          Uri.parse("$baseUrl/notificacoes/$idNotificacao/lida"),
-          headers: {"Authorization": "Bearer $token"},
+        await http.put(
+          Uri.parse("$baseUrl/notificacoes/$idNotificacao"),
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
+          body: jsonEncode({"lida": lida}),
         );
       } catch (_) {}
     }
   }
 
   static Future<void> marcarTodasNotificacoesLidas() async {
-    final token = await _getToken();
-    final response = await http.patch(
-      Uri.parse("$baseUrl/notificacoes"),
-      headers: {"Authorization": "Bearer $token"},
-    );
+    // 1. Atualiza imediatamente o cache em memória e o armazenamento local
+    if (notificacoesCache != null) {
+      for (var n in notificacoesCache!) {
+        if (n is Map) {
+          n["lida"] = true;
+        }
+      }
+      _salvarCacheLocal(_kCacheNotificacoes, notificacoesCache);
+    }
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception("Erro ao marcar notificações como lidas");
+    final token = await _getToken();
+    if (token == null) return;
+
+    // 2. Chamadas com múltiplos fallbacks (PATCH /notificacoes, PUT /notificacoes/ler-todas, PUT /notificacoes)
+    http.Response? response;
+    try {
+      response = await http.patch(
+        Uri.parse("$baseUrl/notificacoes"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+      ).timeout(const Duration(seconds: 8));
+    } catch (_) {}
+
+    if (response == null || response.statusCode < 200 || response.statusCode >= 300) {
+      try {
+        response = await http.patch(
+          Uri.parse("$baseUrl/notificacoes/ler-todas"),
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
+        ).timeout(const Duration(seconds: 8));
+      } catch (_) {}
+    }
+
+    if (response == null || response.statusCode < 200 || response.statusCode >= 300) {
+      try {
+        response = await http.put(
+          Uri.parse("$baseUrl/notificacoes/ler-todas"),
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
+        ).timeout(const Duration(seconds: 8));
+      } catch (_) {}
+    }
+
+    if (response == null || response.statusCode < 200 || response.statusCode >= 300) {
+      try {
+        response = await http.put(
+          Uri.parse("$baseUrl/notificacoes"),
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
+        ).timeout(const Duration(seconds: 8));
+      } catch (_) {}
     }
   }
 
   static Future<void> deletarNotificacao(dynamic idNotificacao) async {
+    if (notificacoesCache != null) {
+      notificacoesCache!.removeWhere(
+        (n) => n is Map && (n["id_notificacao"] == idNotificacao || n["id"] == idNotificacao),
+      );
+      _salvarCacheLocal(_kCacheNotificacoes, notificacoesCache);
+    }
+
     final token = await _getToken();
+    if (token == null) return;
+
     final response = await http.delete(
       Uri.parse("$baseUrl/notificacoes/$idNotificacao"),
       headers: {"Authorization": "Bearer $token"},
@@ -1626,14 +1730,24 @@ class Api {
   }
 
   static Future<void> limparTodasNotificacoes() async {
+    notificacoesCache = [];
+    _salvarCacheLocal(_kCacheNotificacoes, []);
+
     final token = await _getToken();
+    if (token == null) return;
+
     final response = await http.delete(
       Uri.parse("$baseUrl/notificacoes"),
       headers: {"Authorization": "Bearer $token"},
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception("Erro ao limpar notificações");
+      try {
+        await http.delete(
+          Uri.parse("$baseUrl/notificacoes/todas"),
+          headers: {"Authorization": "Bearer $token"},
+        );
+      } catch (_) {}
     }
   }
 

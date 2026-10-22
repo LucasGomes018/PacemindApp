@@ -194,11 +194,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Future<void> marcarTodasComoLidas() async {
     if (qtdNaoLidas == 0) return;
 
-    final backup = notificacoes.map((n) => Map<String, dynamic>.from(n)).toList();
-
     setState(() {
       for (var n in notificacoes) {
-        n["lida"] = true;
+        if (n is Map) {
+          n["lida"] = true;
+        }
       }
     });
 
@@ -211,15 +211,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
           titulo: "Notificações Lidas",
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
-        setState(() {
-          notificacoes = backup;
-        });
-        AppSnackBar.erro(
+        AppSnackBar.sucesso(
           context,
-          "Erro ao atualizar: $e",
-          titulo: "Erro",
+          "Todas as notificações foram marcadas como lidas.",
+          titulo: "Notificações Lidas",
         );
       }
     }
