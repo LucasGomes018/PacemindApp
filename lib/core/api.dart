@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
@@ -788,17 +789,33 @@ class Api {
 
   static Future<Map<String, dynamic>> iniciarCorrida() async {
     final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      debugPrint("Api.iniciarCorrida: Token ausente no SharedPreferences");
+      throw Exception("Usuário não autenticado. Faça login novamente.");
+    }
 
     final response = await http.post(
       Uri.parse("$baseUrl/corridas/iniciar"),
-      headers: {"Authorization": "Bearer $token"},
-    );
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    ).timeout(const Duration(seconds: 8));
 
     if (response.statusCode != 201) {
-      throw Exception("Erro ao iniciar corrida");
+      debugPrint("Api.iniciarCorrida status=${response.statusCode} body=${response.body}");
+      if (response.statusCode == 401) {
+        throw Exception("Sessão expirada. Faça login novamente.");
+      }
+      throw Exception("Erro ao iniciar corrida no servidor (${response.statusCode})");
     }
 
-    return jsonDecode(response.body);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception("Resposta em formato inesperado");
+    }
+    return decoded;
   }
 
   static Future<void> salvarPosicao({
@@ -807,20 +824,24 @@ class Api {
     required double longitude,
     double? precisao,
   }) async {
-    final token = await _getToken();
+    if (idCorrida <= 0) return; // ID local offline: não tenta enviar para o backend
+    try {
+      final token = await _getToken();
+      if (token == null || token.isEmpty) return;
 
-    await http.post(
-      Uri.parse("$baseUrl/corridas/$idCorrida/posicao"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({
-        "latitude": latitude,
-        "longitude": longitude,
-        "precisao": precisao,
-      }),
-    );
+      await http.post(
+        Uri.parse("$baseUrl/corridas/$idCorrida/posicao"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "latitude": latitude,
+          "longitude": longitude,
+          "precisao": precisao,
+        }),
+      ).timeout(const Duration(seconds: 6));
+    } catch (_) {}
   }
 
   static Future<Map<String, dynamic>> finalizarCorrida({
@@ -830,7 +851,9 @@ class Api {
     required int paceMedioSegundos,
     required double velocidadeMedia,
   }) async {
+    if (idCorrida <= 0) return {};
     final token = await _getToken();
+    if (token == null || token.isEmpty) return {};
 
     final response = await http.put(
       Uri.parse("$baseUrl/corridas/$idCorrida/finalizar"),
@@ -844,10 +867,10 @@ class Api {
         "pace_medio_segundos": paceMedioSegundos,
         "velocidade_media": velocidadeMedia,
       }),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     if (response.statusCode != 200) {
-      throw Exception("Erro ao finalizar corrida");
+      throw Exception("Erro ao finalizar corrida (${response.statusCode})");
     }
 
     return jsonDecode(response.body);
@@ -915,9 +938,10 @@ class Api {
     required int idCorrida,
     required List<Map<String, dynamic>> posicoes,
   }) async {
-    if (posicoes.isEmpty) return;
+    if (idCorrida <= 0 || posicoes.isEmpty) return;
     try {
       final token = await _getToken();
+      if (token == null || token.isEmpty) return;
       await http.post(
         Uri.parse("$baseUrl/corridas/$idCorrida/posicoes-lote"),
         headers: {
@@ -925,17 +949,19 @@ class Api {
           "Authorization": "Bearer $token",
         },
         body: jsonEncode({"posicoes": posicoes}),
-      );
+      ).timeout(const Duration(seconds: 15));
     } catch (_) {}
   }
 
   static Future<bool> deletarCorrida(int idCorrida) async {
+    if (idCorrida <= 0) return true;
     try {
       final token = await _getToken();
+      if (token == null || token.isEmpty) return false;
       final response = await http.delete(
         Uri.parse("$baseUrl/corridas/$idCorrida"),
         headers: {"Authorization": "Bearer $token"},
-      );
+      ).timeout(const Duration(seconds: 8));
       return response.statusCode == 200;
     } catch (_) {
       return false;

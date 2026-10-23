@@ -35,6 +35,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
   bool corridaIniciada = false;
   bool corridaPausada = false;
+  bool iniciandoCorrida = false;
 
   double distanciaTotal = 0.0; // metros
   double ultimaDistanciaSincronizada = 0.0;
@@ -767,137 +768,148 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
 
   void iniciarCorrida() async {
-    if (!await garantirLocalizacaoSegundoPlano()) return;
-    if (!mounted) return;
+    if (iniciandoCorrida) return;
+    setState(() => iniciandoCorrida = true);
 
-    if (posicaoAtual == null) {
-      try {
-        final pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.bestForNavigation,
-          timeLimit: const Duration(seconds: 2),
-        );
-        posicaoAtual = LatLng(pos.latitude, pos.longitude);
-        acuraciaAtual = pos.accuracy;
-      } catch (_) {}
-    }
-
-    percurso.clear();
-    trajetoHistorico = null;
-    corridaHistorica = null;
-    // Continua de onde parou caso seja a retomada de um treino vinculado
-    distanciaTotal = distanciaBaseMetros;
-    tempoSegundos = tempoBaseSegundos;
-    paceMedioSegundos = 0;
-    paceAtualSegundos = 0;
-    velocidadeMedia = 0;
-    caloriasEstimadas = ((distanciaTotal / 1000.0) * 62).round();
-    ultimoPontoValido = posicaoAtual;
-    ultimoPontoTempo = DateTime.now();
-    metaAtingidaNotificada = false;
-
-    if (posicaoAtual != null) {
-      percurso.add(posicaoAtual!);
-    }
-
-    late final Map<String, dynamic> corrida;
     try {
-      corrida = await Api.iniciarCorrida();
-    } catch (_) {
+      if (!await garantirLocalizacaoSegundoPlano()) return;
       if (!mounted) return;
-      AppSnackBar.erro(
-        context,
-        "Não foi possível iniciar a corrida. Verifique sua conexão.",
-        titulo: "Falha ao Iniciar",
-      );
-      return;
-    }
 
-    idCorrida = corrida["id"];
-    if (idCorrida == null) {
-      if (mounted) {
-        AppSnackBar.erro(
-          context,
-          "A corrida não recebeu um identificador válido.",
-          titulo: "Erro na Corrida",
-        );
+      if (posicaoAtual == null) {
+        try {
+          final pos = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.bestForNavigation,
+            timeLimit: const Duration(seconds: 3),
+          );
+          posicaoAtual = LatLng(pos.latitude, pos.longitude);
+          acuraciaAtual = pos.accuracy;
+        } catch (_) {}
       }
-      return;
-    }
 
-    // Salva a posição inicial imediatamente no backend
-    if (posicaoAtual != null) {
-      Api.salvarPosicao(
-        idCorrida: idCorrida!,
-        latitude: posicaoAtual!.latitude,
-        longitude: posicaoAtual!.longitude,
-        precisao: acuraciaAtual,
-      ).catchError((_) {});
-    }
+      percurso.clear();
+      trajetoHistorico = null;
+      corridaHistorica = null;
+      // Continua de onde parou caso seja a retomada de um treino vinculado
+      distanciaTotal = distanciaBaseMetros;
+      tempoSegundos = tempoBaseSegundos;
+      paceMedioSegundos = 0;
+      paceAtualSegundos = 0;
+      velocidadeMedia = 0;
+      caloriasEstimadas = ((distanciaTotal / 1000.0) * 62).round();
+      ultimoPontoValido = posicaoAtual;
+      ultimoPontoTempo = DateTime.now();
+      metaAtingidaNotificada = false;
 
-    if (idTreinoVinculado != null) {
+      if (posicaoAtual != null) {
+        percurso.add(posicaoAtual!);
+      }
+
+      bool corridaOffline = false;
       try {
-        await Api.iniciarTreino(idTreinoVinculado!);
-      } catch (_) {}
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool("corrida_ativa", true);
-    await prefs.setInt("id_corrida_ativa", idCorrida!);
-    await prefs.setString("corrida_iniciada_em", DateTime.now().toIso8601String());
-    if (idTreinoVinculado != null) {
-      await prefs.setString("id_treino_ativo", idTreinoVinculado!);
-      if (tituloTreinoVinculado != null) {
-        await prefs.setString("titulo_treino_ativo", tituloTreinoVinculado!);
+        final corrida = await Api.iniciarCorrida();
+        idCorrida = int.tryParse(corrida["id"]?.toString() ?? "");
+      } catch (e) {
+        debugPrint("Iniciando corrida em modo offline devido a: $e");
+        corridaOffline = true;
       }
-    } else {
-      await prefs.remove("id_treino_ativo");
-      await prefs.remove("titulo_treino_ativo");
-    }
 
-    try {
-      await BackgroundTrackingService.start(idCorrida!);
-    } catch (_) {}
+      // Se a API não respondeu ou deu erro de conexão, NUNCA bloqueia a corrida do atleta!
+      // Cria um identificador local temporário para gravação offline com GPS
+      if (idCorrida == null || idCorrida! <= 0) {
+        idCorrida = -(DateTime.now().millisecondsSinceEpoch % 1000000000);
+        corridaOffline = true;
+      }
 
-    if (!mounted) return;
-    setState(() {
-      corridaIniciada = true;
-      corridaPausada = false;
-      seguirUsuario = true;
-    });
+      // Salva a posição inicial no backend se online
+      if (!corridaOffline && posicaoAtual != null && idCorrida! > 0) {
+        Api.salvarPosicao(
+          idCorrida: idCorrida!,
+          latitude: posicaoAtual!.latitude,
+          longitude: posicaoAtual!.longitude,
+          precisao: acuraciaAtual,
+        ).catchError((_) {});
+      }
 
-    _iniciarTimer();
-    _iniciarStreamGps();
+      if (idTreinoVinculado != null) {
+        try {
+          await Api.iniciarTreino(idTreinoVinculado!);
+        } catch (_) {}
+      }
 
-    const tituloPush = "Corrida em andamento 🏃";
-    const corpoPush = "PaceMind monitorando seu trajeto em tempo real.";
-    const tituloApi = "Corrida iniciada 🏃";
-    const msgApi = "Seu treino começou com GPS ativo. Boa corrida!";
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool("corrida_ativa", true);
+      await prefs.setInt("id_corrida_ativa", idCorrida!);
+      await prefs.setBool("corrida_offline", corridaOffline);
+      await prefs.setString("corrida_iniciada_em", DateTime.now().toIso8601String());
+      if (idTreinoVinculado != null) {
+        await prefs.setString("id_treino_ativo", idTreinoVinculado!);
+        if (tituloTreinoVinculado != null) {
+          await prefs.setString("titulo_treino_ativo", tituloTreinoVinculado!);
+        }
+      } else {
+        await prefs.remove("id_treino_ativo");
+        await prefs.remove("titulo_treino_ativo");
+      }
 
-    await AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloPush, corpoPush);
-    await AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloApi, msgApi);
+      try {
+        await BackgroundTrackingService.start(idCorrida!);
+      } catch (_) {}
 
-    try {
-      final notifCriada = await Api.criarNotificacao(
-        titulo: tituloApi,
-        mensagem: msgApi,
-        tipo: "treino",
-      );
-      final idCriado = notifCriada?["id_notificacao"]?.toString();
-      if (idCriado != null && idCriado.isNotEmpty) {
-        await AutoNotificacaoService.registrarNotificacaoLocalEnviada(
-          tituloApi,
-          msgApi,
-          idStr: idCriado,
+      if (!mounted) return;
+      setState(() {
+        corridaIniciada = true;
+        corridaPausada = false;
+        seguirUsuario = true;
+      });
+
+      _iniciarTimer();
+      _iniciarStreamGps();
+
+      if (corridaOffline) {
+        AppSnackBar.info(
+          context,
+          "Corrida iniciada em modo offline. Seu trajeto e métricas estão sendo gravados!",
+          titulo: "GPS Ativo 🏃",
         );
       }
-    } catch (_) {}
 
-    await NotificacaoService.mostrarNotificacao(
-      id: 200,
-      titulo: tituloPush,
-      corpo: corpoPush,
-      canal: 'treinos',
-    );
+      const tituloPush = "Corrida em andamento 🏃";
+      const corpoPush = "PaceMind monitorando seu trajeto em tempo real.";
+      const tituloApi = "Corrida iniciada 🏃";
+      const msgApi = "Seu treino começou com GPS ativo. Boa corrida!";
+
+      await AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloPush, corpoPush);
+      await AutoNotificacaoService.registrarNotificacaoLocalEnviada(tituloApi, msgApi);
+
+      if (!corridaOffline) {
+        try {
+          final notifCriada = await Api.criarNotificacao(
+            titulo: tituloApi,
+            mensagem: msgApi,
+            tipo: "treino",
+          );
+          final idCriado = notifCriada?["id_notificacao"]?.toString();
+          if (idCriado != null && idCriado.isNotEmpty) {
+            await AutoNotificacaoService.registrarNotificacaoLocalEnviada(
+              tituloApi,
+              msgApi,
+              idStr: idCriado,
+            );
+          }
+        } catch (_) {}
+      }
+
+      await NotificacaoService.mostrarNotificacao(
+        id: 200,
+        titulo: tituloPush,
+        corpo: corpoPush,
+        canal: 'treinos',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => iniciandoCorrida = false);
+      }
+    }
   }
 
   void alternarPausa() {
@@ -985,7 +997,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     positionStream?.cancel();
     await BackgroundTrackingService.stop();
 
-    if (idCorrida != null) {
+    if (idCorrida != null && idCorrida! > 0) {
       try {
         await Api.deletarCorrida(idCorrida!);
       } catch (_) {}
@@ -994,6 +1006,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("corrida_ativa");
     await prefs.remove("id_corrida_ativa");
+    await prefs.remove("corrida_offline");
     await prefs.remove("corrida_iniciada_em");
 
     if (!mounted) return;
@@ -1035,7 +1048,15 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         distanciaMetaTreinoKm! > 0 &&
         distCorridaKm >= (distanciaMetaTreinoKm! * 0.99);
 
-    if (idCorrida != null) {
+    // Se a corrida foi gravada em modo offline (idCorrida <= 0 ou nulo), tenta criá-la agora na API
+    if (idCorrida == null || idCorrida! <= 0) {
+      try {
+        final novaCorrida = await Api.iniciarCorrida().timeout(const Duration(seconds: 6));
+        idCorrida = int.tryParse(novaCorrida["id"]?.toString() ?? "");
+      } catch (_) {}
+    }
+
+    if (idCorrida != null && idCorrida! > 0) {
       // 1. Sincroniza em lote a rota completa (percurso) gravada no app para garantir 100% dos pontos
       if (percurso.isNotEmpty) {
         final posicoesLote = percurso.map((p) => {
@@ -1066,72 +1087,75 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           velocidadeMedia: velocidadeMedia,
         );
       } catch (_) {}
+    }
 
-      if (idTreinoVinculado != null) {
-        if (atingiuMeta) {
-          // 🎉 Treino 100% CONCLUÍDO!
-          try {
-            await Api.finalizarTreino(
-              idTreino: idTreinoVinculado!,
-              tempoSegundos: tempoSegundos,
-              distanciaKm: distanciaMetaTreinoKm!,
-              distanciaAtualKm: distCorridaKm,
-              idCorrida: idCorrida,
-              status: "concluido",
-            );
-          } catch (_) {}
+    final idCorridaFinal = (idCorrida != null && idCorrida! > 0) ? idCorrida : null;
 
-          await AutoNotificacaoService.notificarTreinoConcluido(
-            distanciaKm: distCorridaKm,
+    if (idTreinoVinculado != null) {
+      if (atingiuMeta) {
+        // 🎉 Treino 100% CONCLUÍDO!
+        try {
+          await Api.finalizarTreino(
+            idTreino: idTreinoVinculado!,
             tempoSegundos: tempoSegundos,
-            paceMedioSegundos: paceMedioSegundos,
+            distanciaKm: distanciaMetaTreinoKm!,
+            distanciaAtualKm: distCorridaKm,
+            idCorrida: idCorridaFinal,
+            status: "concluido",
           );
-        } else {
-          // ⏸️ Treino INCOMPLETO (PAUSADO para continuar em outro dia)
-          // NÃO marca como concluído! Salva como 'em_andamento'
-          try {
-            await Api.atualizarTreinoParcial(
-              idTreino: idTreinoVinculado!,
-              distanciaAtualKm: distCorridaKm,
-              tempoSegundos: tempoSegundos,
-              status: "em_andamento",
-              idCorrida: idCorrida,
-            );
-          } catch (_) {}
+        } catch (_) {}
 
-          distanciaBaseMetros = distanciaTotal;
-          tempoBaseSegundos = tempoSegundos;
-        }
+        await AutoNotificacaoService.notificarTreinoConcluido(
+          distanciaKm: distCorridaKm,
+          tempoSegundos: tempoSegundos,
+          paceMedioSegundos: paceMedioSegundos,
+        );
       } else {
-        // Se a corrida for muito curta (< 50m e < 30s), NÃO cria treino fantasma concluído
-        if (distanciaTotal >= 50 || tempoSegundos >= 30) {
-          try {
-            // Corrida avulsa sem treino vinculado
-            final hojeIso = DateTime.now().toIso8601String().substring(0, 10);
-            await Api.criarTreinoCompleto(
-              tipo: "Corrida GPS",
-              distanciaKm: distanciaTotal / 1000,
-              tempoSegundos: tempoSegundos,
-              data: hojeIso,
-              sensacao: 6,
-              status: "concluido",
-              observacoes: "Corrida gravada via GPS no PaceMind.",
-              idCorrida: idCorrida,
-            );
-          } catch (_) {}
-
-          await AutoNotificacaoService.notificarTreinoConcluido(
-            distanciaKm: distCorridaKm,
+        // ⏸️ Treino INCOMPLETO (PAUSADO para continuar em outro dia)
+        // NÃO marca como concluído! Salva como 'em_andamento'
+        try {
+          await Api.atualizarTreinoParcial(
+            idTreino: idTreinoVinculado!,
+            distanciaAtualKm: distCorridaKm,
             tempoSegundos: tempoSegundos,
-            paceMedioSegundos: paceMedioSegundos,
+            status: "em_andamento",
+            idCorrida: idCorridaFinal,
           );
-        }
+        } catch (_) {}
+
+        distanciaBaseMetros = distanciaTotal;
+        tempoBaseSegundos = tempoSegundos;
+      }
+    } else {
+      // Se a corrida for muito curta (< 50m e < 30s), NÃO cria treino fantasma concluído
+      if (distanciaTotal >= 50 || tempoSegundos >= 30) {
+        try {
+          // Corrida avulsa sem treino vinculado
+          final hojeIso = DateTime.now().toIso8601String().substring(0, 10);
+          await Api.criarTreinoCompleto(
+            tipo: "Corrida GPS",
+            distanciaKm: distanciaTotal / 1000,
+            tempoSegundos: tempoSegundos,
+            data: hojeIso,
+            sensacao: 6,
+            status: "concluido",
+            observacoes: "Corrida gravada via GPS no PaceMind.",
+            idCorrida: idCorridaFinal,
+          );
+        } catch (_) {}
+
+        await AutoNotificacaoService.notificarTreinoConcluido(
+          distanciaKm: distCorridaKm,
+          tempoSegundos: tempoSegundos,
+          paceMedioSegundos: paceMedioSegundos,
+        );
       }
     }
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("corrida_ativa");
     await prefs.remove("id_corrida_ativa");
+    await prefs.remove("corrida_offline");
     await prefs.remove("corrida_iniciada_em");
 
     if (atingiuMeta || idTreinoVinculado == null) {
@@ -2025,13 +2049,22 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                             ],
                           ),
                           child: ElevatedButton.icon(
-                            onPressed: iniciarCorrida,
-                            icon: const Icon(Icons.play_arrow_rounded, size: 28),
-                            label: const FittedBox(
+                            onPressed: iniciandoCorrida ? null : iniciarCorrida,
+                            icon: iniciandoCorrida
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.play_arrow_rounded, size: 28),
+                            label: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                "Iniciar Corrida",
-                                style: TextStyle(
+                                iniciandoCorrida ? "Iniciando..." : "Iniciar Corrida",
+                                style: const TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.4,
