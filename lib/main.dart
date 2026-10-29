@@ -56,10 +56,12 @@ void main() async {
 
   String? token;
   var corridaAtiva = false;
+  var temaEscuro = false;
   try {
     final prefs = await SharedPreferences.getInstance();
     token = prefs.getString('token');
     corridaAtiva = prefs.getBool('corrida_ativa') ?? false;
+    temaEscuro = prefs.getBool('temaEscuro') ?? false;
   } catch (_) {}
 
   if (token != null && token.isNotEmpty) {
@@ -77,6 +79,7 @@ void main() async {
     MyApp(
       isAuthenticated: token != null && token.isNotEmpty,
       initialPage: corridaAtiva ? 1 : 0,
+      initialDark: temaEscuro,
     ),
   );
 }
@@ -84,13 +87,19 @@ void main() async {
 class MyApp extends StatelessWidget {
   final bool isAuthenticated;
   final int initialPage;
+  final bool initialDark;
 
-  const MyApp({super.key, this.isAuthenticated = false, this.initialPage = 0});
+  const MyApp({
+    super.key,
+    this.isAuthenticated = false,
+    this.initialPage = 0,
+    this.initialDark = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+      create: (_) => ThemeProvider(initialDark: initialDark),
       child: Consumer<ThemeProvider>(
         builder: (context, theme, child) {
           return MaterialApp(
@@ -100,7 +109,7 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: theme.currentTheme,
-            themeAnimationDuration: const Duration(milliseconds: 400),
+            themeAnimationDuration: const Duration(milliseconds: 300),
             themeAnimationCurve: Curves.easeInOut,
 
             initialRoute: isAuthenticated ? "/home" : "/",

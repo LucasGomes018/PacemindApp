@@ -656,7 +656,7 @@ class _AppDrawerState extends State<AppDrawer> {
             "PaceMind • Versão 1.0.0",
             style: TextStyle(
               fontSize: 11,
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
         ],
